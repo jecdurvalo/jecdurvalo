@@ -134,56 +134,88 @@
         let gameSpeed = 3;
 
         // Cat object
+        let pawFrame = 0;
         const cat = {
             x: 80,
             y: canvas.height / 2,
             width: 40,
-            height: 30,
+            height: 35,
             velocity: 0,
             gravity: 0.5,
             jumpStrength: -9,
             
             draw() {
-                // Draw black cat (pixel art style)
+                // Draw round black cat with pointy ears and green eyes
                 ctx.fillStyle = '#1a1a1a';
                 
-                // Body
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Ears
+                // Round body (circle)
                 ctx.beginPath();
-                ctx.moveTo(this.x + 5, this.y);
-                ctx.lineTo(this.x + 12, this.y - 10);
-                ctx.lineTo(this.x + 19, this.y);
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Pointy ears
+                ctx.beginPath();
+                ctx.moveTo(this.x + 8, this.y + 10);
+                ctx.lineTo(this.x + 12, this.y - 8);
+                ctx.lineTo(this.x + 18, this.y + 8);
                 ctx.fill();
                 
                 ctx.beginPath();
-                ctx.moveTo(this.x + 21, this.y);
-                ctx.lineTo(this.x + 28, this.y - 10);
-                ctx.lineTo(this.x + 35, this.y);
+                ctx.moveTo(this.x + 22, this.y + 8);
+                ctx.lineTo(this.x + 28, this.y - 8);
+                ctx.lineTo(this.x + 32, this.y + 10);
                 ctx.fill();
                 
-                // Eyes (yellow)
-                ctx.fillStyle = '#FFD700';
+                // Green eyes
+                ctx.fillStyle = '#00FF00';
                 ctx.beginPath();
-                ctx.arc(this.x + 12, this.y + 10, 4, 0, Math.PI * 2);
-                ctx.arc(this.x + 28, this.y + 10, 4, 0, Math.PI * 2);
+                ctx.arc(this.x + 14, this.y + 14, 5, 0, Math.PI * 2);
+                ctx.arc(this.x + 26, this.y + 14, 5, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Pupils (black)
                 ctx.fillStyle = '#000';
                 ctx.beginPath();
-                ctx.arc(this.x + 13, this.y + 10, 2, 0, Math.PI * 2);
-                ctx.arc(this.x + 29, this.y + 10, 2, 0, Math.PI * 2);
+                ctx.arc(this.x + 15, this.y + 14, 2.5, 0, Math.PI * 2);
+                ctx.arc(this.x + 27, this.y + 14, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eye shine (white dots)
+                ctx.fillStyle = '#FFF';
+                ctx.beginPath();
+                ctx.arc(this.x + 16, this.y + 12, 1.5, 0, Math.PI * 2);
+                ctx.arc(this.x + 28, this.y + 12, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Small nose
+                ctx.fillStyle = '#FF69B4';
+                ctx.beginPath();
+                ctx.arc(this.x + 20, this.y + 20, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Animated paw - moves when jumping/falling
+                pawFrame++;
+                const pawOffset = Math.sin(pawFrame * 0.3) * 5;
+                
+                ctx.fillStyle = '#1a1a1a';
+                // Front paw (visible when jumping)
+                ctx.beginPath();
+                ctx.arc(this.x + 25, this.y + 28 + pawOffset, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Back paw
+                ctx.beginPath();
+                ctx.arc(this.x + 15, this.y + 30 - pawOffset * 0.5, 4, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Tail
                 ctx.fillStyle = '#1a1a1a';
                 ctx.beginPath();
-                ctx.moveTo(this.x, this.y + 15);
-                ctx.quadraticCurveTo(this.x - 15, this.y + 5, this.x - 10, this.y - 5);
-                ctx.lineTo(this.x, this.y + 10);
-                ctx.fill();
+                ctx.moveTo(this.x + 5, this.y + 20);
+                ctx.quadraticCurveTo(this.x - 15, this.y + 10 + pawOffset, this.x - 12, this.y - 5);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#1a1a1a';
+                ctx.stroke();
             },
             
             update() {
@@ -384,6 +416,7 @@
             cat.reset();
             pipes = [];
             clouds = [];
+            pawFrame = 0;
             score = 0;
             frames = 0;
             gameSpeed = 3;
