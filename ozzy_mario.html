@@ -461,12 +461,12 @@
     }
 
     class Flag {
-        constructor(x, y) { 
+        constructor(x, y, visible = true) { 
             this.x = x; 
             this.y = y; 
             this.w = 10; 
             this.h = 100;
-            this.visible = true;
+            this.visible = visible;
         }
         draw() {
             if (!this.visible) return;
@@ -1072,8 +1072,8 @@
             coins.push(new Coin(1600, canvas.height - 290));
             coins.push(new Coin(1850, canvas.height - 190));
             
-            // Bandeira aparece após derrotar o boss
-            flag = new Flag(2300, canvas.height - 150);
+            // Bandeira aparece após derrotar o boss (inicialmente invisível)
+            flag = new Flag(2300, canvas.height - 150, false);
         }
     }
 
@@ -1188,8 +1188,16 @@
     let savedCheckpoint = { level: 0, x: 50, y: 0 };
 
     function takeDamage(amount) {
+        // Se já estiver invulnerável, ignora dano adicional
+        if (player.invincible > 0 && amount === 1) return;
+        
         lives -= amount;
         livesEl.innerText = `VIDAS: ${lives}`;
+        
+        // Aplica invencibilidade temporária se não for morte instantânea
+        if (amount < 3) {
+            player.invincible = 120; // 2 segundos de invencibilidade (60fps)
+        }
         
         if (lives <= 0) {
             gameState = 'GAMEOVER';
