@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ozzy Platformer - Aventura Estilo Mario</title>
+    <title>Ozzy - The Game</title>
     <style>
         * {
             margin: 0;
@@ -142,7 +142,7 @@
 
     <!-- Tela Inicial -->
     <div id="start-screen" class="screen">
-        <h1>OZZY ADVENTURE</h1>
+        <h1>🎸 OZZY - THE GAME 🎸</h1>
         <p>Ajude o Ozzy a atravessar as fases!<br>Pule nas plataformas, colete moedas e chegue na bandeira.</p>
         <p>Cuidado com as <strong>Aranhas</strong> e <strong>Morcegos</strong>!</p>
         <button onclick="startGame()">JOGAR</button>
@@ -482,6 +482,10 @@
         enemies = [];
         coins = [];
         
+        // Guarda checkpoint atual se for morte para restaurar depois
+        const savedCheckpointX = checkpointX;
+        const savedCheckpointY = checkpointY;
+        
         // Só reseta posição e checkpoint se não for respawn por morte
         if (!fromDeath) {
             player.x = 50;
@@ -491,6 +495,10 @@
             cameraX = 0;
             checkpointX = 50; // Reset checkpoint para inicio da fase
             checkpointY = 0;
+        } else {
+            // Se for morte, mantém o checkpoint onde estava
+            checkpointX = savedCheckpointX;
+            checkpointY = savedCheckpointY;
         }
         
         levelEl.innerText = `FASE: ${levelIndex + 1}`;
@@ -558,31 +566,31 @@
             flag = new Flag(1950, canvas.height - 150);
         
         } else if (levelIndex === 3) {
-            // Fase 4: Escalada vertical - espaçamento AINDA MAIOR para permitir pulos
+            // Fase 4: Escalada vertical - plataformas lado a lado com espaço para pular
             platforms.push(new Platform(500, canvas.height - 170, 120, 50));
-            platforms.push(new Platform(800, canvas.height - 250, 120, 50));  // Horizontal aumentado de 250 para 300
-            platforms.push(new Platform(500, canvas.height - 340, 120, 50));
-            platforms.push(new Platform(850, canvas.height - 420, 120, 50));  // Horizontal aumentado
-            platforms.push(new Platform(1200, canvas.height - 340, 180, 50)); // Horizontal aumentado de 320 para 350
-            platforms.push(new Platform(1550, canvas.height - 230, 220, 50)); // Horizontal aumentado
-            platforms.push(new Platform(1900, canvas.height - 120, 350, 50)); // Horizontal aumentado
+            platforms.push(new Platform(680, canvas.height - 170, 120, 50));  // Lado a lado com gap de 60px
+            platforms.push(new Platform(500, canvas.height - 280, 120, 50));  // Subida
+            platforms.push(new Platform(680, canvas.height - 280, 120, 50));  // Lado a lado
+            platforms.push(new Platform(860, canvas.height - 380, 150, 50));  // Plataforma mais alta
+            platforms.push(new Platform(1100, canvas.height - 320, 180, 50)); // Descida
+            platforms.push(new Platform(1400, canvas.height - 240, 200, 50)); // Plataforma final
+            platforms.push(new Platform(1700, canvas.height - 150, 350, 50)); // Chão final
 
-            enemies.push(new Enemy(1220, canvas.height - 380, 'spider'));
-            enemies.push(new Enemy(1600, canvas.height - 270, 'spider'));
-            enemies.push(new Enemy(700, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(1000, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(1650, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1450, canvas.height - 280, 'spider'));
+            enemies.push(new Enemy(1750, canvas.height - 190, 'spider'));
+            enemies.push(new Enemy(800, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1200, canvas.height - 490, 'bat'));
 
             coins.push(new Coin(540, canvas.height - 210));
-            coins.push(new Coin(840, canvas.height - 290));
-            coins.push(new Coin(540, canvas.height - 380));
-            coins.push(new Coin(890, canvas.height - 460));
-            coins.push(new Coin(1270, canvas.height - 380));
-            coins.push(new Coin(1640, canvas.height - 270));
-            coins.push(new Coin(2000, canvas.height - 160));
-            coins.push(new Coin(2150, canvas.height - 160));
+            coins.push(new Coin(720, canvas.height - 210));
+            coins.push(new Coin(540, canvas.height - 320));
+            coins.push(new Coin(720, canvas.height - 320));
+            coins.push(new Coin(920, canvas.height - 420));
+            coins.push(new Coin(1170, canvas.height - 360));
+            coins.push(new Coin(1480, canvas.height - 280));
+            coins.push(new Coin(1850, canvas.height - 190));
 
-            flag = new Flag(2100, canvas.height - 220);
+            flag = new Flag(1950, canvas.height - 250);
 
         } else if (levelIndex === 4) {
             // Fase 5: Precisão e timing - espaçamento aumentado
@@ -734,14 +742,18 @@
             gameState = 'GAMEOVER';
             gameOverScreen.style.display = 'flex';
         } else {
+            // Salva checkpoint antes de morrer para respawn no mesmo lugar
+            const deathCheckpointX = checkpointX;
+            const deathCheckpointY = checkpointY;
+            
             // Respawn no checkpoint da fase atual
-            player.x = checkpointX;
-            player.y = checkpointY;
+            player.x = deathCheckpointX;
+            player.y = deathCheckpointY;
             player.vx = 0;
             player.vy = 0;
-            cameraX = Math.max(0, checkpointX - 200);
+            cameraX = Math.max(0, deathCheckpointX - 200);
             
-            // Recarrega a fase mantendo o checkpoint
+            // Recarrega a fase mantendo o checkpoint onde morreu
             loadLevel(currentLevelIdx, true);
         }
     }
@@ -807,6 +819,10 @@
         
         ctx.beginPath();
         ctx.arc(600 - cloudOffset % 1000, 80, 60, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(900 - cloudOffset % 1000, 150, 45, 0, Math.PI*2);
         ctx.fill();
     }
 
