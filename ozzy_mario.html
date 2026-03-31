@@ -1058,8 +1058,9 @@
             boss = new Boss(1200, canvas.height - 150);
             
             // Minions (inimigos menores que aparecem durante a luta)
-            enemies.push(new Enemy(400, canvas.height - 90, 'bat'));
-            enemies.push(new Enemy(800, canvas.height - 90, 'bat'));
+            // Removidos morcegos iniciais para não pegar jogador desprevenido
+            // enemies.push(new Enemy(400, canvas.height - 90, 'bat'));
+            // enemies.push(new Enemy(800, canvas.height - 90, 'bat'));
             enemies.push(new Enemy(1600, canvas.height - 90, 'bat'));
             
             // Moedas de poder espalhadas
@@ -1183,6 +1184,9 @@
         }
     }
 
+    // Variável para armazenar checkpoint entre fases
+    let savedCheckpoint = { level: 0, x: 50, y: 0 };
+
     function takeDamage(amount) {
         lives -= amount;
         livesEl.innerText = `VIDAS: ${lives}`;
@@ -1191,23 +1195,59 @@
             gameState = 'GAMEOVER';
             gameOverScreen.style.display = 'flex';
         } else {
-            // Respawn no início da fase atual
-            player.x = 50;
-            player.y = 0;
-            player.vx = 0;
-            player.vy = 0;
-            cameraX = 0;
-            
-            // Recarrega a fase do início
-            loadLevel(currentLevelIdx);
+            // Sistema de checkpoint: se estiver na fase 6 ou superior, volta na fase anterior
+            if (currentLevelIdx >= 5) {
+                // Salva o checkpoint atual antes de morrer
+                savedCheckpoint = { level: currentLevelIdx - 1, x: 50, y: 0 };
+                
+                // Volta para a fase anterior com 1 vida
+                currentLevelIdx = Math.max(0, currentLevelIdx - 1);
+                lives = 1;
+                livesEl.innerText = `VIDAS: ${lives}`;
+                
+                // Respawn no início da fase anterior
+                player.x = 50;
+                player.y = 0;
+                player.vx = 0;
+                player.vy = 0;
+                cameraX = 0;
+                
+                // Recarrega a fase anterior
+                loadLevel(currentLevelIdx);
+                
+                // Mostra mensagem de checkpoint
+                const checkpointMsg = document.createElement('div');
+                checkpointMsg.style.position = 'absolute';
+                checkpointMsg.style.top = '40%';
+                checkpointMsg.style.left = '50%';
+                checkpointMsg.style.transform = 'translate(-50%, -50%)';
+                checkpointMsg.style.color = '#ffff00';
+                checkpointMsg.style.fontSize = '28px';
+                checkpointMsg.style.fontWeight = 'bold';
+                checkpointMsg.style.textShadow = '3px 3px 0 #000';
+                checkpointMsg.style.zIndex = '100';
+                checkpointMsg.innerText = 'CHECKPOINT! FASE ' + (currentLevelIdx + 1);
+                document.getElementById('game-container').appendChild(checkpointMsg);
+                setTimeout(() => checkpointMsg.remove(), 2000);
+            } else {
+                // Respawn no início da fase atual para fases 1-5
+                player.x = 50;
+                player.y = 0;
+                player.vx = 0;
+                player.vy = 0;
+                cameraX = 0;
+                
+                // Recarrega a fase do início
+                loadLevel(currentLevelIdx);
+            }
         }
     }
 
     function nextLevel() {
         currentLevelIdx++;
         
-        // Verifica se chegou na fase 8 (index 7) com mais de 700 moedas
-        if (currentLevelIdx === 7 && score > 700) {
+        // Verifica se chegou na fase 8 (index 7) com mais de 500 moedas
+        if (currentLevelIdx === 7 && score > 500) {
             lives++;
             livesEl.innerText = `VIDAS: ${lives}`;
             // Mostra mensagem temporária na tela
@@ -1241,6 +1281,7 @@
         currentLevelIdx = 0;
         checkpointX = 50;
         checkpointY = 0;
+        savedCheckpoint = { level: 0, x: 50, y: 0 };
         scoreEl.innerText = `MOEDAS: 0`;
         livesEl.innerText = `VIDAS: 3`;
         startScreen.style.display = 'none';
