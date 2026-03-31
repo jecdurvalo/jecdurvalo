@@ -568,7 +568,7 @@
         } else if (levelIndex === 3) {
             // Fase 4: Escalada vertical - plataformas com MAIOR espaçamento para facilitar
             platforms.push(new Platform(500, canvas.height - 170, 140, 50));
-            platforms.push(new Platform(780, canvas.height - 220, 140, 50));  // Gap horizontal maior
+            platforms.push(new Platform(900, canvas.height - 220, 140, 50));  // Gap horizontal BEM maior da primeira pra segunda
             platforms.push(new Platform(500, canvas.height - 320, 140, 50));  // Subida com gap vertical maior
             platforms.push(new Platform(780, canvas.height - 370, 140, 50));  // Gap horizontal e vertical maiores
             platforms.push(new Platform(1080, canvas.height - 450, 180, 50));  // Plataforma mais alta e larga
@@ -582,7 +582,7 @@
             enemies.push(new Enemy(1400, canvas.height - 470, 'bat'));
 
             coins.push(new Coin(560, canvas.height - 210));
-            coins.push(new Coin(840, canvas.height - 260));
+            coins.push(new Coin(960, canvas.height - 260));
             coins.push(new Coin(560, canvas.height - 360));
             coins.push(new Coin(840, canvas.height - 410));
             coins.push(new Coin(1160, canvas.height - 490));
