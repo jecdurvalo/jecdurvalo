@@ -1,4 +1,19 @@
 ```
-# Web development
-*.html
+# HTML specific temporary files (if any generated during editing)
+*.tmp
+*.bak
+*.backup
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
 ```
