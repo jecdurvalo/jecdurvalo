@@ -58,6 +58,29 @@
             z-index: 10;
         }
 
+        /* Botão de Pausa */
+        #pause-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 204, 0, 0.8);
+            border: 3px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #000;
+            pointer-events: auto;
+            z-index: 11;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 0 #b38f00;
+            transition: transform 0.1s;
+        }
+        #pause-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b38f00; }
+
         .screen {
             position: absolute;
             top: 0;
@@ -89,8 +112,13 @@
             color: #000;
             transition: transform 0.1s;
             box-shadow: 0 6px 0 #008f00;
+            margin: 10px;
         }
         button:active { transform: translateY(4px); box-shadow: 0 2px 0 #008f00; }
+        button.secondary { background: #ffcc00; box-shadow: 0 6px 0 #b38f00; }
+        button.secondary:active { box-shadow: 0 2px 0 #b38f00; }
+        button.info { background: #00ccff; box-shadow: 0 6px 0 #008fb3; }
+        button.info:active { box-shadow: 0 2px 0 #008fb3; }
 
         /* Controles Mobile */
         #mobile-controls {
@@ -139,6 +167,9 @@
         <div id="level-hud">FASE: 1</div>
         <div id="lives-hud">VIDAS: 3</div>
     </div>
+    
+    <!-- Botão de Pausa -->
+    <button id="pause-btn" onclick="pauseGame()">⏸</button>
 
     <!-- Tela Inicial -->
     <div id="start-screen" class="screen">
@@ -146,6 +177,44 @@
         <p>Ajude o Ozzy a atravessar as fases!<br>Pule nas plataformas, colete moedas e chegue na bandeira.</p>
         <p>Cuidado com as <strong>Aranhas</strong> e <strong>Morcegos</strong>!</p>
         <button onclick="startGame()">JOGAR</button>
+        <br>
+        <button class="info" onclick="showScreen('instructions-screen')">COMO JOGAR</button>
+        <button class="secondary" onclick="showScreen('credits-screen')">CRÉDITOS</button>
+    </div>
+
+    <!-- Tela de Instruções -->
+    <div id="instructions-screen" class="screen" style="display: none;">
+        <h1 style="color: #00ccff;">COMO JOGAR</h1>
+        <p><strong>Objetivo:</strong> Leve o Ozzy até a bandeira final de cada fase!</p>
+        <p><strong>Controles (Teclado):</strong><br>
+        ← → ou A/D: Mover<br>
+        Espaço ou ↑ ou W: Pular</p>
+        <p><strong>Controles (Mobile):</strong><br>
+        Use os botões na tela para mover e pular.</p>
+        <p><strong>Dicas:</strong><br>
+        • Colete moedas para aumentar sua pontuação<br>
+        • Pule sobre os inimigos para derrotá-los<br>
+        • Evite cair no abismo!</p>
+        <button onclick="showScreen('start-screen')">VOLTAR</button>
+    </div>
+
+    <!-- Tela de Créditos -->
+    <div id="credits-screen" class="screen" style="display: none;">
+        <h1 style="color: #ffcc00;">CRÉDITOS</h1>
+        <p><strong>Desenvolvimento:</strong><br>Ozzy Game Studio</p>
+        <p><strong>Personagem:</strong><br>Ozzy - O Gatinho Rockstar</p>
+        <p><strong>Inimigos:</strong><br>Aranhas das Cavernas<br>Morcegos da Noite</p>
+        <p><strong>Música:</strong><br>Rock Classic vibes 🎸</p>
+        <p style="margin-top: 20px; font-size: 14px; color: #aaa;">Feito com ❤️ para os fãs de jogos plataforma</p>
+        <button onclick="showScreen('start-screen')">VOLTAR</button>
+    </div>
+
+    <!-- Tela de Pausa -->
+    <div id="pause-screen" class="screen" style="display: none;">
+        <h1 style="color: #ffcc00;">PAUSA</h1>
+        <p>Jogo pausado</p>
+        <button onclick="resumeGame()">CONTINUAR</button>
+        <button class="secondary" onclick="resetGame()">SAIR DO JOGO</button>
     </div>
 
     <!-- Tela Game Over -->
@@ -184,7 +253,25 @@
     const startScreen = document.getElementById('start-screen');
     const gameOverScreen = document.getElementById('game-over-screen');
     const winScreen = document.getElementById('win-screen');
+    const instructionsScreen = document.getElementById('instructions-screen');
+    const creditsScreen = document.getElementById('credits-screen');
+    const pauseScreen = document.getElementById('pause-screen');
     const finalScoreEl = document.getElementById('final-score');
+    const pauseBtn = document.getElementById('pause-btn');
+
+    // Função para mostrar tela específica
+    function showScreen(screenId) {
+        // Esconde todas as telas
+        startScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+        winScreen.style.display = 'none';
+        instructionsScreen.style.display = 'none';
+        creditsScreen.style.display = 'none';
+        pauseScreen.style.display = 'none';
+        
+        // Mostra a tela desejada
+        document.getElementById(screenId).style.display = 'flex';
+    }
 
     // Configuração Responsiva
     let scale = 1;
@@ -219,12 +306,21 @@
             player.jump();
             keys.up = true;
         }
+        // Pausa com ESC ou P
+        if ((e.code === 'Escape' || e.code === 'KeyP') && gameState === 'PLAYING') {
+            pauseGame();
+        }
     });
     window.addEventListener('keyup', e => {
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
         if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
     });
+
+    function pauseGame() {
+        gameState = 'PAUSED';
+        showScreen('pause-screen');
+    }
 
     // Listeners Touch
     const setupTouch = (id, key) => {
@@ -1074,6 +1170,193 @@
             
             // Bandeira aparece após derrotar o boss (inicialmente invisível)
             flag = new Flag(2300, canvas.height - 150, false);
+        } else if (levelIndex === 12) {
+            // FASE 13: A Ponte Quebrada
+            // Design: Ponte suspensa com seções quebradas e inimigos voadores
+            
+            // Plataforma inicial
+            platforms.push(new Platform(50, canvas.height - 50, 200, 50));
+            
+            // Seção 1: Ponte com gaps
+            platforms.push(new Platform(300, canvas.height - 100, 150, 30));
+            platforms.push(new Platform(500, canvas.height - 150, 120, 30));
+            platforms.push(new Platform(670, canvas.height - 100, 150, 30));
+            
+            // Inimigos na primeira seção
+            enemies.push(new Enemy(520, canvas.height - 190, 'bat'));
+            
+            // Área de descanso com moedas
+            platforms.push(new Platform(870, canvas.height - 50, 180, 50));
+            coins.push(new Coin(920, canvas.height - 90));
+            coins.push(new Coin(970, canvas.height - 90));
+            coins.push(new Coin(1020, canvas.height - 90));
+            
+            // Seção 2: Ponte mais estreita
+            platforms.push(new Platform(1100, canvas.height - 100, 100, 30));
+            platforms.push(new Platform(1250, canvas.height - 180, 100, 30));
+            platforms.push(new Platform(1400, canvas.height - 100, 100, 30));
+            platforms.push(new Platform(1550, canvas.height - 180, 100, 30));
+            
+            // Inimigos voadores
+            enemies.push(new Enemy(1270, canvas.height - 220, 'bat'));
+            enemies.push(new Enemy(1570, canvas.height - 220, 'bat'));
+            
+            // Moedas flutuantes
+            coins.push(new Coin(1150, canvas.height - 140));
+            coins.push(new Coin(1300, canvas.height - 220));
+            coins.push(new Coin(1450, canvas.height - 140));
+            coins.push(new Coin(1600, canvas.height - 220));
+            
+            // Plataforma final antes do chão
+            platforms.push(new Platform(1700, canvas.height - 100, 150, 30));
+            enemies.push(new Enemy(1750, canvas.height - 140, 'spider'));
+            
+            // Chão final com inimigos
+            platforms.push(new Platform(1900, canvas.height - 50, 600, 50));
+            enemies.push(new Enemy(2000, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(2150, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(2300, canvas.height - 90, 'spider'));
+            
+            // Moedas finais
+            coins.push(new Coin(2050, canvas.height - 90));
+            coins.push(new Coin(2200, canvas.height - 90));
+            coins.push(new Coin(2350, canvas.height - 90));
+            coins.push(new Coin(2400, canvas.height - 150));
+            
+            flag = new Flag(2450, canvas.height - 150);
+            
+        } else if (levelIndex === 13) {
+            // FASE 14: A Torre Invertida
+            // Design: Fase que começa no topo e desce, com plataformas descendentes
+            
+            // Plataforma inicial no topo
+            platforms.push(new Platform(50, 100, 200, 50));
+            coins.push(new Coin(150, 60));
+            
+            // Escada descendente para a direita
+            platforms.push(new Platform(300, 150, 120, 40));
+            platforms.push(new Platform(470, 220, 120, 40));
+            platforms.push(new Platform(640, 290, 120, 40));
+            platforms.push(new Platform(810, 360, 120, 40));
+            
+            // Inimigos nas plataformas
+            enemies.push(new Enemy(490, 180, 'spider'));
+            enemies.push(new Enemy(660, 250, 'spider'));
+            
+            // Moedas na descida
+            coins.push(new Coin(350, 110));
+            coins.push(new Coin(520, 180));
+            coins.push(new Coin(690, 250));
+            coins.push(new Coin(860, 320));
+            
+            // Área do meio com inimigos voadores
+            platforms.push(new Platform(980, 400, 200, 40));
+            enemies.push(new Enemy(1050, 360, 'bat'));
+            enemies.push(new Enemy(1150, 360, 'bat'));
+            coins.push(new Coin(1030, 360));
+            coins.push(new Coin(1130, 360));
+            
+            // Segunda descida mais perigosa
+            platforms.push(new Platform(1230, 320, 100, 30));
+            platforms.push(new Platform(1380, 250, 100, 30));
+            platforms.push(new Platform(1530, 180, 100, 30));
+            platforms.push(new Platform(1680, 120, 100, 30));
+            
+            // Inimigos traiçoeiros
+            enemies.push(new Enemy(1400, 210, 'spider'));
+            enemies.push(new Enemy(1550, 140, 'bat'));
+            
+            // Moedas bônus
+            coins.push(new Coin(1280, 280));
+            coins.push(new Coin(1430, 210));
+            coins.push(new Coin(1580, 140));
+            coins.push(new Coin(1730, 80));
+            
+            // Plataforma de transição
+            platforms.push(new Platform(1830, 150, 150, 40));
+            enemies.push(new Enemy(1880, 110, 'spider'));
+            
+            // Descida final em espiral
+            platforms.push(new Platform(2030, 200, 90, 30));
+            platforms.push(new Platform(2170, 280, 90, 30));
+            platforms.push(new Platform(2310, 360, 90, 30));
+            
+            // Chão final
+            platforms.push(new Platform(2450, canvas.height - 50, 400, 50));
+            enemies.push(new Enemy(2550, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(2700, canvas.height - 90, 'goomba'));
+            
+            // Moedas finais
+            coins.push(new Coin(2075, 160));
+            coins.push(new Coin(2215, 240));
+            coins.push(new Coin(2355, 320));
+            coins.push(new Coin(2600, canvas.height - 90));
+            coins.push(new Coin(2750, canvas.height - 90));
+            
+            flag = new Flag(2800, canvas.height - 150);
+            
+        } else if (levelIndex === 14) {
+            // FASE 15: O Boss Final - Ozzy vs Shadow King
+            // Design: Arena épica do boss final com múltiplos estágios
+            
+            // Arena principal ampla
+            platforms.push(new Platform(50, canvas.height - 50, 2800, 50));
+            
+            // Plataformas estratégicas superiores
+            platforms.push(new Platform(150, canvas.height - 180, 180, 40));
+            platforms.push(new Platform(400, canvas.height - 280, 140, 40));
+            platforms.push(new Platform(600, canvas.height - 180, 180, 40));
+            platforms.push(new Platform(850, canvas.height - 280, 200, 40));
+            platforms.push(new Platform(1150, canvas.height - 180, 180, 40));
+            platforms.push(new Platform(1400, canvas.height - 280, 140, 40));
+            platforms.push(new Platform(1600, canvas.height - 180, 180, 40));
+            platforms.push(new Platform(1850, canvas.height - 280, 200, 40));
+            platforms.push(new Platform(2150, canvas.height - 180, 180, 40));
+            platforms.push(new Platform(2400, canvas.height - 280, 140, 40));
+            platforms.push(new Platform(2600, canvas.height - 180, 180, 40));
+            
+            // Boss Final - Shadow King (mais poderoso)
+            boss = new Boss(1400, canvas.height - 150);
+            boss.maxHealth = 5; // Mais vida
+            boss.health = 5;
+            
+            // Minions protetores
+            enemies.push(new Enemy(300, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(700, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(1100, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(1700, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(2100, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(2500, canvas.height - 90, 'bat'));
+            
+            // Aranhas guardiãs nas plataformas
+            enemies.push(new Enemy(200, canvas.height - 220, 'spider'));
+            enemies.push(new Enemy(650, canvas.height - 220, 'spider'));
+            enemies.push(new Enemy(1200, canvas.height - 220, 'spider'));
+            enemies.push(new Enemy(1650, canvas.height - 220, 'spider'));
+            enemies.push(new Enemy(2200, canvas.height - 220, 'spider'));
+            
+            // Moedas de poder distribuídas
+            coins.push(new Coin(200, canvas.height - 220));
+            coins.push(new Coin(450, canvas.height - 320));
+            coins.push(new Coin(650, canvas.height - 220));
+            coins.push(new Coin(900, canvas.height - 320));
+            coins.push(new Coin(1200, canvas.height - 220));
+            coins.push(new Coin(1450, canvas.height - 320));
+            coins.push(new Coin(1650, canvas.height - 220));
+            coins.push(new Coin(1900, canvas.height - 320));
+            coins.push(new Coin(2200, canvas.height - 220));
+            coins.push(new Coin(2450, canvas.height - 320));
+            coins.push(new Coin(2650, canvas.height - 220));
+            
+            // Super moedas bônus (valem mais)
+            coins.push(new Coin(500, canvas.height - 400));
+            coins.push(new Coin(1000, canvas.height - 400));
+            coins.push(new Coin(1500, canvas.height - 400));
+            coins.push(new Coin(2000, canvas.height - 400));
+            coins.push(new Coin(2500, canvas.height - 400));
+            
+            // Bandeira da vitória final (aparece após derrotar o boss)
+            flag = new Flag(2700, canvas.height - 150, false);
         }
     }
 
@@ -1201,6 +1484,7 @@
         
         if (lives <= 0) {
             gameState = 'GAMEOVER';
+            pauseBtn.style.display = 'none'; // Esconde botão de pausa
             gameOverScreen.style.display = 'flex';
         } else {
             // Sistema de checkpoint: se estiver na fase 6 ou superior, volta na fase anterior
@@ -1274,9 +1558,10 @@
             setTimeout(() => bonusMsg.remove(), 2000);
         }
         
-        if (currentLevelIdx >= 12) {
+        if (currentLevelIdx >= 15) {
             gameState = 'WIN';
             finalScoreEl.innerText = score;
+            pauseBtn.style.display = 'none'; // Esconde botão de pausa
             winScreen.style.display = 'flex';
         } else {
             loadLevel(currentLevelIdx);
@@ -1284,6 +1569,7 @@
     }
 
     function resetGame() {
+        pauseBtn.style.display = 'none'; // Esconde botão de pausa
         score = 0;
         lives = 3;
         currentLevelIdx = 0;
@@ -1295,6 +1581,7 @@
         startScreen.style.display = 'none';
         gameOverScreen.style.display = 'none';
         winScreen.style.display = 'none';
+        pauseScreen.style.display = 'none';
         loadLevel(0);
         gameState = 'PLAYING';
         gameLoop();
@@ -1302,7 +1589,14 @@
 
     function startGame() {
         startScreen.style.display = 'none';
+        pauseBtn.style.display = 'flex'; // Mostra botão de pausa
         loadLevel(0);
+        gameState = 'PLAYING';
+        gameLoop();
+    }
+
+    function resumeGame() {
+        pauseScreen.style.display = 'none';
         gameState = 'PLAYING';
         gameLoop();
     }
