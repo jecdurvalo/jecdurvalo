@@ -567,30 +567,30 @@
         
         } else if (levelIndex === 3) {
             // Fase 4: Escalada vertical - plataformas com MAIOR espaçamento para facilitar
-            platforms.push(new Platform(500, canvas.height - 170, 120, 50));
-            platforms.push(new Platform(720, canvas.height - 170, 120, 50));  // Lado a lado com gap de 100px (mais fácil)
-            platforms.push(new Platform(500, canvas.height - 280, 120, 50));  // Subida
-            platforms.push(new Platform(720, canvas.height - 280, 120, 50));  // Lado a lado com gap de 100px
-            platforms.push(new Platform(940, canvas.height - 380, 150, 50));  // Plataforma mais alta e larga
-            platforms.push(new Platform(1200, canvas.height - 320, 180, 50)); // Descida suave
-            platforms.push(new Platform(1500, canvas.height - 240, 200, 50)); // Plataforma final maior
-            platforms.push(new Platform(1800, canvas.height - 150, 400, 50)); // Chão final bem longo
+            platforms.push(new Platform(500, canvas.height - 170, 140, 50));
+            platforms.push(new Platform(780, canvas.height - 220, 140, 50));  // Gap horizontal maior
+            platforms.push(new Platform(500, canvas.height - 320, 140, 50));  // Subida com gap vertical maior
+            platforms.push(new Platform(780, canvas.height - 370, 140, 50));  // Gap horizontal e vertical maiores
+            platforms.push(new Platform(1080, canvas.height - 450, 180, 50));  // Plataforma mais alta e larga
+            platforms.push(new Platform(1400, canvas.height - 360, 200, 50)); // Descida suave
+            platforms.push(new Platform(1750, canvas.height - 260, 220, 50)); // Plataforma final maior
+            platforms.push(new Platform(2100, canvas.height - 150, 450, 50)); // Chão final bem longo
 
-            enemies.push(new Enemy(1550, canvas.height - 280, 'spider'));
-            enemies.push(new Enemy(1850, canvas.height - 190, 'spider'));
-            enemies.push(new Enemy(800, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(1200, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1800, canvas.height - 300, 'spider'));
+            enemies.push(new Enemy(2150, canvas.height - 190, 'spider'));
+            enemies.push(new Enemy(900, canvas.height - 560, 'bat'));
+            enemies.push(new Enemy(1400, canvas.height - 470, 'bat'));
 
-            coins.push(new Coin(540, canvas.height - 210));
-            coins.push(new Coin(760, canvas.height - 210));
-            coins.push(new Coin(540, canvas.height - 320));
-            coins.push(new Coin(760, canvas.height - 320));
-            coins.push(new Coin(1000, canvas.height - 420));
-            coins.push(new Coin(1270, canvas.height - 360));
-            coins.push(new Coin(1580, canvas.height - 280));
-            coins.push(new Coin(1980, canvas.height - 190));
+            coins.push(new Coin(560, canvas.height - 210));
+            coins.push(new Coin(840, canvas.height - 260));
+            coins.push(new Coin(560, canvas.height - 360));
+            coins.push(new Coin(840, canvas.height - 410));
+            coins.push(new Coin(1160, canvas.height - 490));
+            coins.push(new Coin(1480, canvas.height - 400));
+            coins.push(new Coin(1840, canvas.height - 300));
+            coins.push(new Coin(2300, canvas.height - 190));
 
-            flag = new Flag(2100, canvas.height - 250);
+            flag = new Flag(2450, canvas.height - 250);
 
         } else if (levelIndex === 4) {
             // Fase 5: Precisão e timing - dificuldade média
