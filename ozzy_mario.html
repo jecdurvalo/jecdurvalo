@@ -477,29 +477,19 @@
     let flag = null;
 
     // Construtor de Níveis
-    function loadLevel(levelIndex, fromDeath = false) {
+    function loadLevel(levelIndex) {
         platforms = [];
         enemies = [];
         coins = [];
         
-        // Guarda checkpoint atual se for morte para restaurar depois
-        const savedCheckpointX = checkpointX;
-        const savedCheckpointY = checkpointY;
-        
-        // Só reseta posição e checkpoint se não for respawn por morte
-        if (!fromDeath) {
-            player.x = 50;
-            player.y = 0;
-            player.vx = 0;
-            player.vy = 0;
-            cameraX = 0;
-            checkpointX = 50; // Reset checkpoint para inicio da fase
-            checkpointY = 0;
-        } else {
-            // Se for morte, mantém o checkpoint onde estava
-            checkpointX = savedCheckpointX;
-            checkpointY = savedCheckpointY;
-        }
+        // Reseta posição e checkpoint para o início da fase
+        player.x = 50;
+        player.y = 0;
+        player.vx = 0;
+        player.vy = 0;
+        cameraX = 0;
+        checkpointX = 50;
+        checkpointY = 0;
         
         levelEl.innerText = `FASE: ${levelIndex + 1}`;
 
@@ -836,27 +826,20 @@
     function takeDamage(amount) {
         lives -= amount;
         livesEl.innerText = `VIDAS: ${lives}`;
-        player.invincible = 60; // 1 segundo de invencibilidade
-        player.vy = -5; // Pequeno pulo de dano
-        player.vx = -player.direction * 5; // Empurrão para trás
-
+        
         if (lives <= 0) {
             gameState = 'GAMEOVER';
             gameOverScreen.style.display = 'flex';
         } else {
-            // Salva checkpoint antes de morrer para respawn no mesmo lugar
-            const deathCheckpointX = checkpointX;
-            const deathCheckpointY = checkpointY;
-            
-            // Respawn no checkpoint da fase atual
-            player.x = deathCheckpointX;
-            player.y = deathCheckpointY;
+            // Respawn no início da fase atual
+            player.x = 50;
+            player.y = 0;
             player.vx = 0;
             player.vy = 0;
-            cameraX = Math.max(0, deathCheckpointX - 200);
+            cameraX = 0;
             
-            // Recarrega a fase mantendo o checkpoint onde morreu
-            loadLevel(currentLevelIdx, true);
+            // Recarrega a fase do início
+            loadLevel(currentLevelIdx);
         }
     }
 
