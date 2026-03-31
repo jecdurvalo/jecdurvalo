@@ -779,10 +779,7 @@
             enemies.push(new Enemy(950, canvas.height - 350, 'spider'));
             enemies.push(new Enemy(1640, canvas.height - 90, 'spider'));
             enemies.push(new Enemy(1790, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(380, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(600, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(820, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(1040, canvas.height - 430, 'bat'));
+            // Morcegos removidos para não dificultar demais antes da fase 8
 
             coins.push(new Coin(300, canvas.height - 220));
             coins.push(new Coin(520, canvas.height - 330));
@@ -1208,6 +1205,27 @@
 
     function nextLevel() {
         currentLevelIdx++;
+        
+        // Verifica se chegou na fase 8 (index 7) com mais de 700 moedas
+        if (currentLevelIdx === 7 && score > 700) {
+            lives++;
+            livesEl.innerText = `VIDAS: ${lives}`;
+            // Mostra mensagem temporária na tela
+            const bonusMsg = document.createElement('div');
+            bonusMsg.style.position = 'absolute';
+            bonusMsg.style.top = '50%';
+            bonusMsg.style.left = '50%';
+            bonusMsg.style.transform = 'translate(-50%, -50%)';
+            bonusMsg.style.color = '#00ff00';
+            bonusMsg.style.fontSize = '32px';
+            bonusMsg.style.fontWeight = 'bold';
+            bonusMsg.style.textShadow = '3px 3px 0 #000';
+            bonusMsg.style.zIndex = '100';
+            bonusMsg.innerText = '+1 VIDA EXTRA!';
+            document.getElementById('game-container').appendChild(bonusMsg);
+            setTimeout(() => bonusMsg.remove(), 2000);
+        }
+        
         if (currentLevelIdx >= 12) {
             gameState = 'WIN';
             finalScoreEl.innerText = score;
