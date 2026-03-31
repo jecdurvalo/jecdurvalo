@@ -698,47 +698,55 @@
             flag = new Flag(2200, canvas.height - 150);
 
         } else if (levelIndex === 7) {
-            // FASE 8: Desafio final - Plataformas mínimas mas gaps calculados para serem possíveis (~180-200px)
-            platforms.push(new Platform(50, canvas.height - 50, 150, 50));
+            // FASE 8: A Escalada Final (Equilibrada e Possível)
+            // Design: Uma escada constante com gaps curtos (~150-180px) e plataformas largas para mobile.
             
-            platforms.push(new Platform(230, canvas.height - 180, 100, 50));
-            platforms.push(new Platform(420, canvas.height - 290, 100, 50));
-            platforms.push(new Platform(610, canvas.height - 200, 100, 50));
-            platforms.push(new Platform(800, canvas.height - 310, 110, 50));
-            platforms.push(new Platform(990, canvas.height - 220, 100, 50));
-            platforms.push(new Platform(1180, canvas.height - 330, 110, 50));
-            platforms.push(new Platform(1370, canvas.height - 240, 100, 50));
-            platforms.push(new Platform(1560, canvas.height - 150, 100, 50));
-            platforms.push(new Platform(1750, canvas.height - 90, 120, 50));
-            platforms.push(new Platform(1950, canvas.height - 50, 500, 50));
+            // Chão inicial bem largo e seguro
+            platforms.push(new Platform(50, canvas.height - 50, 200, 50));
+            
+            // Degrau 1 - Gap de ~130px
+            platforms.push(new Platform(280, canvas.height - 130, 110, 50));
+            coins.push(new Coin(320, canvas.height - 170));
+            
+            // Degrau 2 - Gap de ~140px
+            platforms.push(new Platform(460, canvas.height - 210, 110, 50));
+            enemies.push(new Enemy(480, canvas.height - 250, 'goomba'));
+            
+            // Degrau 3 - Plataforma mais larga para respiro (Gap de ~150px)
+            platforms.push(new Platform(650, canvas.height - 290, 140, 50));
+            coins.push(new Coin(700, canvas.height - 330));
+            
+            // Degrau 4 - Gap de ~140px
+            platforms.push(new Platform(870, canvas.height - 370, 110, 50));
+            
+            // Degrau 5 - Gap de ~140px
+            platforms.push(new Platform(1060, canvas.height - 450, 110, 50));
+            enemies.push(new Enemy(1080, canvas.height - 490, 'goomba'));
+            
+            // Degrau 6 - Gap de ~150px
+            platforms.push(new Platform(1250, canvas.height - 370, 110, 50));
+            coins.push(new Coin(1290, canvas.height - 410));
+            
+            // Degrau 7 - Gap de ~140px descendo
+            platforms.push(new Platform(1440, canvas.height - 290, 110, 50));
+            
+            // Plataforma Final (Castelo) - Bem larga e segura
+            platforms.push(new Platform(1650, canvas.height - 210, 200, 50));
+            
+            // Chão final longo para chegar na bandeira
+            platforms.push(new Platform(1650, canvas.height - 50, 600, 50));
+            
+            // Inimigos apenas no chão final (não bloqueiam os pulos críticos)
+            enemies.push(new Enemy(1800, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(2000, canvas.height - 90, 'goomba'));
 
-            enemies.push(new Enemy(820, canvas.height - 350, 'spider'));
-            enemies.push(new Enemy(2000, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(2150, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(2300, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(330, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(520, canvas.height - 450, 'bat'));
-            enemies.push(new Enemy(1380, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(1770, canvas.height - 450, 'bat'));
-            enemies.push(new Enemy(2170, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(2560, canvas.height - 450, 'bat'));
-            enemies.push(new Enemy(2950, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(3340, canvas.height - 450, 'bat'));
+            // Moedas decorativas no caminho final
+            coins.push(new Coin(1750, canvas.height - 90));
+            coins.push(new Coin(1900, canvas.height - 90));
+            coins.push(new Coin(2050, canvas.height - 90));
 
-            coins.push(new Coin(450, canvas.height - 220));
-            coins.push(new Coin(830, canvas.height - 330));
-            coins.push(new Coin(1220, canvas.height - 240));
-            coins.push(new Coin(1610, canvas.height - 350));
-            coins.push(new Coin(2010, canvas.height - 260));
-            coins.push(new Coin(2400, canvas.height - 370));
-            coins.push(new Coin(2790, canvas.height - 280));
-            coins.push(new Coin(3180, canvas.height - 190));
-            coins.push(new Coin(3570, canvas.height - 130));
-            coins.push(new Coin(4000, canvas.height - 90));
-            coins.push(new Coin(4150, canvas.height - 90));
-            coins.push(new Coin(4300, canvas.height - 90));
-
-            flag = new Flag(4250, canvas.height - 150);
+            // Bandeira posicionada no final do chão longo
+            flag = new Flag(2150, canvas.height - 150);
         }
     }
 
