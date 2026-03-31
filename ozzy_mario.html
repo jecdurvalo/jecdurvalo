@@ -486,155 +486,161 @@
         cameraX = 0;
         levelEl.innerText = `FASE: ${levelIndex + 1}`;
 
-        // Chão inicial seguro
-        platforms.push(new Platform(0, canvas.height - 50, 400, 50));
+        // Chão inicial seguro (mais longo para dar espaço de corrida)
+        platforms.push(new Platform(0, canvas.height - 50, 500, 50));
 
         if (levelIndex === 0) {
             // Fase 1: Tutorial - Introdução às mecânicas básicas
-            platforms.push(new Platform(500, canvas.height - 100, 200, 50));
-            platforms.push(new Platform(800, canvas.height - 150, 200, 50));
-            platforms.push(new Platform(1100, canvas.height - 50, 600, 50));
+            // Plataformas com espaçamento aumentado e plataforma intermediária para facilitar pulo inicial
+            platforms.push(new Platform(580, canvas.height - 120, 180, 50));  // Primeira plataforma elevada
+            platforms.push(new Platform(850, canvas.height - 180, 180, 50));  // Segunda plataforma mais alta
+            platforms.push(new Platform(1150, canvas.height - 120, 200, 50)); // Terceira plataforma descendo
+            platforms.push(new Platform(1450, canvas.height - 50, 700, 50));  // Plataforma final longa
             
-            enemies.push(new Enemy(1200, canvas.height - 90, 'spider'));
-            
-            coins.push(new Coin(550, canvas.height - 140));
-            coins.push(new Coin(850, canvas.height - 190));
-            coins.push(new Coin(1300, canvas.height - 90));
-            coins.push(new Coin(1400, canvas.height - 90));
-
-            flag = new Flag(1600, canvas.height - 150);
-
-        } else if (levelIndex === 1) {
-            // Fase 2: Primeiros desafios com morcegos
-            platforms.push(new Platform(450, canvas.height - 120, 100, 50));
-            platforms.push(new Platform(650, canvas.height - 200, 100, 50));
-            platforms.push(new Platform(850, canvas.height - 120, 100, 50));
-            platforms.push(new Platform(1100, canvas.height - 50, 800, 50));
-
-            enemies.push(new Enemy(1200, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(1300, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(900, canvas.height - 300, 'bat'));
-
-            coins.push(new Coin(480, canvas.height - 160));
-            coins.push(new Coin(680, canvas.height - 240));
-            coins.push(new Coin(880, canvas.height - 160));
-            coins.push(new Coin(1400, canvas.height - 90));
-
-            flag = new Flag(1800, canvas.height - 150);
-
-        } else if (levelIndex === 2) {
-            // Fase 3: Plataformas móveis e mais inimigos
-            platforms.push(new Platform(400, canvas.height - 150, 80, 50));
-            platforms.push(new Platform(600, canvas.height - 250, 80, 50));
-            platforms.push(new Platform(800, canvas.height - 150, 80, 50));
-            platforms.push(new Platform(1000, canvas.height - 250, 80, 50));
-            platforms.push(new Platform(1200, canvas.height - 50, 600, 50));
-
-            enemies.push(new Enemy(1250, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(1400, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(700, canvas.height - 350, 'bat'));
-            enemies.push(new Enemy(900, canvas.height - 350, 'bat'));
-
-            coins.push(new Coin(420, canvas.height - 190));
-            coins.push(new Coin(620, canvas.height - 290));
-            coins.push(new Coin(820, canvas.height - 190));
-            coins.push(new Coin(1020, canvas.height - 290));
-            coins.push(new Coin(1300, canvas.height - 90));
-
-            flag = new Flag(1700, canvas.height - 150);
-        
-        } else if (levelIndex === 3) {
-            // Fase 4: Escalada vertical
-            platforms.push(new Platform(400, canvas.height - 150, 100, 50));
-            platforms.push(new Platform(600, canvas.height - 220, 100, 50));
-            platforms.push(new Platform(400, canvas.height - 300, 100, 50));
-            platforms.push(new Platform(600, canvas.height - 380, 100, 50));
-            platforms.push(new Platform(850, canvas.height - 300, 150, 50));
-            platforms.push(new Platform(1100, canvas.height - 200, 200, 50));
-            platforms.push(new Platform(1400, canvas.height - 100, 300, 50));
-
-            enemies.push(new Enemy(850, canvas.height - 340, 'spider'));
-            enemies.push(new Enemy(1100, canvas.height - 240, 'spider'));
-            enemies.push(new Enemy(500, canvas.height - 450, 'bat'));
-            enemies.push(new Enemy(800, canvas.height - 450, 'bat'));
-            enemies.push(new Enemy(1200, canvas.height - 450, 'bat'));
-
-            coins.push(new Coin(430, canvas.height - 190));
-            coins.push(new Coin(630, canvas.height - 260));
-            coins.push(new Coin(430, canvas.height - 340));
-            coins.push(new Coin(630, canvas.height - 420));
-            coins.push(new Coin(900, canvas.height - 340));
-            coins.push(new Coin(1200, canvas.height - 240));
-            coins.push(new Coin(1500, canvas.height - 140));
-
-            flag = new Flag(1600, canvas.height - 200);
-
-        } else if (levelIndex === 4) {
-            // Fase 5: Precisão e timing
-            platforms.push(new Platform(350, canvas.height - 120, 60, 50));
-            platforms.push(new Platform(500, canvas.height - 180, 60, 50));
-            platforms.push(new Platform(650, canvas.height - 240, 60, 50));
-            platforms.push(new Platform(800, canvas.height - 180, 60, 50));
-            platforms.push(new Platform(950, canvas.height - 240, 60, 50));
-            platforms.push(new Platform(1100, canvas.height - 180, 60, 50));
-            platforms.push(new Platform(1250, canvas.height - 120, 60, 50));
-            platforms.push(new Platform(1450, canvas.height - 50, 400, 50));
-
-            enemies.push(new Enemy(1500, canvas.height - 90, 'spider'));
             enemies.push(new Enemy(1600, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(1700, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(700, canvas.height - 350, 'bat'));
-            enemies.push(new Enemy(900, canvas.height - 350, 'bat'));
-            enemies.push(new Enemy(1100, canvas.height - 350, 'bat'));
-
-            coins.push(new Coin(360, canvas.height - 160));
-            coins.push(new Coin(510, canvas.height - 220));
-            coins.push(new Coin(660, canvas.height - 280));
-            coins.push(new Coin(810, canvas.height - 220));
-            coins.push(new Coin(960, canvas.height - 280));
-            coins.push(new Coin(1110, canvas.height - 220));
-            coins.push(new Coin(1260, canvas.height - 160));
-            coins.push(new Coin(1550, canvas.height - 90));
-            coins.push(new Coin(1650, canvas.height - 90));
+            
+            coins.push(new Coin(650, canvas.height - 160));
+            coins.push(new Coin(920, canvas.height - 220));
+            coins.push(new Coin(1230, canvas.height - 160));
+            coins.push(new Coin(1600, canvas.height - 90));
             coins.push(new Coin(1750, canvas.height - 90));
 
-            flag = new Flag(1750, canvas.height - 150);
+            flag = new Flag(2000, canvas.height - 150);
 
-        } else if (levelIndex === 5) {
-            // Fase 6: Desafio final - Todas as habilidades
-            platforms.push(new Platform(300, canvas.height - 150, 80, 50));
-            platforms.push(new Platform(500, canvas.height - 250, 80, 50));
-            platforms.push(new Platform(700, canvas.height - 150, 80, 50));
-            platforms.push(new Platform(900, canvas.height - 250, 80, 50));
-            platforms.push(new Platform(1100, canvas.height - 350, 100, 50));
-            platforms.push(new Platform(1350, canvas.height - 250, 80, 50));
-            platforms.push(new Platform(1550, canvas.height - 150, 80, 50));
+        } else if (levelIndex === 1) {
+            // Fase 2: Primeiros desafios com morcegos - espaçamento aumentado
+            platforms.push(new Platform(550, canvas.height - 140, 120, 50));
+            platforms.push(new Platform(780, canvas.height - 220, 120, 50));
+            platforms.push(new Platform(1020, canvas.height - 140, 120, 50));
+            platforms.push(new Platform(1300, canvas.height - 50, 900, 50));
+
+            enemies.push(new Enemy(1400, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(1550, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(1000, canvas.height - 320, 'bat'));
+
+            coins.push(new Coin(590, canvas.height - 180));
+            coins.push(new Coin(820, canvas.height - 260));
+            coins.push(new Coin(1060, canvas.height - 180));
+            coins.push(new Coin(1500, canvas.height - 90));
+            coins.push(new Coin(1650, canvas.height - 90));
+
+            flag = new Flag(2050, canvas.height - 150);
+
+        } else if (levelIndex === 2) {
+            // Fase 3: Plataformas móveis e mais inimigos - espaçamento aumentado
+            platforms.push(new Platform(500, canvas.height - 170, 100, 50));
+            platforms.push(new Platform(720, canvas.height - 270, 100, 50));
+            platforms.push(new Platform(940, canvas.height - 170, 100, 50));
+            platforms.push(new Platform(1160, canvas.height - 270, 100, 50));
+            platforms.push(new Platform(1400, canvas.height - 50, 700, 50));
+
+            enemies.push(new Enemy(1500, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(1680, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(800, canvas.height - 370, 'bat'));
+            enemies.push(new Enemy(1050, canvas.height - 370, 'bat'));
+
+            coins.push(new Coin(530, canvas.height - 210));
+            coins.push(new Coin(750, canvas.height - 310));
+            coins.push(new Coin(970, canvas.height - 210));
+            coins.push(new Coin(1190, canvas.height - 310));
+            coins.push(new Coin(1600, canvas.height - 90));
+            coins.push(new Coin(1750, canvas.height - 90));
+
+            flag = new Flag(1950, canvas.height - 150);
+        
+        } else if (levelIndex === 3) {
+            // Fase 4: Escalada vertical - espaçamento aumentado
+            platforms.push(new Platform(500, canvas.height - 170, 120, 50));
+            platforms.push(new Platform(720, canvas.height - 250, 120, 50));
+            platforms.push(new Platform(500, canvas.height - 340, 120, 50));
+            platforms.push(new Platform(720, canvas.height - 420, 120, 50));
+            platforms.push(new Platform(980, canvas.height - 340, 180, 50));
+            platforms.push(new Platform(1260, canvas.height - 230, 220, 50));
+            platforms.push(new Platform(1580, canvas.height - 120, 350, 50));
+
+            enemies.push(new Enemy(1000, canvas.height - 380, 'spider'));
+            enemies.push(new Enemy(1300, canvas.height - 270, 'spider'));
+            enemies.push(new Enemy(600, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(900, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1400, canvas.height - 490, 'bat'));
+
+            coins.push(new Coin(540, canvas.height - 210));
+            coins.push(new Coin(760, canvas.height - 290));
+            coins.push(new Coin(540, canvas.height - 380));
+            coins.push(new Coin(760, canvas.height - 460));
+            coins.push(new Coin(1050, canvas.height - 380));
+            coins.push(new Coin(1350, canvas.height - 270));
+            coins.push(new Coin(1700, canvas.height - 160));
+            coins.push(new Coin(1850, canvas.height - 160));
+
+            flag = new Flag(1800, canvas.height - 220);
+
+        } else if (levelIndex === 4) {
+            // Fase 5: Precisão e timing - espaçamento aumentado
+            platforms.push(new Platform(420, canvas.height - 140, 80, 50));
+            platforms.push(new Platform(600, canvas.height - 210, 80, 50));
+            platforms.push(new Platform(790, canvas.height - 280, 80, 50));
+            platforms.push(new Platform(980, canvas.height - 210, 80, 50));
+            platforms.push(new Platform(1170, canvas.height - 280, 80, 50));
+            platforms.push(new Platform(1360, canvas.height - 210, 80, 50));
+            platforms.push(new Platform(1550, canvas.height - 140, 80, 50));
             platforms.push(new Platform(1750, canvas.height - 50, 500, 50));
 
-            enemies.push(new Enemy(1100, canvas.height - 390, 'spider'));
             enemies.push(new Enemy(1800, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(1900, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(2000, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(400, canvas.height - 400, 'bat'));
-            enemies.push(new Enemy(600, canvas.height - 400, 'bat'));
-            enemies.push(new Enemy(800, canvas.height - 400, 'bat'));
-            enemies.push(new Enemy(1000, canvas.height - 400, 'bat'));
-            enemies.push(new Enemy(1200, canvas.height - 450, 'bat'));
-            enemies.push(new Enemy(1400, canvas.height - 400, 'bat'));
+            enemies.push(new Enemy(1950, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(2100, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(850, canvas.height - 390, 'bat'));
+            enemies.push(new Enemy(1100, canvas.height - 390, 'bat'));
+            enemies.push(new Enemy(1350, canvas.height - 390, 'bat'));
 
-            coins.push(new Coin(320, canvas.height - 190));
-            coins.push(new Coin(520, canvas.height - 290));
-            coins.push(new Coin(720, canvas.height - 190));
-            coins.push(new Coin(920, canvas.height - 290));
-            coins.push(new Coin(1130, canvas.height - 390));
-            coins.push(new Coin(1370, canvas.height - 290));
-            coins.push(new Coin(1570, canvas.height - 190));
-            coins.push(new Coin(1850, canvas.height - 90));
-            coins.push(new Coin(1950, canvas.height - 90));
+            coins.push(new Coin(450, canvas.height - 180));
+            coins.push(new Coin(630, canvas.height - 250));
+            coins.push(new Coin(820, canvas.height - 320));
+            coins.push(new Coin(1010, canvas.height - 250));
+            coins.push(new Coin(1200, canvas.height - 320));
+            coins.push(new Coin(1390, canvas.height - 250));
+            coins.push(new Coin(1580, canvas.height - 180));
+            coins.push(new Coin(1900, canvas.height - 90));
             coins.push(new Coin(2050, canvas.height - 90));
-            coins.push(new Coin(2150, canvas.height - 90));
+            coins.push(new Coin(2200, canvas.height - 90));
 
-            flag = new Flag(2150, canvas.height - 150);
+            flag = new Flag(2100, canvas.height - 150);
+
+        } else if (levelIndex === 5) {
+            // Fase 6: Desafio final - Todas as habilidades - espaçamento aumentado
+            platforms.push(new Platform(380, canvas.height - 170, 100, 50));
+            platforms.push(new Platform(600, canvas.height - 280, 100, 50));
+            platforms.push(new Platform(830, canvas.height - 170, 100, 50));
+            platforms.push(new Platform(1060, canvas.height - 280, 100, 50));
+            platforms.push(new Platform(1300, canvas.height - 390, 130, 50));
+            platforms.push(new Platform(1580, canvas.height - 280, 100, 50));
+            platforms.push(new Platform(1830, canvas.height - 170, 100, 50));
+            platforms.push(new Platform(2050, canvas.height - 50, 600, 50));
+
+            enemies.push(new Enemy(1320, canvas.height - 430, 'spider'));
+            enemies.push(new Enemy(2100, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(2250, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(2400, canvas.height - 90, 'spider'));
+            enemies.push(new Enemy(500, canvas.height - 450, 'bat'));
+            enemies.push(new Enemy(750, canvas.height - 450, 'bat'));
+            enemies.push(new Enemy(1000, canvas.height - 450, 'bat'));
+            enemies.push(new Enemy(1250, canvas.height - 450, 'bat'));
+            enemies.push(new Enemy(1500, canvas.height - 500, 'bat'));
+            enemies.push(new Enemy(1750, canvas.height - 450, 'bat'));
+
+            coins.push(new Coin(410, canvas.height - 210));
+            coins.push(new Coin(630, canvas.height - 320));
+            coins.push(new Coin(860, canvas.height - 210));
+            coins.push(new Coin(1090, canvas.height - 320));
+            coins.push(new Coin(1350, canvas.height - 430));
+            coins.push(new Coin(1610, canvas.height - 320));
+            coins.push(new Coin(1860, canvas.height - 210));
+            coins.push(new Coin(2200, canvas.height - 90));
+            coins.push(new Coin(2350, canvas.height - 90));
+            coins.push(new Coin(2500, canvas.height - 90));
+            coins.push(new Coin(2650, canvas.height - 90));
+
+            flag = new Flag(2500, canvas.height - 150);
         }
     }
 
