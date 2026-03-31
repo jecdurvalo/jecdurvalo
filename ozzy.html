@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ozzy</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        
+        canvas {
+            display: block;
+            border-radius: 8px;
+        }
+        
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            z-index: 20;
+        }
+        
+        #gameOverScreen {
+            display: none;
+        }
+        
+        h1 {
+            color: #FFD700;
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        
+        p {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        
+        button {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            background: #FF5252;
+            transform: scale(1.05);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">0</div>
+        <canvas id="gameCanvas" width="480" height="640"></canvas>
+        
+        <div id="startScreen">
+            <h1>Ozzy</h1>
+            <p>Ajude o gatinho preto a desviar dos obstáculos!</p>
+            <p>Pressione ESPAÇO ou clique para pular</p>
+            <button id="startButton">Jogar</button>
+        </div>
+        
+        <div id="gameOverScreen">
+            <h1>Fim de Jogo!</h1>
+            <p>Pontuação: <span id="finalScore">0</span></p>
+            <p>Melhor pontuação: <span id="bestScore">0</span></p>
+            <button id="restartButton">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const finalScoreElement = document.getElementById('finalScore');
+        const bestScoreElement = document.getElementById('bestScore');
+
+        // Game variables
+        let gameRunning = false;
+        let score = 0;
+        let bestScore = localStorage.getItem('ozzyBestScore') || 0;
+        let frames = 0;
+        let gameSpeed = 3;
+
+        // Cat object - Round black cat with pointy ears and green eyes
+        let pawFrame = 0;
+        const cat = {
+            x: 80,
+            y: canvas.height / 2,
+            radius: 20,
+            velocity: 0,
+            gravity: 0.5,
+            jumpStrength: -9,
+            
+            draw() {
+                const centerX = this.x + this.radius;
+                const centerY = this.y + this.radius;
+                
+                // Draw tail (behind body)
+                ctx.save();
+                ctx.translate(centerX - 15, centerY + 5);
+                const tailAngle = Math.sin(pawFrame * 0.2) * 0.3;
+                ctx.rotate(tailAngle);
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-20, -10, -25, -20);
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = '#000000';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                ctx.restore();
+                
+                // Draw round black body (circle)
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw pointy ears
+                ctx.fillStyle = '#000000';
+                
+                // Left ear
+                ctx.beginPath();
+                ctx.moveTo(centerX - 12, centerY - 12);
+                ctx.lineTo(centerX - 18, centerY - 28);
+                ctx.lineTo(centerX - 5, centerY - 18);
+                ctx.fill();
+                
+                // Right ear
+                ctx.beginPath();
+                ctx.moveTo(centerX + 12, centerY - 12);
+                ctx.lineTo(centerX + 18, centerY - 28);
+                ctx.lineTo(centerX + 5, centerY - 18);
+                ctx.fill();
+                
+                // Inner ears (pink)
+                ctx.fillStyle = '#FFB6C1';
+                
+                // Left inner ear
+                ctx.beginPath();
+                ctx.moveTo(centerX - 11, centerY - 14);
+                ctx.lineTo(centerX - 16, centerY - 24);
+                ctx.lineTo(centerX - 7, centerY - 16);
+                ctx.fill();
+                
+                // Right inner ear
+                ctx.beginPath();
+                ctx.moveTo(centerX + 11, centerY - 14);
+                ctx.lineTo(centerX + 16, centerY - 24);
+                ctx.lineTo(centerX + 7, centerY - 16);
+                ctx.fill();
+                
+                // Draw big green eyes
+                ctx.fillStyle = '#00FF00';
+                ctx.beginPath();
+                ctx.ellipse(centerX - 7, centerY - 2, 7, 9, 0, 0, Math.PI * 2);
+                ctx.ellipse(centerX + 7, centerY - 2, 7, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw pupils (black vertical slits)
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.ellipse(centerX - 7, centerY - 2, 2.5, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(centerX + 7, centerY - 2, 2.5, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eye shine (white dots for sparkle)
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(centerX - 5, centerY - 5, 2, 0, Math.PI * 2);
+                ctx.arc(centerX + 9, centerY - 5, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Small pink nose
+                ctx.fillStyle = '#FF69B4';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY + 6, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Whiskers
+                ctx.strokeStyle = '#666666';
+                ctx.lineWidth = 1;
+                
+                // Left whiskers
+                ctx.beginPath();
+                ctx.moveTo(centerX - 8, centerY + 8);
+                ctx.lineTo(centerX - 20, centerY + 5);
+                ctx.moveTo(centerX - 8, centerY + 10);
+                ctx.lineTo(centerX - 20, centerY + 10);
+                ctx.moveTo(centerX - 8, centerY + 12);
+                ctx.lineTo(centerX - 20, centerY + 15);
+                ctx.stroke();
+                
+                // Right whiskers
+                ctx.beginPath();
+                ctx.moveTo(centerX + 8, centerY + 8);
+                ctx.lineTo(centerX + 20, centerY + 5);
+                ctx.moveTo(centerX + 8, centerY + 10);
+                ctx.lineTo(centerX + 20, centerY + 10);
+                ctx.moveTo(centerX + 8, centerY + 12);
+                ctx.lineTo(centerX + 20, centerY + 15);
+                ctx.stroke();
+                
+                // Draw animated paws that move when jumping/falling
+                pawFrame++;
+                const pawOffset = Math.sin(pawFrame * 0.4) * 6;
+                
+                ctx.fillStyle = '#000000';
+                
+                // Front paw (right side, more visible)
+                ctx.beginPath();
+                ctx.arc(centerX + 12, centerY + 12 + pawOffset, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Back paw (left side)
+                ctx.beginPath();
+                ctx.arc(centerX - 10, centerY + 14 - pawOffset * 0.7, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Paw pads (pink dots on paws)
+                ctx.fillStyle = '#FFB6C1';
+                ctx.beginPath();
+                ctx.arc(centerX + 13, centerY + 13 + pawOffset, 2, 0, Math.PI * 2);
+                ctx.arc(centerX - 9, centerY + 15 - pawOffset * 0.7, 2, 0, Math.PI * 2);
+                ctx.fill();
+            },
+            
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                
+                // Prevent going through ceiling
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.velocity = 0;
+                }
+                
+                // Prevent going through floor
+                if (this.y + this.radius * 2 > canvas.height - 50) {
+                    this.y = canvas.height - 50 - this.radius * 2;
+                    this.velocity = 0;
+                    gameOver();
+                }
+            },
+            
+            jump() {
+                this.velocity = this.jumpStrength;
+            },
+            
+            reset() {
+                this.y = canvas.height / 2;
+                this.velocity = 0;
+            }
+        };
+
+        // Pipes array
+        let pipes = [];
+
+        class Pipe {
+            constructor() {
+                this.x = canvas.width;
+                this.width = 60;
+                this.gap = 170;
+                this.topHeight = Math.random() * (canvas.height - 50 - this.gap - 100) + 50;
+                this.bottomY = this.topHeight + this.gap;
+                this.passed = false;
+            }
+            
+            draw() {
+                // Gradient for pipes
+                const gradient = ctx.createLinearGradient(this.x, 0, this.x + this.width, 0);
+                gradient.addColorStop(0, '#4CAF50');
+                gradient.addColorStop(0.5, '#8BC34A');
+                gradient.addColorStop(1, '#4CAF50');
+                
+                ctx.fillStyle = gradient;
+                
+                // Top pipe
+                ctx.fillRect(this.x, 0, this.width, this.topHeight);
+                // Pipe cap
+                ctx.fillRect(this.x - 5, this.topHeight - 20, this.width + 10, 20);
+                
+                // Bottom pipe
+                ctx.fillRect(this.x, this.bottomY, this.width, canvas.height - this.bottomY - 50);
+                // Pipe cap
+                ctx.fillRect(this.x - 5, this.bottomY, this.width + 10, 20);
+                
+                // Outline
+                ctx.strokeStyle = '#2E7D32';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(this.x, 0, this.width, this.topHeight);
+                ctx.strokeRect(this.x, this.bottomY, this.width, canvas.height - this.bottomY - 50);
+            }
+            
+            update() {
+                this.x -= gameSpeed;
+            }
+            
+            offscreen() {
+                return this.x + this.width < 0;
+            }
+            
+            collision(cat) {
+                // Simple circle-rectangle collision
+                const centerX = cat.x + cat.radius;
+                const centerY = cat.y + cat.radius;
+                
+                // Check collision with top pipe
+                if (centerX + cat.radius > this.x && 
+                    centerX - cat.radius < this.x + this.width && 
+                    centerY - cat.radius < this.topHeight) {
+                    return true;
+                }
+                
+                // Check collision with bottom pipe
+                if (centerX + cat.radius > this.x && 
+                    centerX - cat.radius < this.x + this.width && 
+                    centerY + cat.radius > this.bottomY) {
+                    return true;
+                }
+                
+                return false;
+            }
+        }
+
+        // Background clouds
+        let clouds = [];
+        
+        class Cloud {
+            constructor() {
+                this.x = canvas.width + Math.random() * 200;
+                this.y = Math.random() * (canvas.height / 2);
+                this.speed = Math.random() * 0.5 + 0.5;
+                this.size = Math.random() * 30 + 20;
+            }
+            
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.arc(this.x + this.size * 0.8, this.y - this.size * 0.3, this.size * 0.9, 0, Math.PI * 2);
+                ctx.arc(this.x + this.size * 1.5, this.y, this.size * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            update() {
+                this.x -= this.speed;
+            }
+            
+            offscreen() {
+                return this.x + this.size * 2 < 0;
+            }
+        }
+
+        // Ground
+        let groundOffset = 0;
+
+        function drawGround() {
+            groundOffset -= gameSpeed;
+            if (groundOffset <= -40) groundOffset = 0;
+            
+            // Ground background
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            
+            // Grass top
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 10);
+            
+            // Pattern on ground
+            ctx.fillStyle = '#6D4C41';
+            for (let i = groundOffset; i < canvas.width; i += 40) {
+                ctx.fillRect(i, canvas.height - 40, 20, 40);
+            }
+        }
+
+        function spawnPipe() {
+            if (frames % 100 === 0) {
+                pipes.push(new Pipe());
+            }
+        }
+
+        function spawnCloud() {
+            if (frames % 150 === 0) {
+                clouds.push(new Cloud());
+            }
+        }
+
+        function checkCollisions() {
+            for (let pipe of pipes) {
+                if (pipe.collision(cat)) {
+                    gameOver();
+                    return;
+                }
+            }
+        }
+
+        function updateScore() {
+            for (let pipe of pipes) {
+                if (!pipe.passed && pipe.x + pipe.width < cat.x) {
+                    score++;
+                    scoreElement.textContent = score;
+                    pipe.passed = true;
+                    
+                    // Increase difficulty every 5 points
+                    if (score % 5 === 0) {
+                        gameSpeed += 0.3;
+                    }
+                }
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('ozzyBestScore', bestScore);
+            }
+            
+            finalScoreElement.textContent = score;
+            bestScoreElement.textContent = bestScore;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() {
+            cat.reset();
+            pipes = [];
+            clouds = [];
+            pawFrame = 0;
+            score = 0;
+            frames = 0;
+            gameSpeed = 3;
+            scoreElement.textContent = score;
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+            gameRunning = true;
+            loop();
+        }
+
+        function loop() {
+            if (!gameRunning) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw clouds
+            spawnCloud();
+            for (let i = clouds.length - 1; i >= 0; i--) {
+                clouds[i].update();
+                clouds[i].draw();
+                if (clouds[i].offscreen()) {
+                    clouds.splice(i, 1);
+                }
+            }
+            
+            // Update and draw pipes
+            spawnPipe();
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].update();
+                pipes[i].draw();
+                if (pipes[i].offscreen()) {
+                    pipes.splice(i, 1);
+                }
+            }
+            
+            // Draw ground
+            drawGround();
+            
+            // Update and draw cat
+            cat.update();
+            cat.draw();
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Update score
+            updateScore();
+            
+            frames++;
+            requestAnimationFrame(loop);
+        }
+
+        // Initial draw (background only)
+        function init() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw some initial clouds
+            for (let i = 0; i < 3; i++) {
+                const cloud = new Cloud();
+                cloud.x = Math.random() * canvas.width;
+                clouds.push(cloud);
+                cloud.draw();
+            }
+            
+            drawGround();
+            cat.draw();
+        }
+
+        // Event listeners
+        startButton.addEventListener('click', resetGame);
+        restartButton.addEventListener('click', resetGame);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameRunning) {
+                    cat.jump();
+                } else if (startScreen.style.display !== 'none' || gameOverScreen.style.display !== 'none') {
+                    resetGame();
+                }
+            }
+        });
+
+        canvas.addEventListener('click', () => {
+            if (gameRunning) {
+                cat.jump();
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) {
+                cat.jump();
+            }
+        });
+
+        // Initialize the game
+        init();
+    </script>
+</body>
+</html>
