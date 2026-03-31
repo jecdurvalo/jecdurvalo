@@ -461,12 +461,158 @@
     }
 
     class Flag {
-        constructor(x, y) { this.x = x; this.y = y; this.w = 10; this.h = 100; }
+        constructor(x, y) { 
+            this.x = x; 
+            this.y = y; 
+            this.w = 10; 
+            this.h = 100;
+            this.visible = true;
+        }
         draw() {
+            if (!this.visible) return;
             const drawX = this.x - cameraX;
             ctx.fillStyle = '#fff'; ctx.fillRect(drawX, this.y, 5, 100); // Haste
             ctx.fillStyle = '#ff0000'; // Bandeira
             ctx.beginPath(); ctx.moveTo(drawX+5, this.y); ctx.lineTo(drawX+40, this.y+15); ctx.lineTo(drawX+5, this.y+30); ctx.fill();
+        }
+    }
+
+    // Classe do Boss
+    class Boss {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.startY = y;
+            this.w = 100;
+            this.h = 100;
+            this.startX = x;
+            this.hp = 5;
+            this.maxHp = 5;
+            this.speed = 2.5;
+            this.dir = 1;
+            this.patrolDist = 400;
+            this.angle = 0;
+            this.attackCooldown = 0;
+            this.dead = false;
+        }
+        
+        update() {
+            if (this.dead) return;
+            
+            // Movimento de patrulha
+            this.x += this.speed * this.dir;
+            if (this.x > this.startX + this.patrolDist || this.x < this.startX - this.patrolDist) {
+                this.dir *= -1;
+            }
+            
+            // Voo ondulatória
+            this.angle += 0.05;
+            this.y = this.startY + Math.sin(this.angle) * 50;
+            
+            if (this.attackCooldown > 0) this.attackCooldown--;
+        }
+        
+        draw() {
+            if (this.dead) return;
+            
+            const drawX = this.x - cameraX;
+            if (drawX < -150 || drawX > canvas.width + 150) return;
+            
+            ctx.save();
+            ctx.translate(drawX + this.w/2, this.y + this.h/2);
+            
+            // Corpo do morcego gigante (roxo escuro)
+            ctx.fillStyle = '#4a0080';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 50, 40, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Asas grandes
+            ctx.fillStyle = '#2d004d';
+            const wingFlap = Math.sin(this.angle * 2) * 20;
+            
+            // Asa esquerda
+            ctx.beginPath();
+            ctx.moveTo(-30, -10);
+            ctx.quadraticCurveTo(-80, -60 + wingFlap, -100, -20 + wingFlap);
+            ctx.quadraticCurveTo(-70, 10, -40, 20);
+            ctx.fill();
+            
+            // Asa direita
+            ctx.beginPath();
+            ctx.moveTo(30, -10);
+            ctx.quadraticCurveTo(80, -60 + wingFlap, 100, -20 + wingFlap);
+            ctx.quadraticCurveTo(70, 10, 40, 20);
+            ctx.fill();
+            
+            // Olhos vermelhos brilhantes
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(-20, -10, 12, 0, Math.PI * 2);
+            ctx.arc(20, -10, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pupilas pretas
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(-18, -10, 5, 0, Math.PI * 2);
+            ctx.arc(22, -10, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Brilho nos olhos
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(-22, -14, 3, 0, Math.PI * 2);
+            ctx.arc(18, -14, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Orelhas pontudas
+            ctx.fillStyle = '#4a0080';
+            ctx.beginPath();
+            ctx.moveTo(-30, -30);
+            ctx.lineTo(-45, -60);
+            ctx.lineTo(-15, -45);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(30, -30);
+            ctx.lineTo(45, -60);
+            ctx.lineTo(15, -45);
+            ctx.fill();
+            
+            // Barra de vida do boss
+            ctx.restore();
+            
+            // Desenhar barra de vida acima do boss
+            const barWidth = 80;
+            const barHeight = 8;
+            const barX = drawX + this.w/2 - barWidth/2;
+            const barY = this.y - 20;
+            
+            // Fundo da barra
+            ctx.fillStyle = '#333';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Vida atual
+            const hpPercent = this.hp / this.maxHp;
+            ctx.fillStyle = hpPercent > 0.5 ? '#0f0' : hpPercent > 0.25 ? '#ff0' : '#f00';
+            ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+            
+            // Borda da barra
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+        }
+        
+        takeDamage() {
+            this.hp--;
+            if (this.hp <= 0) {
+                this.dead = true;
+                score += 500;
+                scoreEl.innerText = `MOEDAS: ${score}`;
+                // Faz a bandeira aparecer após derrotar o boss
+                if (flag) flag.visible = true;
+            }
         }
     }
 
@@ -475,12 +621,14 @@
     let enemies = [];
     let coins = [];
     let flag = null;
+    let boss = null;
 
     // Construtor de Níveis
     function loadLevel(levelIndex) {
         platforms = [];
         enemies = [];
         coins = [];
+        boss = null;
         
         // Reseta posição e checkpoint para o início da fase
         player.x = 50;
@@ -737,6 +885,197 @@
 
             // Bandeira posicionada no final do chão longo
             flag = new Flag(2150, canvas.height - 150);
+
+        } else if (levelIndex === 8) {
+            // FASE 9: O Vale das Sombras
+            // Design: Fase noturna com múltiplos níveis e inimigos voadores
+            
+            // Chão inicial
+            platforms.push(new Platform(50, canvas.height - 50, 250, 50));
+            
+            // Plataformas elevadas
+            platforms.push(new Platform(350, canvas.height - 120, 100, 50));
+            platforms.push(new Platform(500, canvas.height - 200, 100, 50));
+            platforms.push(new Platform(650, canvas.height - 280, 120, 50));
+            
+            // Área central com inimigos
+            platforms.push(new Platform(820, canvas.height - 200, 150, 50));
+            enemies.push(new Enemy(850, canvas.height - 240, 'bat'));
+            enemies.push(new Enemy(920, canvas.height - 240, 'bat'));
+            
+            // Descida em degraus
+            platforms.push(new Platform(1020, canvas.height - 280, 100, 50));
+            platforms.push(new Platform(1170, canvas.height - 360, 100, 50));
+            platforms.push(new Platform(1320, canvas.height - 280, 100, 50));
+            
+            // Plataforma longa com aranhas
+            platforms.push(new Platform(1470, canvas.height - 200, 200, 50));
+            enemies.push(new Enemy(1500, canvas.height - 240, 'spider'));
+            enemies.push(new Enemy(1620, canvas.height - 240, 'spider'));
+            
+            // Últimos saltos
+            platforms.push(new Platform(1720, canvas.height - 280, 90, 50));
+            platforms.push(new Platform(1860, canvas.height - 200, 90, 50));
+            
+            // Chão final
+            platforms.push(new Platform(2000, canvas.height - 50, 400, 50));
+            enemies.push(new Enemy(2100, canvas.height - 90, 'goomba'));
+            
+            // Moedas espalhadas
+            coins.push(new Coin(380, canvas.height - 160));
+            coins.push(new Coin(530, canvas.height - 240));
+            coins.push(new Coin(690, canvas.height - 320));
+            coins.push(new Coin(880, canvas.height - 240));
+            coins.push(new Coin(1200, canvas.height - 400));
+            coins.push(new Coin(1350, canvas.height - 320));
+            coins.push(new Coin(1550, canvas.height - 240));
+            coins.push(new Coin(1750, canvas.height - 320));
+            coins.push(new Coin(1890, canvas.height - 240));
+            coins.push(new Coin(2150, canvas.height - 90));
+
+            flag = new Flag(2300, canvas.height - 150);
+
+        } else if (levelIndex === 9) {
+            // FASE 10: A Torre Invertida
+            // Design: Fase que começa no alto e desce gradualmente
+            
+            // Plataforma inicial elevada
+            platforms.push(new Platform(50, canvas.height - 300, 150, 50));
+            
+            // Descida em zig-zag
+            platforms.push(new Platform(250, canvas.height - 250, 100, 50));
+            platforms.push(new Platform(400, canvas.height - 200, 100, 50));
+            platforms.push(new Platform(550, canvas.height - 250, 100, 50));
+            platforms.push(new Platform(700, canvas.height - 300, 100, 50));
+            
+            // Seção com morcegos
+            platforms.push(new Platform(850, canvas.height - 250, 120, 50));
+            enemies.push(new Enemy(870, canvas.height - 290, 'bat'));
+            platforms.push(new Platform(1020, canvas.height - 200, 100, 50));
+            enemies.push(new Enemy(1040, canvas.height - 240, 'bat'));
+            
+            // Grande queda controlada
+            platforms.push(new Platform(1170, canvas.height - 280, 80, 50));
+            platforms.push(new Platform(1300, canvas.height - 360, 80, 50));
+            platforms.push(new Platform(1430, canvas.height - 280, 80, 50));
+            
+            // Área final no chão
+            platforms.push(new Platform(1560, canvas.height - 150, 150, 50));
+            enemies.push(new Enemy(1600, canvas.height - 190, 'spider'));
+            
+            // Chão principal
+            platforms.push(new Platform(1560, canvas.height - 50, 600, 50));
+            enemies.push(new Enemy(1700, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(1850, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(2000, canvas.height - 90, 'goomba'));
+            
+            // Moedas
+            coins.push(new Coin(280, canvas.height - 290));
+            coins.push(new Coin(430, canvas.height - 240));
+            coins.push(new Coin(580, canvas.height - 290));
+            coins.push(new Coin(730, canvas.height - 340));
+            coins.push(new Coin(890, canvas.height - 290));
+            coins.push(new Coin(1050, canvas.height - 240));
+            coins.push(new Coin(1330, canvas.height - 400));
+            coins.push(new Coin(1460, canvas.height - 320));
+            coins.push(new Coin(1600, canvas.height - 190));
+            coins.push(new Coin(1750, canvas.height - 90));
+            coins.push(new Coin(1900, canvas.height - 90));
+
+            flag = new Flag(2100, canvas.height - 150);
+
+        } else if (levelIndex === 10) {
+            // FASE 11: O Labirinto Flutuante
+            // Design: Plataformas flutuantes com gaps precisos
+            
+            // Inicio seguro
+            platforms.push(new Platform(50, canvas.height - 50, 150, 50));
+            
+            // Série de plataformas flutuantes pequenas
+            platforms.push(new Platform(250, canvas.height - 100, 80, 50));
+            platforms.push(new Platform(380, canvas.height - 180, 80, 50));
+            platforms.push(new Platform(510, canvas.height - 260, 80, 50));
+            platforms.push(new Platform(640, canvas.height - 180, 80, 50));
+            platforms.push(new Platform(770, canvas.height - 100, 80, 50));
+            
+            // Área central com inimigos
+            platforms.push(new Platform(920, canvas.height - 100, 150, 50));
+            enemies.push(new Enemy(950, canvas.height - 140, 'spider'));
+            enemies.push(new Enemy(1020, canvas.height - 140, 'bat'));
+            
+            // Segunda seção de plataformas
+            platforms.push(new Platform(1120, canvas.height - 180, 70, 50));
+            platforms.push(new Platform(1240, canvas.height - 260, 70, 50));
+            platforms.push(new Platform(1360, canvas.height - 180, 70, 50));
+            platforms.push(new Platform(1480, canvas.height - 100, 70, 50));
+            
+            // Plataforma de descanso
+            platforms.push(new Platform(1620, canvas.height - 100, 120, 50));
+            coins.push(new Coin(1670, canvas.height - 140));
+            
+            // Última sequência
+            platforms.push(new Platform(1790, canvas.height - 180, 80, 50));
+            platforms.push(new Platform(1920, canvas.height - 260, 80, 50));
+            platforms.push(new Platform(2050, canvas.height - 180, 80, 50));
+            
+            // Chão final
+            platforms.push(new Platform(2200, canvas.height - 50, 400, 50));
+            enemies.push(new Enemy(2300, canvas.height - 90, 'goomba'));
+            enemies.push(new Enemy(2450, canvas.height - 90, 'goomba'));
+            
+            // Moedas nas plataformas
+            coins.push(new Coin(270, canvas.height - 140));
+            coins.push(new Coin(400, canvas.height - 220));
+            coins.push(new Coin(530, canvas.height - 300));
+            coins.push(new Coin(660, canvas.height - 220));
+            coins.push(new Coin(790, canvas.height - 140));
+            coins.push(new Coin(970, canvas.height - 140));
+            coins.push(new Coin(1140, canvas.height - 220));
+            coins.push(new Coin(1260, canvas.height - 300));
+            coins.push(new Coin(1380, canvas.height - 220));
+            coins.push(new Coin(1500, canvas.height - 140));
+            coins.push(new Coin(1810, canvas.height - 220));
+            coins.push(new Coin(1940, canvas.height - 300));
+            coins.push(new Coin(2070, canvas.height - 220));
+            coins.push(new Coin(2350, canvas.height - 90));
+
+            flag = new Flag(2500, canvas.height - 150);
+
+        } else if (levelIndex === 11) {
+            // FASE 12: A Caverna do Boss - Ozzy vs Dark Bat
+            // Design: Arena do boss final com múltiplas plataformas
+            
+            // Chão da arena
+            platforms.push(new Platform(50, canvas.height - 50, 2400, 50));
+            
+            // Plataformas superiores para estratégia
+            platforms.push(new Platform(200, canvas.height - 150, 150, 50));
+            platforms.push(new Platform(450, canvas.height - 250, 120, 50));
+            platforms.push(new Platform(700, canvas.height - 150, 150, 50));
+            platforms.push(new Platform(1000, canvas.height - 250, 200, 50));
+            platforms.push(new Platform(1300, canvas.height - 150, 150, 50));
+            platforms.push(new Platform(1550, canvas.height - 250, 120, 50));
+            platforms.push(new Platform(1800, canvas.height - 150, 150, 50));
+            
+            // Boss - Dark Bat (inimigo especial grande)
+            boss = new Boss(1200, canvas.height - 150);
+            
+            // Minions (inimigos menores que aparecem durante a luta)
+            enemies.push(new Enemy(400, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(800, canvas.height - 90, 'bat'));
+            enemies.push(new Enemy(1600, canvas.height - 90, 'bat'));
+            
+            // Moedas de poder espalhadas
+            coins.push(new Coin(250, canvas.height - 190));
+            coins.push(new Coin(500, canvas.height - 290));
+            coins.push(new Coin(750, canvas.height - 190));
+            coins.push(new Coin(1050, canvas.height - 290));
+            coins.push(new Coin(1350, canvas.height - 190));
+            coins.push(new Coin(1600, canvas.height - 290));
+            coins.push(new Coin(1850, canvas.height - 190));
+            
+            // Bandeira aparece após derrotar o boss
+            flag = new Flag(2300, canvas.height - 150);
         }
     }
 
@@ -797,6 +1136,30 @@
             }
         }
         
+        // Colisão com Boss
+        if (boss && !boss.dead) {
+            if (player.x < boss.x + boss.w &&
+                player.x + player.width > boss.x &&
+                player.y < boss.y + boss.h &&
+                player.y + player.height > boss.y) {
+                
+                // Verifica se o jogador pulou em cima do boss
+                const hitFromAbove = (player.vy > 0) && 
+                                     (player.y + player.height - player.vy <= boss.y + boss.h * 0.5);
+                
+                if (hitFromAbove) {
+                    // Dano no boss ao pular em cima
+                    boss.takeDamage();
+                    player.vy = -10; // Pulo de rebote mais alto
+                    
+                    // Efeito visual de dano
+                    boss.angle = Math.PI; // Pisca
+                } else if (player.invincible === 0) {
+                    takeDamage(1);
+                }
+            }
+        }
+        
         // Remove inimigos mortos
         enemies = enemies.filter(e => !e.dead);
 
@@ -845,7 +1208,7 @@
 
     function nextLevel() {
         currentLevelIdx++;
-        if (currentLevelIdx >= 8) {
+        if (currentLevelIdx >= 12) {
             gameState = 'WIN';
             finalScoreEl.innerText = score;
             winScreen.style.display = 'flex';
@@ -927,6 +1290,13 @@
         platforms.forEach(p => p.draw());
         coins.forEach(c => c.draw());
         enemies.forEach(e => { e.update(); e.draw(); });
+        
+        // Atualizar e desenhar boss se existir
+        if (boss) {
+            boss.update();
+            boss.draw();
+        }
+        
         player.draw();
 
         frames++;
