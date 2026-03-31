@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ozzy Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #222;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            background-color: #674ea7;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+        
+        #start-screen, #game-over-screen, #level-complete-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            z-index: 20;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            color: #ffd700;
+        }
+        
+        p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="ui">
+            <div>Pontos: <span id="score">0</span></div>
+            <div>Fase: <span id="level">1</span></div>
+            <div>Vidas: <span id="lives">3</span></div>
+        </div>
+        
+        <div id="start-screen">
+            <h1>Ozzy Game</h1>
+            <p>Ajude o Ozzy a coletar todas as moedas!</p>
+            <p>Controles: Setas ou A/D para mover, ESPAÇO para pular</p>
+            <button id="start-btn">Começar Jogo</button>
+        </div>
+        
+        <div id="game-over-screen" class="hidden">
+            <h1>Game Over!</h1>
+            <p>Pontuação Final: <span id="final-score">0</span></p>
+            <button id="restart-btn">Jogar Novamente</button>
+        </div>
+        
+        <div id="level-complete-screen" class="hidden">
+            <h1>Fase Completa!</h1>
+            <p>Próxima fase em 3...</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let currentLevel = 1;
+        let lives = 3;
+        let coinsCollected = 0;
+        let totalCoins = 0;
+        
+        // Ozzy properties
+        const ozzy = {
+            x: 50,
+            y: 300,
+            width: 50,
+            height: 50,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 5,
+            jumpForce: -12,
+            gravity: 0.6,
+            jumping: false,
+            direction: 1, // 1 = right, -1 = left
+            grounded: false
+        };
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && gameRunning) {
+                if (ozzy.grounded) {
+                    ozzy.velocityY = ozzy.jumpForce;
+                    ozzy.jumping = true;
+                    ozzy.grounded = false;
+                }
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+        
+        // Touch controls
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameRunning && ozzy.grounded) {
+                ozzy.velocityY = ozzy.jumpForce;
+                ozzy.jumping = true;
+                ozzy.grounded = false;
+            }
+            e.preventDefault();
+        });
+        
+        // Level data
+        const levels = [
+            {
+                platforms: [
+                    { x: 0, y: 450, width: 800, height: 50 },
+                    { x: 200, y: 350, width: 150, height: 20 },
+                    { x: 400, y: 280, width: 150, height: 20 },
+                    { x: 600, y: 200, width: 150, height: 20 }
+                ],
+                coins: [
+                    { x: 250, y: 310, collected: false },
+                    { x: 450, y: 240, collected: false },
+                    { x: 650, y: 160, collected: false },
+                    { x: 100, y: 410, collected: false },
+                    { x: 700, y: 410, collected: false }
+                ],
+                obstacles: [
+                    { x: 300, y: 420, width: 30, height: 30 },
+                    { x: 500, y: 420, width: 30, height: 30 }
+                ],
+                exit: { x: 750, y: 150, width: 40, height: 50 }
+            },
+            {
+                platforms: [
+                    { x: 0, y: 450, width: 200, height: 50 },
+                    { x: 250, y: 400, width: 100, height: 20 },
+                    { x: 400, y: 350, width: 100, height: 20 },
+                    { x: 550, y: 300, width: 100, height: 20 },
+                    { x: 700, y: 250, width: 100, height: 20 },
+                    { x: 300, y: 200, width: 150, height: 20 }
+                ],
+                coins: [
+                    { x: 280, y: 360, collected: false },
+                    { x: 430, y: 310, collected: false },
+                    { x: 580, y: 260, collected: false },
+                    { x: 730, y: 210, collected: false },
+                    { x: 350, y: 160, collected: false },
+                    { x: 450, y: 160, collected: false }
+                ],
+                obstacles: [
+                    { x: 270, y: 370, width: 25, height: 30 },
+                    { x: 420, y: 320, width: 25, height: 30 },
+                    { x: 570, y: 270, width: 25, height: 30 }
+                ],
+                exit: { x: 350, y: 150, width: 40, height: 50 }
+            },
+            {
+                platforms: [
+                    { x: 0, y: 450, width: 150, height: 50 },
+                    { x: 200, y: 400, width: 80, height: 20 },
+                    { x: 350, y: 350, width: 80, height: 20 },
+                    { x: 500, y: 300, width: 80, height: 20 },
+                    { x: 650, y: 250, width: 80, height: 20 },
+                    { x: 500, y: 200, width: 80, height: 20 },
+                    { x: 350, y: 150, width: 80, height: 20 },
+                    { x: 200, y: 100, width: 80, height: 20 }
+                ],
+                coins: [
+                    { x: 220, y: 360, collected: false },
+                    { x: 370, y: 310, collected: false },
+                    { x: 520, y: 260, collected: false },
+                    { x: 670, y: 210, collected: false },
+                    { x: 520, y: 160, collected: false },
+                    { x: 370, y: 110, collected: false },
+                    { x: 220, y: 60, collected: false }
+                ],
+                obstacles: [
+                    { x: 210, y: 370, width: 20, height: 30 },
+                    { x: 360, y: 320, width: 20, height: 30 },
+                    { x: 510, y: 270, width: 20, height: 30 },
+                    { x: 660, y: 220, width: 20, height: 30 }
+                ],
+                exit: { x: 200, y: 50, width: 40, height: 50 }
+            }
+        ];
+        
+        let currentLevelData = null;
+        
+        function loadLevel(levelIndex) {
+            if (levelIndex > levels.length) {
+                // Victory!
+                gameRunning = false;
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                document.querySelector('#game-over-screen h1').textContent = 'Você Venceu!';
+                document.getElementById('final-score').textContent = score;
+                return;
+            }
+            
+            currentLevel = levelIndex;
+            currentLevelData = JSON.parse(JSON.stringify(levels[levelIndex - 1])); // Deep copy
+            coinsCollected = 0;
+            totalCoins = currentLevelData.coins.length;
+            
+            // Reset Ozzy position
+            ozzy.x = 50;
+            ozzy.y = 300;
+            ozzy.velocityX = 0;
+            ozzy.velocityY = 0;
+            ozzy.jumping = false;
+            ozzy.grounded = false;
+            
+            updateUI();
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = currentLevel;
+            document.getElementById('lives').textContent = lives;
+        }
+        
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        function update() {
+            if (!gameRunning) return;
+            
+            // Horizontal movement
+            ozzy.velocityX = 0;
+            if (keys['ArrowLeft'] || keys['KeyA']) {
+                ozzy.velocityX = -ozzy.speed;
+                ozzy.direction = -1;
+            }
+            if (keys['ArrowRight'] || keys['KeyD']) {
+                ozzy.velocityX = ozzy.speed;
+                ozzy.direction = 1;
+            }
+            
+            // Apply gravity
+            ozzy.velocityY += ozzy.gravity;
+            
+            // Update position
+            ozzy.x += ozzy.velocityX;
+            ozzy.y += ozzy.velocityY;
+            
+            // Boundary checks
+            if (ozzy.x < 0) ozzy.x = 0;
+            if (ozzy.x + ozzy.width > canvas.width) ozzy.x = canvas.width - ozzy.width;
+            
+            // Platform collision
+            ozzy.grounded = false;
+            for (const platform of currentLevelData.platforms) {
+                // Check if Ozzy is falling onto the platform
+                if (ozzy.velocityY >= 0 &&
+                    ozzy.x + ozzy.width > platform.x &&
+                    ozzy.x < platform.x + platform.width &&
+                    ozzy.y + ozzy.height >= platform.y &&
+                    ozzy.y + ozzy.height <= platform.y + platform.height + 10) {
+                    
+                    ozzy.y = platform.y - ozzy.height;
+                    ozzy.velocityY = 0;
+                    ozzy.grounded = true;
+                    ozzy.jumping = false;
+                }
+            }
+            
+            // Coin collection
+            for (const coin of currentLevelData.coins) {
+                if (!coin.collected) {
+                    const coinRect = { x: coin.x, y: coin.y, width: 20, height: 20 };
+                    const ozzyRect = { x: ozzy.x, y: ozzy.y, width: ozzy.width, height: ozzy.height };
+                    
+                    if (checkCollision(ozzyRect, coinRect)) {
+                        coin.collected = true;
+                        coinsCollected++;
+                        score += 10;
+                        updateUI();
+                    }
+                }
+            }
+            
+            // Obstacle collision
+            for (const obstacle of currentLevelData.obstacles) {
+                const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
+                const ozzyRect = { x: ozzy.x + 10, y: ozzy.y + 10, width: ozzy.width - 20, height: ozzy.height - 20 };
+                
+                if (checkCollision(ozzyRect, obstacleRect)) {
+                    lives--;
+                    updateUI();
+                    if (lives <= 0) {
+                        gameOver();
+                    } else {
+                        // Reset position
+                        ozzy.x = 50;
+                        ozzy.y = 300;
+                        ozzy.velocityX = 0;
+                        ozzy.velocityY = 0;
+                    }
+                    break;
+                }
+            }
+            
+            // Exit check (only if all coins collected)
+            if (coinsCollected === totalCoins) {
+                const exitRect = currentLevelData.exit;
+                const ozzyRect = { x: ozzy.x, y: ozzy.y, width: ozzy.width, height: ozzy.height };
+                
+                if (checkCollision(ozzyRect, exitRect)) {
+                    levelComplete();
+                }
+            }
+            
+            // Fall death
+            if (ozzy.y > canvas.height) {
+                lives--;
+                updateUI();
+                if (lives <= 0) {
+                    gameOver();
+                } else {
+                    ozzy.x = 50;
+                    ozzy.y = 300;
+                    ozzy.velocityX = 0;
+                    ozzy.velocityY = 0;
+                }
+            }
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+        
+        function levelComplete() {
+            gameRunning = false;
+            const levelScreen = document.getElementById('level-complete-screen');
+            levelScreen.classList.remove('hidden');
+            
+            let countdown = 3;
+            const interval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    levelScreen.querySelector('p').textContent = `Próxima fase em ${countdown}...`;
+                } else {
+                    clearInterval(interval);
+                    levelScreen.classList.add('hidden');
+                    loadLevel(currentLevel + 1);
+                    gameRunning = true;
+                }
+            }, 1000);
+        }
+        
+        // Draw Ozzy (round black cat with pointy ears, green eyes, like Ozzy Osbourne)
+        function drawOzzy() {
+            ctx.save();
+            ctx.translate(ozzy.x + ozzy.width/2, ozzy.y + ozzy.height/2);
+            ctx.scale(ozzy.direction, 1); // Flip based on direction
+
+            // Body (round black cat)
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(0, 5, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ears (pointy)
+            ctx.fillStyle = '#000';
+            // Left ear
+            ctx.beginPath();
+            ctx.moveTo(-15, -15);
+            ctx.lineTo(-25, -35);
+            ctx.lineTo(-5, -25);
+            ctx.fill();
+            // Right ear
+            ctx.beginPath();
+            ctx.moveTo(15, -15);
+            ctx.lineTo(25, -35);
+            ctx.lineTo(5, -25);
+            ctx.fill();
+
+            // Inner ears (pink)
+            ctx.fillStyle = '#ffb6c1';
+            // Left inner ear
+            ctx.beginPath();
+            ctx.moveTo(-15, -15);
+            ctx.lineTo(-22, -30);
+            ctx.lineTo(-8, -22);
+            ctx.fill();
+            // Right inner ear
+            ctx.beginPath();
+            ctx.moveTo(15, -15);
+            ctx.lineTo(22, -30);
+            ctx.lineTo(8, -22);
+            ctx.fill();
+
+            // Eyes (big green eyes)
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.ellipse(-8, -5, 8, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(8, -5, 8, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupils (vertical black slits)
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(-8, -5, 2, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(8, -5, 2, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye shine
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(-10, -8, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(6, -8, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nose (pink)
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.arc(0, 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mouth (rockstar grin)
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 10, 6, 0, Math.PI);
+            ctx.stroke();
+
+            // Whiskers
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            // Left whiskers
+            ctx.beginPath();
+            ctx.moveTo(-10, 5);
+            ctx.lineTo(-30, 0);
+            ctx.moveTo(-10, 8);
+            ctx.lineTo(-30, 8);
+            ctx.moveTo(-10, 11);
+            ctx.lineTo(-30, 16);
+            ctx.stroke();
+            // Right whiskers
+            ctx.beginPath();
+            ctx.moveTo(10, 5);
+            ctx.lineTo(30, 0);
+            ctx.moveTo(10, 8);
+            ctx.lineTo(30, 8);
+            ctx.moveTo(10, 11);
+            ctx.lineTo(30, 16);
+            ctx.stroke();
+
+            // Arms (visible when jumping)
+            ctx.fillStyle = '#000';
+            if (ozzy.jumping) {
+                // Arms up when jumping
+                ctx.beginPath();
+                ctx.arc(-18, 0, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(18, 0, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Paw pads (pink)
+                ctx.fillStyle = '#ffb6c1';
+                ctx.beginPath();
+                ctx.arc(-18, 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(18, 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Arms down when on ground
+                ctx.beginPath();
+                ctx.arc(-18, 15, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(18, 15, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Paw pads (pink)
+                ctx.fillStyle = '#ffb6c1';
+                ctx.beginPath();
+                ctx.arc(-18, 17, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(18, 17, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Legs and feet
+            ctx.fillStyle = '#000';
+            if (ozzy.jumping) {
+                // Legs tucked when jumping
+                ctx.beginPath();
+                ctx.arc(-12, 20, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(12, 20, 9, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Legs standing
+                ctx.beginPath();
+                ctx.arc(-12, 22, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(12, 22, 9, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Paw pads on feet (pink)
+            ctx.fillStyle = '#ffb6c1';
+            if (ozzy.jumping) {
+                ctx.beginPath();
+                ctx.arc(-12, 22, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(12, 22, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.arc(-12, 24, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(12, 24, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Tail (animated)
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            const tailWag = Math.sin(Date.now() / 200) * 10;
+            ctx.moveTo(20, 10);
+            ctx.quadraticCurveTo(35, 5 + tailWag, 45, -5 + tailWag);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+        
+        function drawLevel() {
+            // Draw platforms
+            ctx.fillStyle = '#8B4513';
+            for (const platform of currentLevelData.platforms) {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                
+                // Grass on top
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(platform.x, platform.y, platform.width, 5);
+                ctx.fillStyle = '#8B4513';
+            }
+            
+            // Draw coins
+            for (const coin of currentLevelData.coins) {
+                if (!coin.collected) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(coin.x + 10, coin.y + 10, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Coin shine
+                    ctx.fillStyle = '#FFF';
+                    ctx.beginPath();
+                    ctx.arc(coin.x + 7, coin.y + 7, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // Draw obstacles
+            ctx.fillStyle = '#8B0000';
+            for (const obstacle of currentLevelData.obstacles) {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                
+                // Spike details
+                ctx.fillStyle = '#A52A2A';
+                ctx.beginPath();
+                ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
+                ctx.lineTo(obstacle.x + obstacle.width/2, obstacle.y);
+                ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
+                ctx.fill();
+                ctx.fillStyle = '#8B0000';
+            }
+            
+            // Draw exit
+            if (coinsCollected === totalCoins) {
+                ctx.fillStyle = '#4CAF50';
+                const exit = currentLevelData.exit;
+                ctx.fillRect(exit.x, exit.y, exit.width, exit.height);
+                
+                // Door frame
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(exit.x, exit.y, exit.width, exit.height);
+                
+                // Door handle
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(exit.x + exit.width - 10, exit.y + exit.height/2, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#674ea7';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (currentLevelData) {
+                drawLevel();
+                drawOzzy();
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners for buttons
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-screen').classList.add('hidden');
+            score = 0;
+            lives = 3;
+            loadLevel(1);
+            gameRunning = true;
+        });
+        
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.querySelector('#game-over-screen h1').textContent = 'Game Over!';
+            score = 0;
+            lives = 3;
+            loadLevel(1);
+            gameRunning = true;
+        });
+        
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
