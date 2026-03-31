@@ -1,17 +1,1 @@
-```
-# HTML/CSS/JS build artifacts and temp files
-*.tmp
-*.swp
-
-# Environment files
-.env
-.env.local
-*.env.*
-
-# Editor/IDE files
-.vscode/
-.idea/
-
-# Logs
-*.log
-```
+Nothing should be ignored since only a single HTML file was modified and no build artifacts, dependencies, or temporary files are present in the changes.
