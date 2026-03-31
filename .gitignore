@@ -1,15 +1,20 @@
 ```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
+# Build artifacts
+dist/
+build/
+*.js.map
 
 # Dependencies
 node_modules/
-.venv/
-venv/
+
+# Environment
 .env
 .env.local
-.env.*
+*.env.*
+
+# Editors
+.vscode/
+.idea/
 
 # Editors
 .vscode/
@@ -20,11 +25,17 @@ venv/
 *.tmp
 *.swp
 
-# System files
+# OS files
 .DS_Store
 Thumbs.db
 
-# Coverage reports
+# Python artifacts (if any Python files exist in project)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Coverage
 coverage/
 htmlcov/
 .coverage

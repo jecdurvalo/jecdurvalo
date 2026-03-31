@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ozzy - The Game (Clean Code)</title>
+    
+    <!-- CSS Separado -->
+    <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- HUD (Heads-Up Display) -->
+    <div id="ui-layer">
+        <div id="score-hud">MOEDAS: 0</div>
+        <div id="level-hud">FASE: 1</div>
+        <div id="lives-hud">VIDAS: 3</div>
+    </div>
+
+    <!-- Tela Inicial -->
+    <div id="start-screen" class="screen">
+        <h1>🎸 OZZY - THE GAME 🎸</h1>
+        <p>Ajude o Ozzy a atravessar as fases!<br>Pule nas plataformas, colete moedas e chegue na bandeira.</p>
+        <p>Cuidado com as <strong>Aranhas</strong> e <strong>Morcegos</strong>!</p>
+        <button class="btn-primary">JOGAR</button>
+    </div>
+
+    <!-- Tela Game Over -->
+    <div id="game-over-screen" class="screen" style="display: none;">
+        <h1 class="danger">GAME OVER</h1>
+        <p>Ozzy foi pego!</p>
+        <button class="btn-primary">TENTAR DE NOVO</button>
+    </div>
+
+    <!-- Tela Vitória -->
+    <div id="win-screen" class="screen" style="display: none;">
+        <h1 class="highlight">VOCÊ VENCEU!</h1>
+        <p>Parabéns! Ozzy completou a aventura.</p>
+        <p>Pontuação Final: <span id="final-score" class="highlight">0</span></p>
+        <button class="btn-primary">JOGAR NOVAMENTE</button>
+    </div>
+
+    <!-- Controles Mobile -->
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div class="control-btn" id="btn-left">←</div>
+            <div class="control-btn" id="btn-right">→</div>
+        </div>
+        <div class="control-btn btn-jump" id="btn-jump">↑</div>
+    </div>
+</div>
+
+<!-- JavaScript Modular -->
+<script type="module" src="src/js/main.js"></script>
+
+</body>
+</html>
