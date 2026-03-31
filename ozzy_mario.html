@@ -205,6 +205,8 @@
     let lives = 3;
     let cameraX = 0;
     let frames = 0;
+    let checkpointX = 50; // Ponto de respawn na fase atual
+    let checkpointY = 0;
 
     // Inputs
     const keys = { right: false, left: false, up: false };
@@ -484,6 +486,8 @@
         player.vx = 0;
         player.vy = 0;
         cameraX = 0;
+        checkpointX = 50; // Reset checkpoint para inicio da fase
+        checkpointY = 0;
         levelEl.innerText = `FASE: ${levelIndex + 1}`;
 
         // Chão inicial seguro (mais longo para dar espaço de corrida)
@@ -549,31 +553,31 @@
             flag = new Flag(1950, canvas.height - 150);
         
         } else if (levelIndex === 3) {
-            // Fase 4: Escalada vertical - espaçamento aumentado
+            // Fase 4: Escalada vertical - espaçamento aumentado para permitir pulos
             platforms.push(new Platform(500, canvas.height - 170, 120, 50));
-            platforms.push(new Platform(720, canvas.height - 250, 120, 50));
+            platforms.push(new Platform(750, canvas.height - 250, 120, 50));  // Mais distante horizontalmente
             platforms.push(new Platform(500, canvas.height - 340, 120, 50));
-            platforms.push(new Platform(720, canvas.height - 420, 120, 50));
-            platforms.push(new Platform(980, canvas.height - 340, 180, 50));
-            platforms.push(new Platform(1260, canvas.height - 230, 220, 50));
-            platforms.push(new Platform(1580, canvas.height - 120, 350, 50));
+            platforms.push(new Platform(780, canvas.height - 420, 120, 50));  // Mais distante para facilitar
+            platforms.push(new Platform(1100, canvas.height - 340, 180, 50)); // Mais distante
+            platforms.push(new Platform(1450, canvas.height - 230, 220, 50)); // Mais distante
+            platforms.push(new Platform(1800, canvas.height - 120, 350, 50)); // Mais distante
 
-            enemies.push(new Enemy(1000, canvas.height - 380, 'spider'));
-            enemies.push(new Enemy(1300, canvas.height - 270, 'spider'));
-            enemies.push(new Enemy(600, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(900, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(1400, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1120, canvas.height - 380, 'spider'));
+            enemies.push(new Enemy(1500, canvas.height - 270, 'spider'));
+            enemies.push(new Enemy(650, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(950, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1550, canvas.height - 490, 'bat'));
 
             coins.push(new Coin(540, canvas.height - 210));
-            coins.push(new Coin(760, canvas.height - 290));
+            coins.push(new Coin(790, canvas.height - 290));
             coins.push(new Coin(540, canvas.height - 380));
-            coins.push(new Coin(760, canvas.height - 460));
-            coins.push(new Coin(1050, canvas.height - 380));
-            coins.push(new Coin(1350, canvas.height - 270));
-            coins.push(new Coin(1700, canvas.height - 160));
-            coins.push(new Coin(1850, canvas.height - 160));
+            coins.push(new Coin(820, canvas.height - 460));
+            coins.push(new Coin(1170, canvas.height - 380));
+            coins.push(new Coin(1540, canvas.height - 270));
+            coins.push(new Coin(1900, canvas.height - 160));
+            coins.push(new Coin(2050, canvas.height - 160));
 
-            flag = new Flag(1800, canvas.height - 220);
+            flag = new Flag(2000, canvas.height - 220);
 
         } else if (levelIndex === 4) {
             // Fase 5: Precisão e timing - espaçamento aumentado
@@ -724,6 +728,13 @@
         if (lives <= 0) {
             gameState = 'GAMEOVER';
             gameOverScreen.style.display = 'flex';
+        } else {
+            // Respawn no checkpoint da fase atual
+            player.x = checkpointX;
+            player.y = checkpointY;
+            player.vx = 0;
+            player.vy = 0;
+            cameraX = Math.max(0, checkpointX - 200);
         }
     }
 
@@ -742,6 +753,8 @@
         score = 0;
         lives = 3;
         currentLevelIdx = 0;
+        checkpointX = 50;
+        checkpointY = 0;
         scoreEl.innerText = `MOEDAS: 0`;
         livesEl.innerText = `VIDAS: 3`;
         startScreen.style.display = 'none';
@@ -767,6 +780,12 @@
         }
         // Limitar câmera ao início do nível
         if (cameraX < 0) cameraX = 0;
+        
+        // Atualiza checkpoint quando jogador avança e está no chão
+        if (player.x > checkpointX && player.grounded) {
+            checkpointX = player.x;
+            checkpointY = player.y;
+        }
     }
 
     function drawBackground() {
