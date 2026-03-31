@@ -791,11 +791,24 @@
                 player.y < e.y + e.h &&
                 player.y + player.height > e.y) {
                 
-                if (player.invincible === 0) {
+                // Verifica se o jogador pulou em cima do inimigo (estilo Mario)
+                const hitFromAbove = (player.vy > 0) && 
+                                     (player.y + player.height - player.vy <= e.y + e.h * 0.5);
+                
+                if (hitFromAbove) {
+                    // Mata o inimigo ao pular em cima
+                    e.dead = true;
+                    player.vy = -8; // Pulo de rebote
+                    score += 20; // Bonus por matar inimigo
+                    scoreEl.innerText = `MOEDAS: ${score}`;
+                } else if (player.invincible === 0) {
                     takeDamage(1);
                 }
             }
         }
+        
+        // Remove inimigos mortos
+        enemies = enemies.filter(e => !e.dead);
 
         // Moedas
         for (let c of coins) {
