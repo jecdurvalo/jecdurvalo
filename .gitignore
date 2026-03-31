@@ -1,8 +1,16 @@
 ```
-# HTML specific temporary files (if any generated during editing)
+# HTML-specific build artifacts (if any)
+*.html~
+
+# Logs and temp files
+*.log
 *.tmp
-*.bak
-*.backup
+*.swp
+
+# Environment files
+.env
+.env.local
+*.env.*
 
 # Editor/IDE files
 .vscode/
@@ -14,6 +22,51 @@
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Python artifacts (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py~
+.Python
+*.so
+
+# Build outputs (if applicable)
+dist/
+build/
+*.out
+*.exe
+*.dll
+*.so
+*.a
+*.obj
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

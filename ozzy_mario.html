@@ -477,17 +477,22 @@
     let flag = null;
 
     // Construtor de Níveis
-    function loadLevel(levelIndex) {
+    function loadLevel(levelIndex, fromDeath = false) {
         platforms = [];
         enemies = [];
         coins = [];
-        player.x = 50;
-        player.y = 0;
-        player.vx = 0;
-        player.vy = 0;
-        cameraX = 0;
-        checkpointX = 50; // Reset checkpoint para inicio da fase
-        checkpointY = 0;
+        
+        // Só reseta posição e checkpoint se não for respawn por morte
+        if (!fromDeath) {
+            player.x = 50;
+            player.y = 0;
+            player.vx = 0;
+            player.vy = 0;
+            cameraX = 0;
+            checkpointX = 50; // Reset checkpoint para inicio da fase
+            checkpointY = 0;
+        }
+        
         levelEl.innerText = `FASE: ${levelIndex + 1}`;
 
         // Chão inicial seguro (mais longo para dar espaço de corrida)
@@ -553,31 +558,31 @@
             flag = new Flag(1950, canvas.height - 150);
         
         } else if (levelIndex === 3) {
-            // Fase 4: Escalada vertical - espaçamento aumentado para permitir pulos
+            // Fase 4: Escalada vertical - espaçamento AINDA MAIOR para permitir pulos
             platforms.push(new Platform(500, canvas.height - 170, 120, 50));
-            platforms.push(new Platform(750, canvas.height - 250, 120, 50));  // Mais distante horizontalmente
+            platforms.push(new Platform(800, canvas.height - 250, 120, 50));  // Horizontal aumentado de 250 para 300
             platforms.push(new Platform(500, canvas.height - 340, 120, 50));
-            platforms.push(new Platform(780, canvas.height - 420, 120, 50));  // Mais distante para facilitar
-            platforms.push(new Platform(1100, canvas.height - 340, 180, 50)); // Mais distante
-            platforms.push(new Platform(1450, canvas.height - 230, 220, 50)); // Mais distante
-            platforms.push(new Platform(1800, canvas.height - 120, 350, 50)); // Mais distante
+            platforms.push(new Platform(850, canvas.height - 420, 120, 50));  // Horizontal aumentado
+            platforms.push(new Platform(1200, canvas.height - 340, 180, 50)); // Horizontal aumentado de 320 para 350
+            platforms.push(new Platform(1550, canvas.height - 230, 220, 50)); // Horizontal aumentado
+            platforms.push(new Platform(1900, canvas.height - 120, 350, 50)); // Horizontal aumentado
 
-            enemies.push(new Enemy(1120, canvas.height - 380, 'spider'));
-            enemies.push(new Enemy(1500, canvas.height - 270, 'spider'));
-            enemies.push(new Enemy(650, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(950, canvas.height - 490, 'bat'));
-            enemies.push(new Enemy(1550, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1220, canvas.height - 380, 'spider'));
+            enemies.push(new Enemy(1600, canvas.height - 270, 'spider'));
+            enemies.push(new Enemy(700, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1000, canvas.height - 490, 'bat'));
+            enemies.push(new Enemy(1650, canvas.height - 490, 'bat'));
 
             coins.push(new Coin(540, canvas.height - 210));
-            coins.push(new Coin(790, canvas.height - 290));
+            coins.push(new Coin(840, canvas.height - 290));
             coins.push(new Coin(540, canvas.height - 380));
-            coins.push(new Coin(820, canvas.height - 460));
-            coins.push(new Coin(1170, canvas.height - 380));
-            coins.push(new Coin(1540, canvas.height - 270));
-            coins.push(new Coin(1900, canvas.height - 160));
-            coins.push(new Coin(2050, canvas.height - 160));
+            coins.push(new Coin(890, canvas.height - 460));
+            coins.push(new Coin(1270, canvas.height - 380));
+            coins.push(new Coin(1640, canvas.height - 270));
+            coins.push(new Coin(2000, canvas.height - 160));
+            coins.push(new Coin(2150, canvas.height - 160));
 
-            flag = new Flag(2000, canvas.height - 220);
+            flag = new Flag(2100, canvas.height - 220);
 
         } else if (levelIndex === 4) {
             // Fase 5: Precisão e timing - espaçamento aumentado
@@ -735,6 +740,9 @@
             player.vx = 0;
             player.vy = 0;
             cameraX = Math.max(0, checkpointX - 200);
+            
+            // Recarrega a fase mantendo o checkpoint
+            loadLevel(currentLevelIdx, true);
         }
     }
 
