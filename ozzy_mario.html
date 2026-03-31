@@ -353,6 +353,12 @@
             
             // Limites do mundo (esquerda)
             if (this.x < 0) { this.x = 0; this.vx = 0; }
+            
+            // Limite direito na fase 12 (boss) - arena de 2400px começando em 50
+            if (currentLevelIdx === 11 && this.x > 2400 - this.width) {
+                this.x = 2400 - this.width;
+                this.vx = 0;
+            }
 
             // Gravidade
             this.vy += this.gravity;
@@ -1602,11 +1608,22 @@
     }
 
     function updateCamera() {
-        // Câmera segue o jogador suavemente, mas não volta para trás facilmente
+        // Câmera segue o jogador suavemente
         const targetX = player.x - canvas.width / 3;
-        if (targetX > cameraX) {
+        
+        // Na fase 12 (boss), a câmera pode ir e voltar livremente
+        if (currentLevelIdx === 11) {
             cameraX += (targetX - cameraX) * 0.1;
+            // Limitar câmera ao tamanho da arena do boss (chão de 2400px começando em 50)
+            const maxCameraX = 2400 - canvas.width + 50;
+            if (cameraX > maxCameraX) cameraX = maxCameraX;
+        } else {
+            // Nas outras fases, a câmera só avança (não volta facilmente)
+            if (targetX > cameraX) {
+                cameraX += (targetX - cameraX) * 0.1;
+            }
         }
+        
         // Limitar câmera ao início do nível
         if (cameraX < 0) cameraX = 0;
         
