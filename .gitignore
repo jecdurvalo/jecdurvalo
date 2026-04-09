@@ -1,1 +1,68 @@
 Nothing needs to be added to .gitignore since the only change is adding a single HTML file (`consorcio-landing/landing-page-completa.html`) which is a source file and should not be ignored.
+```
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage*
+.nosetests*
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+dist/
+coverage/
+.nyc_output
+*.min.js
+*.min.css
+
+# Vite specific
+.vite/
+vite.config.js.timestamp*
+
+# React specific
+*.hot-update.js
+*.hot-update.json
+```
