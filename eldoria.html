@@ -679,7 +679,10 @@ function updatePanels(){
         let item = equipped[k];
         let icon = item?.icon || '❓';
         let durabInfo = item ? `<small style="color:${item.durability < 30 ? 'red' : '#aaa'}"> (${item.durability}%)</small>` : '';
-        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:40px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}</div>`;
+        // Barra de durabilidade para itens equipados
+        let durabBar = item && !item.stackable && item.slot !== 'consumable' ? 
+            `<div style="display:flex; align-items:center; gap:5px; margin-top:5px;"><div style="width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;"><div style="width:${item.durability}%; height:100%; background:${item.durability > 60 ? '#4CAF50' : (item.durability > 30 ? '#FFC107' : '#f44336')}; transition:width 0.3s;"></div></div><small style="color:#fff; min-width:35px;">${item.durability}%</small></div>` : '';
+        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:50px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}${durabBar}</div>`;
     }
     inventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
@@ -693,15 +696,8 @@ function updatePanels(){
             }
         }
         let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
-        // Barra de durabilidade com cores dinamicas (verde -> amarelo -> vermelho)
-        let durabInfo = '';
-        if(!it.stackable && it.slot !== 'consumable') {
-            let durabPercent = Math.round((it.durability / it.maxDurability) * 100);
-            let durabColor = durabPercent > 60 ? '#4CAF50' : (durabPercent > 30 ? '#FFC107' : '#f44336');
-            durabInfo = `<div style="display:flex; align-items:center; gap:5px; margin-top:3px;"><div style="width:100%; height:6px; background:#333; border-radius:3px; overflow:hidden;"><div style="width:${durabPercent}%; height:100%; background:${durabColor}; transition:width 0.3s;"></div></div><small style="color:${durabColor}; min-width:35px;">${durabPercent}%</small></div>`;
-        }
         let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
-        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small>${durabInfo}</div></div>`;
+        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small></div></div>`;
     });
     shopInventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
@@ -1118,11 +1114,11 @@ function showGameOver() {
     
     gameOverOverlay.style.display = 'flex';
     
-    // Se não tem gold para reviver, reseta o jogo automaticamente após 2 segundos
+    // Se não tem gold para reviver, reseta o jogo automaticamente após 3 segundos
     if(!canRevive) {
         setTimeout(() => {
             resetGame();
-        }, 2000);
+        }, 3000);
     }
 }
 
@@ -1157,6 +1153,17 @@ function resetGame() {
     
     // Resetar posição do herói
     hero.position.set(0, 0, 0);
+    
+    // Remover decorações do bioma
+    visuals.forEach(v => {
+        if(v.userData.isDecoration) {
+            scene.remove(v);
+        }
+    });
+    visuals = visuals.filter(v => !v.userData.isDecoration);
+    
+    // Recriar decorações do bioma inicial
+    addBiomeDecorations();
     
     // Remover monstros da cena
     monsters.forEach(m => {
@@ -1196,6 +1203,8 @@ function resetGame() {
     goldDisplay.innerText = "Gold: " + player.gold;
     applyEquipVisual();
     recalcStats();
+    updateBiome(); // Atualiza bioma para o level 1
+    updatePanels(); // Atualiza painéis com os valores corretos
     
     // Esconder game over overlay
     gameOverOverlay.style.display = 'none';
