@@ -40,15 +40,75 @@ class Game {
             level: document.getElementById('level-hud'),
             lives: document.getElementById('lives-hud'),
             startScreen: document.getElementById('start-screen'),
+            instructionsScreen: document.getElementById('instructions-screen'),
+            pauseScreen: document.getElementById('pause-screen'),
             gameOverScreen: document.getElementById('game-over-screen'),
             winScreen: document.getElementById('win-screen'),
             finalScore: document.getElementById('final-score'),
+            pauseBtn: document.getElementById('pause-btn'),
         };
 
         // Setup inicial
         this.setupTouchControls();
+        this.setupButtonListeners();
         this.resize();
         window.addEventListener('resize', () => this.resize());
+    }
+
+    /**
+     * Configura listeners de todos os botões das telas
+     */
+    setupButtonListeners() {
+        // Botão Iniciar
+        const startBtn = document.getElementById('start-btn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => this.start());
+        }
+
+        // Botão Instruções
+        const instructionsBtn = document.getElementById('instructions-btn');
+        if (instructionsBtn) {
+            instructionsBtn.addEventListener('click', () => this.showInstructions());
+        }
+
+        // Botão Voltar das instruções
+        const backFromInstructions = document.getElementById('back-from-instructions');
+        if (backFromInstructions) {
+            backFromInstructions.addEventListener('click', () => this.hideInstructions());
+        }
+
+        // Botões de Retry/Play Again
+        const retryBtn = document.getElementById('retry-btn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => this.reset());
+        }
+
+        const playAgainBtn = document.getElementById('play-again-btn');
+        if (playAgainBtn) {
+            playAgainBtn.addEventListener('click', () => this.reset());
+        }
+
+        // Botões de Menu
+        const menuButtons = document.querySelectorAll('.btn-menu');
+        menuButtons.forEach(btn => {
+            btn.addEventListener('click', () => this.goToMenu());
+        });
+
+        // Botões de Pausa
+        const resumeBtn = document.getElementById('resume-btn');
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', () => this.resume());
+        }
+
+        const quitBtn = document.getElementById('quit-btn');
+        if (quitBtn) {
+            quitBtn.addEventListener('click', () => this.quitToMenu());
+        }
+
+        // Botão de Pause na UI
+        if (this.ui.pauseBtn) {
+            this.ui.pauseBtn.addEventListener('click', () => this.pause());
+        }
     }
 
     /**
@@ -70,12 +130,40 @@ class Game {
     }
 
     /**
+     * Mostra tela de instruções
+     */
+    showInstructions() {
+        this.hideAllScreens();
+        this.ui.instructionsScreen.style.display = 'flex';
+    }
+
+    /**
+     * Esconde tela de instruções
+     */
+    hideInstructions() {
+        this.ui.instructionsScreen.style.display = 'none';
+        this.ui.startScreen.style.display = 'flex';
+    }
+
+    /**
+     * Esconde todas as telas
+     */
+    hideAllScreens() {
+        this.ui.startScreen.style.display = 'none';
+        this.ui.instructionsScreen.style.display = 'none';
+        this.ui.pauseScreen.style.display = 'none';
+        this.ui.gameOverScreen.style.display = 'none';
+        this.ui.winScreen.style.display = 'none';
+    }
+
+    /**
      * Inicia o jogo
      */
     start() {
-        this.ui.startScreen.style.display = 'none';
+        this.hideAllScreens();
         this.loadLevel(0);
         this.gameState = CONFIG.STATES.PLAYING;
+        this.ui.pauseBtn.style.display = 'flex';
         this.gameLoop();
     }
 
@@ -126,12 +214,52 @@ class Game {
         
         this.updateUI();
         
-        this.ui.gameOverScreen.style.display = 'none';
-        this.ui.winScreen.style.display = 'none';
+        this.hideAllScreens();
         
         this.loadLevel(0);
         this.gameState = CONFIG.STATES.PLAYING;
+        this.ui.pauseBtn.style.display = 'flex';
         this.gameLoop();
+    }
+
+    /**
+     * Vai para o menu principal
+     */
+    goToMenu() {
+        this.hideAllScreens();
+        this.ui.startScreen.style.display = 'flex';
+        this.ui.pauseBtn.style.display = 'none';
+        this.gameState = CONFIG.STATES.START;
+    }
+
+    /**
+     * Sai do jogo atual e volta ao menu
+     */
+    quitToMenu() {
+        this.goToMenu();
+    }
+
+    /**
+     * Pausa o jogo
+     */
+    pause() {
+        if (this.gameState === CONFIG.STATES.PLAYING) {
+            this.gameState = CONFIG.STATES.PAUSED;
+            this.hideAllScreens();
+            this.ui.pauseScreen.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Retoma o jogo após pausa
+     */
+    resume() {
+        if (this.gameState === CONFIG.STATES.PAUSED) {
+            this.gameState = CONFIG.STATES.PLAYING;
+            this.hideAllScreens();
+            this.ui.pauseBtn.style.display = 'flex';
+            this.gameLoop();
+        }
     }
 
     /**
@@ -156,7 +284,9 @@ class Game {
      */
     gameOver() {
         this.gameState = CONFIG.STATES.GAMEOVER;
+        this.hideAllScreens();
         this.ui.gameOverScreen.style.display = 'flex';
+        this.ui.pauseBtn.style.display = 'none';
     }
 
     /**
@@ -165,7 +295,9 @@ class Game {
     win() {
         this.gameState = CONFIG.STATES.WIN;
         this.ui.finalScore.innerText = this.score;
+        this.hideAllScreens();
         this.ui.winScreen.style.display = 'flex';
+        this.ui.pauseBtn.style.display = 'none';
     }
 
     /**

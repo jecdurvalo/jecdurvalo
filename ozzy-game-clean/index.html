@@ -25,14 +25,47 @@
         <h1>🎸 OZZY - THE GAME 🎸</h1>
         <p>Ajude o Ozzy a atravessar as fases!<br>Pule nas plataformas, colete moedas e chegue na bandeira.</p>
         <p>Cuidado com as <strong>Aranhas</strong> e <strong>Morcegos</strong>!</p>
-        <button class="btn-primary">JOGAR</button>
+        <button class="btn-primary" id="start-btn">JOGAR</button>
+        <br>
+        <button class="btn-secondary" id="instructions-btn">COMO JOGAR</button>
+        <br>
+        <button class="btn-menu" id="menu-btn">VOLTAR PARA O MENU</button>
     </div>
+
+    <!-- Tela de Instruções -->
+    <div id="instructions-screen" class="screen" style="display: none;">
+        <h1 class="info">COMO JOGAR</h1>
+        <p><strong>Objetivo:</strong> Leve o Ozzy até a bandeira final de cada fase!</p>
+        <p><strong>Controles (Teclado):</strong><br>
+        ← → ou A/D: Mover<br>
+        Espaço ou ↑ ou W: Pular</p>
+        <p><strong>Controles (Mobile):</strong><br>
+        Use os botões na tela para mover e pular.</p>
+        <p><strong>Dicas:</strong><br>
+        • Colete moedas para aumentar sua pontuação<br>
+        • Pule sobre os inimigos para derrotá-los<br>
+        • Evite cair no abismo!</p>
+        <button class="btn-primary" id="back-from-instructions">VOLTAR</button>
+    </div>
+
+    <!-- Tela de Pausa -->
+    <div id="pause-screen" class="screen" style="display: none;">
+        <h1 class="warning">PAUSA</h1>
+        <p>Jogo pausado</p>
+        <button class="btn-primary" id="resume-btn">CONTINUAR</button>
+        <button class="btn-secondary" id="quit-btn">SAIR DO JOGO</button>
+        <button class="btn-menu" id="menu-pause-btn">VOLTAR PARA O MENU</button>
+    </div>
+
+    <!-- Botão de Pausa -->
+    <button id="pause-btn" style="display: none;">⏸</button>
 
     <!-- Tela Game Over -->
     <div id="game-over-screen" class="screen" style="display: none;">
         <h1 class="danger">GAME OVER</h1>
         <p>Ozzy foi pego!</p>
-        <button class="btn-primary">TENTAR DE NOVO</button>
+        <button class="btn-primary" id="retry-btn">TENTAR DE NOVO</button>
+        <button class="btn-menu" id="menu-gameover-btn">VOLTAR PARA O MENU</button>
     </div>
 
     <!-- Tela Vitória -->
@@ -40,7 +73,8 @@
         <h1 class="highlight">VOCÊ VENCEU!</h1>
         <p>Parabéns! Ozzy completou a aventura.</p>
         <p>Pontuação Final: <span id="final-score" class="highlight">0</span></p>
-        <button class="btn-primary">JOGAR NOVAMENTE</button>
+        <button class="btn-primary" id="play-again-btn">JOGAR NOVAMENTE</button>
+        <button class="btn-menu" id="menu-win-btn">VOLTAR PARA O MENU</button>
     </div>
 
     <!-- Controles Mobile -->
