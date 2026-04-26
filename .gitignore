@@ -1,56 +1,47 @@
 ```
-# Build artifacts
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
 dist/
 build/
-*.js.map
-*.min.js
+target/
 
 # Dependencies
+.venv/
+venv/
 node_modules/
+.julia/
+zig*/
+.env
+.env.local
+.env.*
 
 # Logs and temp files
 *.log
 *.tmp
-
-# Environment
-.env
-.env.local
-*.env.*
+*.swp
 
 # Editors
 .vscode/
 .idea/
-*.swp
 
-# Coverage reports
+# System files
+.DS_Store
+Thumbs.db
+
+# Coverage
 coverage/
 htmlcov/
-*.coverage
+.coverage
 
-# Python artifacts (if any Python in project)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+# Python specific
+.mypy_cache/
+.pytest_cache/
 
-# Java artifacts (if any Java in project)
-*.class
-*.jar
-*.war
-*.ear
-target/
+# Java/Gradle
 .gradle/
-!gradle/wrapper/gradle-wrapper.jar
-
-# C/C++ artifacts (if any C/C++ in project)
-*.o
-*.obj
-*.so
-*.dll
-*.a
-*.lib
-*.out
 
 # Compressed files
 *.zip
@@ -71,8 +62,4 @@ target/
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
 ```
