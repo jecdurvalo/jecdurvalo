@@ -169,6 +169,37 @@ canvas {
     box-shadow: 0 2px 0 #008fb3;
 }
 
+/* ========================================
+   PAUSE BUTTON
+   ======================================== */
+#pause-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.1s;
+    z-index: 15;
+}
+
+#pause-btn:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+#pause-btn:active {
+    background: rgba(255, 255, 255, 0.7);
+}
+
 /* Cores específicas para títulos */
 .screen h1.info {
     color: #00ccff;
