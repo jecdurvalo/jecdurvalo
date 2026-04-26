@@ -2111,21 +2111,21 @@ function animate(time){
     // AOE - Atualização dos efeitos visuais
     for(let i=aoes.length-1; i>=0; i--){
         let aoe = aoes[i];
-        aoi.life--;
+        aoe.life--;
         
         // Fade out do efeito
-        if(aoi.effectMesh){
-            aoi.effectMesh.material.opacity = (aoi.life / 20) * 0.7;
-            aoi.effectMesh.scale.multiplyScalar(1.05);
+        if(aoe.effectMesh){
+            aoe.effectMesh.material.opacity = (aoe.life / 20) * 0.7;
+            aoe.effectMesh.scale.multiplyScalar(1.05);
         }
-        if(aoi.lightMesh){
-            aoi.lightMesh.material.opacity = (aoi.life / 20) * 0.5;
-            aoi.lightMesh.scale.multiplyScalar(1.03);
+        if(aoe.lightMesh){
+            aoe.lightMesh.material.opacity = (aoe.life / 20) * 0.5;
+            aoe.lightMesh.scale.multiplyScalar(1.03);
         }
         
-        if(aoi.life <= 0){
-            if(aoi.effectMesh) scene.remove(aoi.effectMesh);
-            if(aoi.lightMesh) scene.remove(aoi.lightMesh);
+        if(aoe.life <= 0){
+            if(aoe.effectMesh) scene.remove(aoe.effectMesh);
+            if(aoe.lightMesh) scene.remove(aoe.lightMesh);
             aoes.splice(i, 1);
         }
     }
