@@ -179,7 +179,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="statusWindow">
     <button onclick="toggleV()" class="close-btn">×</button>
-    <h2>📜 Grimório do Herói</h2>
+    <h2>📖 Grimório do Herói</h2>
     <div id="statsPanel" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin-bottom:10px;"></div>
     <h3>⚔️ Equipamento</h3>
     <div id="equippedPanel"></div>
@@ -189,7 +189,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="shopWindow">
     <button onclick="toggleShop()" class="close-btn">×</button>
-    <h2>🏪 Mercador Real</h2>
+    <h2>💰 Mercado de Eldoria</h2>
     <p>Negocie seus tesouros. O valor depende da raridade e qualidade do item.</p>
     <div id="shopInventoryPanel" class="inventory-grid"></div>
 </div>
@@ -208,13 +208,38 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
             <div id="playerXPPoints" style="font-size:32px; color:cyan; font-weight:bold;">0</div>
             <div style="font-size:12px; color:#aaa;">XP Total</div>
         </div>
+        <div style="flex:1; background:rgba(255,255,255,0.1); padding:15px; border-radius:10px; text-align:center;">
+            <div style="font-size:24px; margin-bottom:5px;">💎 Skill Points</div>
+            <div id="playerSkillPoints" style="font-size:32px; color:#ff69b4; font-weight:bold;">0</div>
+            <div style="font-size:12px; color:#aaa;">Disponíveis</div>
+        </div>
     </div>
     
-    <h3>📜 Missões Ativas</h3>
-    <div id="activeQuestsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:15px; max-height:150px; overflow-y:auto;"></div>
+    <!-- Tabs de navegação -->
+    <div style="display:flex; gap:10px; margin-bottom:15px; border-bottom:2px solid rgba(90,185,255,0.3); padding-bottom:10px;">
+        <button onclick="showEvolutionTab('quests')" id="tabQuests" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.1)); border:1px solid rgba(90,185,255,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">📜 Missões</button>
+        <button onclick="showEvolutionTab('achievements')" id="tabAchievements" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,215,0,0.1)); border:1px solid rgba(255,215,0,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">🏅 Conquistas</button>
+        <button onclick="showEvolutionTab('skilltree')" id="tabSkilltree" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(255,105,180,0.3), rgba(255,105,180,0.1)); border:1px solid rgba(255,105,180,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">🌳 Habilidades</button>
+    </div>
     
-    <h3>🏅 Conquistas</h3>
-    <div id="achievementsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
+    <div id="tabContentQuests">
+        <h3>📜 Missões Ativas</h3>
+        <div id="activeQuestsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; max-height:200px; overflow-y:auto;"></div>
+        
+        <h3 style="margin-top:15px;">✅ Missões Completas</h3>
+        <div id="completedQuestsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; max-height:150px; overflow-y:auto;"></div>
+    </div>
+    
+    <div id="tabContentAchievements" style="display:none;">
+        <h3>🏅 Conquistas</h3>
+        <div id="achievementsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; max-height:400px; overflow-y:auto;"></div>
+    </div>
+    
+    <div id="tabContentSkilltree" style="display:none;">
+        <h3>🌳 Árvore de Habilidades</h3>
+        <p style="color:#aaa; font-size:13px; margin-bottom:10px;">Gaste Skill Points para desbloquear habilidades passivas permanentes.</p>
+        <div id="skillTreePanel" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; max-height:400px; overflow-y:auto;"></div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -242,26 +267,56 @@ let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 // Sistema de Evolução - Conquistas e Missões
 let evolutionData = {
     totalXP: 0,
+    skillPoints: 0, // Skill points para árvore de habilidades
     achievements: [
-        { id: 'first_blood', name: 'Primeiro Sangue', desc: 'Derrote seu primeiro inimigo', icon: '⚔️', unlocked: false, condition: (data) => data.kills >= 1 },
-        { id: 'killer_10', name: 'Caçador', desc: 'Derrote 10 inimigos', icon: '🎯', unlocked: false, condition: (data) => data.kills >= 10 },
-        { id: 'killer_50', name: 'Guerreiro', desc: 'Derrote 50 inimigos', icon: '🏅', unlocked: false, condition: (data) => data.kills >= 50 },
-        { id: 'killer_100', name: 'Lenda', desc: 'Derrote 100 inimigos', icon: '👑', unlocked: false, condition: (data) => data.kills >= 100 },
-        { id: 'level_5', name: 'Aprendiz', desc: 'Alcance o nível 5', icon: '⭐', unlocked: false, condition: (data) => data.level >= 5 },
-        { id: 'level_10', name: 'Veterano', desc: 'Alcance o nível 10', icon: '🌟', unlocked: false, condition: (data) => data.level >= 10 },
-        { id: 'level_20', name: 'Mestre', desc: 'Alcance o nível 20', icon: '💫', unlocked: false, condition: (data) => data.level >= 20 },
-        { id: 'looter', name: 'Saqueador', desc: 'Colete 20 itens', icon: '📦', unlocked: false, condition: (data) => data.itemsCollected >= 20 },
-        { id: 'rich', name: 'Mercador', desc: 'Acumule 500 gold', icon: '💰', unlocked: false, condition: (data) => data.gold >= 500 },
-        { id: 'explorer', name: 'Explorador', desc: 'Visite todos os biomas', icon: '🗺️', unlocked: false, condition: (data) => data.biomesVisited >= 5 }
+        { id: 'first_blood', name: 'Primeiro Sangue', desc: 'Derrote seu primeiro inimigo', icon: '⚔️', unlocked: false, condition: (data) => data.kills >= 1, rewardSP: 1, rewardGold: 10 },
+        { id: 'killer_10', name: 'Caçador', desc: 'Derrote 10 inimigos', icon: '🎯', unlocked: false, condition: (data) => data.kills >= 10, rewardSP: 1, rewardGold: 25 },
+        { id: 'killer_50', name: 'Guerreiro', desc: 'Derrote 50 inimigos', icon: '🏅', unlocked: false, condition: (data) => data.kills >= 50, rewardSP: 2, rewardGold: 75 },
+        { id: 'killer_100', name: 'Lenda', desc: 'Derrote 100 inimigos', icon: '👑', unlocked: false, condition: (data) => data.kills >= 100, rewardSP: 3, rewardGold: 150 },
+        { id: 'level_5', name: 'Aprendiz', desc: 'Alcance o nível 5', icon: '⭐', unlocked: false, condition: (data) => data.level >= 5, rewardSP: 1, rewardGold: 50 },
+        { id: 'level_10', name: 'Veterano', desc: 'Alcance o nível 10', icon: '🌟', unlocked: false, condition: (data) => data.level >= 10, rewardSP: 2, rewardGold: 100 },
+        { id: 'level_15', name: 'Herói', desc: 'Alcance o nível 15', icon: '🔥', unlocked: false, condition: (data) => data.level >= 15, rewardSP: 2, rewardGold: 150 },
+        { id: 'level_20', name: 'Mestre', desc: 'Alcance o nível 20', icon: '💫', unlocked: false, condition: (data) => data.level >= 20, rewardSP: 3, rewardGold: 200 },
+        { id: 'level_30', name: 'Lendário', desc: 'Alcance o nível 30', icon: '✨', unlocked: false, condition: (data) => data.level >= 30, rewardSP: 5, rewardGold: 500 },
+        { id: 'looter', name: 'Saqueador', desc: 'Colete 20 itens', icon: '📦', unlocked: false, condition: (data) => data.itemsCollected >= 20, rewardSP: 1, rewardGold: 30 },
+        { id: 'rich', name: 'Mercador', desc: 'Acumule 500 gold', icon: '💰', unlocked: false, condition: (data) => data.gold >= 500, rewardSP: 1, rewardGold: 0 },
+        { id: 'rich_1000', name: 'Magnata', desc: 'Acumule 1000 gold', icon: '💎', unlocked: false, condition: (data) => data.gold >= 1000, rewardSP: 2, rewardGold: 100 },
+        { id: 'explorer', name: 'Explorador', desc: 'Visite todos os biomas', icon: '🗺️', unlocked: false, condition: (data) => data.biomesVisited >= 5, rewardSP: 2, rewardGold: 100 },
+        { id: 'boss_slayer', name: 'Matador de Bosses', desc: 'Derrote 10 bosses', icon: '👹', unlocked: false, condition: (data) => data.bossKills >= 10, rewardSP: 3, rewardGold: 200 },
+        { id: 'aoi_master', name: 'Mestre do AOI', desc: 'Use AOI 50 vezes', icon: '💥', unlocked: false, condition: (data) => data.aoiUses >= 50, rewardSP: 2, rewardGold: 75 }
     ],
     quests: [
-        { id: 'quest_1', name: 'Iniciante', desc: 'Derrote 5 Slimes', icon: '🐌', target: 5, progress: 0, type: 'slime_kills', completed: false, rewardXP: 50, rewardGold: 25 },
-        { id: 'quest_2', name: 'Caçador de Lobos', desc: 'Derrote 10 Lobos', icon: '🐺', target: 10, progress: 0, type: 'wolf_kills', completed: false, rewardXP: 100, rewardGold: 50 },
-        { id: 'quest_3', name: 'Coletor', desc: 'Colete 15 itens', icon: '🎒', target: 15, progress: 0, type: 'items', completed: false, rewardXP: 75, rewardGold: 40 },
-        { id: 'quest_4', name: 'Boss Slayer', desc: 'Derrote 3 Bosses', icon: '👹', target: 3, progress: 0, type: 'boss_kills', completed: false, rewardXP: 200, rewardGold: 150 },
-        { id: 'quest_5', name: 'Caçador de Aranhas', desc: 'Derrote 8 Aranhas', icon: '🕷️', target: 8, progress: 0, type: 'spider_kills', completed: false, rewardXP: 80, rewardGold: 45 },
-        { id: 'quest_6', name: 'Orc Hunter', desc: 'Derrote 12 Orcs', icon: '👹', target: 12, progress: 0, type: 'orc_kills', completed: false, rewardXP: 120, rewardGold: 60 },
-        { id: 'quest_7', name: 'Dragon Slayer', desc: 'Derrote 5 Dragões', icon: '🐉', target: 5, progress: 0, type: 'dragon_kills', completed: false, rewardXP: 300, rewardGold: 200 }
+        { id: 'quest_1', name: 'Iniciante', desc: 'Derrote 5 Slimes', icon: '🐌', target: 5, progress: 0, type: 'slime_kills', completed: false, rewardXP: 50, rewardGold: 25, rewardSP: 0 },
+        { id: 'quest_2', name: 'Caçador de Lobos', desc: 'Derrote 10 Lobos', icon: '🐺', target: 10, progress: 0, type: 'wolf_kills', completed: false, rewardXP: 100, rewardGold: 50, rewardSP: 1 },
+        { id: 'quest_3', name: 'Coletor', desc: 'Colete 15 itens', icon: '🎒', target: 15, progress: 0, type: 'items', completed: false, rewardXP: 75, rewardGold: 40, rewardSP: 0 },
+        { id: 'quest_4', name: 'Boss Slayer', desc: 'Derrote 3 Bosses', icon: '👹', target: 3, progress: 0, type: 'boss_kills', completed: false, rewardXP: 200, rewardGold: 150, rewardSP: 2 },
+        { id: 'quest_5', name: 'Caçador de Aranhas', desc: 'Derrote 8 Aranhas', icon: '🕷️', target: 8, progress: 0, type: 'spider_kills', completed: false, rewardXP: 80, rewardGold: 45, rewardSP: 1 },
+        { id: 'quest_6', name: 'Orc Hunter', desc: 'Derrote 12 Orcs', icon: '👹', target: 12, progress: 0, type: 'orc_kills', completed: false, rewardXP: 120, rewardGold: 60, rewardSP: 1 },
+        { id: 'quest_7', name: 'Dragon Slayer', desc: 'Derrote 5 Dragões', icon: '🐉', target: 5, progress: 0, type: 'dragon_kills', completed: false, rewardXP: 300, rewardGold: 200, rewardSP: 3 },
+        { id: 'quest_8', name: 'Goblin Bane', desc: 'Derrote 15 Goblins', icon: '👺', target: 15, progress: 0, type: 'goblin_kills', completed: false, rewardXP: 90, rewardGold: 50, rewardSP: 1 },
+        { id: 'quest_9', name: 'Treant Hunter', desc: 'Derrote 10 Treants', icon: '🌳', target: 10, progress: 0, type: 'treant_kills', completed: false, rewardXP: 150, rewardGold: 80, rewardSP: 2 },
+        { id: 'quest_10', name: 'Desert Explorer', desc: 'Derrote 20 monstros do deserto', icon: '🏜️', target: 20, progress: 0, type: 'desert_kills', completed: false, rewardXP: 180, rewardGold: 100, rewardSP: 2 },
+        { id: 'quest_11', name: 'Ice Master', desc: 'Derrote 15 monstros de gelo', icon: '❄️', target: 15, progress: 0, type: 'ice_kills', completed: false, rewardXP: 200, rewardGold: 120, rewardSP: 2 },
+        { id: 'quest_12', name: 'Fire Walker', desc: 'Derrote 25 monstros vulcânicos', icon: '🔥', target: 25, progress: 0, type: 'fire_kills', completed: false, rewardXP: 350, rewardGold: 200, rewardSP: 4 }
+    ],
+    // Árvore de Habilidades
+    skillTree: [
+        { id: 'atk_boost_1', name: 'Força Bruta I', desc: '+10% de dano físico', icon: '⚔️', cost: 1, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.1); }, reqLevel: 5 },
+        { id: 'def_boost_1', name: 'Pele de Ferro I', desc: '+10% de defesa', icon: '🛡️', cost: 1, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.1); }, reqLevel: 5 },
+        { id: 'hp_boost_1', name: 'Vitalidade I', desc: '+15% de HP máximo', icon: '❤️', cost: 1, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 1.15); player.hp = player.maxHp; }, reqLevel: 5 },
+        { id: 'sp_boost_1', name: 'Energia I', desc: '+20% de SP máximo', icon: '💙', cost: 1, maxLevel: 1, level: 0, effect: () => { player.maxSp = Math.floor(player.maxSp * 1.2); player.sp = player.maxSp; }, reqLevel: 5 },
+        { id: 'atk_boost_2', name: 'Força Bruta II', desc: '+15% de dano físico', icon: '⚔️', cost: 2, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.15); }, reqLevel: 10, requires: ['atk_boost_1'] },
+        { id: 'def_boost_2', name: 'Pele de Ferro II', desc: '+15% de defesa', icon: '🛡️', cost: 2, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.15); }, reqLevel: 10, requires: ['def_boost_1'] },
+        { id: 'hp_boost_2', name: 'Vitalidade II', desc: '+20% de HP máximo', icon: '❤️', cost: 2, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 1.2); player.hp = player.maxHp; }, reqLevel: 10, requires: ['hp_boost_1'] },
+        { id: 'sp_boost_2', name: 'Energia II', desc: '+25% de SP máximo', icon: '💙', cost: 2, maxLevel: 1, level: 0, effect: () => { player.maxSp = Math.floor(player.maxSp * 1.25); player.sp = player.maxSp; }, reqLevel: 10, requires: ['sp_boost_1'] },
+        { id: 'crit_chance', name: 'Olho de Águia', desc: '+5% de chance de crítico', icon: '🎯', cost: 3, maxLevel: 1, level: 0, effect: () => { if(!player.critChance) player.critChance = 0; player.critChance += 5; }, reqLevel: 15 },
+        { id: 'lifesteal', name: 'Vampirismo', desc: 'Roubo de vida: 3%', icon: '🩸', cost: 3, maxLevel: 1, level: 0, effect: () => { if(!player.lifesteal) player.lifesteal = 0; player.lifesteal += 3; }, reqLevel: 15 },
+        { id: 'atk_boost_3', name: 'Força Bruta III', desc: '+20% de dano físico', icon: '⚔️', cost: 3, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.2); }, reqLevel: 20, requires: ['atk_boost_2'] },
+        { id: 'def_boost_3', name: 'Pele de Ferro III', desc: '+20% de defesa', icon: '🛡️', cost: 3, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.2); }, reqLevel: 20, requires: ['def_boost_2'] },
+        { id: 'aoi_mastery', name: 'Mestre do AOI', desc: 'AOI causa +50% de dano', icon: '💥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.aoiDamageBonus) player.aoiDamageBonus = 0; player.aoiDamageBonus += 50; }, reqLevel: 20 },
+        { id: 'fireball_mastery', name: 'Mestre da Fireball', desc: 'Fireball causa +50% de dano', icon: '🔥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.fireballDamageBonus) player.fireballDamageBonus = 0; player.fireballDamageBonus += 50; }, reqLevel: 20 },
+        { id: 'legendary_strength', name: 'Força Lendária', desc: '+30% de dano físico', icon: '👑', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.3); }, reqLevel: 25, requires: ['atk_boost_3'] },
+        { id: 'legendary_defense', name: 'Defesa Lendária', desc: '+30% de defesa', icon: '🏆', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.3); }, reqLevel: 25, requires: ['def_boost_3'] }
     ],
     stats: {
         kills: 0,
@@ -280,7 +335,11 @@ let evolutionData = {
         banditKills: 0,
         scorpionKills: 0,
         mummyKills: 0,
-        wormKills: 0
+        wormKills: 0,
+        aoiUses: 0,
+        desertKills: 0,
+        iceKills: 0,
+        fireKills: 0
     }
 };
 
@@ -431,17 +490,118 @@ const biomes = [
 function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
 
 // Funções do Sistema de Evolução
+function showEvolutionTab(tabName) {
+    // Esconde todas as tabs
+    document.getElementById('tabContentQuests').style.display = 'none';
+    document.getElementById('tabContentAchievements').style.display = 'none';
+    document.getElementById('tabContentSkilltree').style.display = 'none';
+    
+    // Reseta estilos dos botões
+    ['quests', 'achievements', 'skilltree'].forEach(t => {
+        let btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if(btn) btn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))';
+    });
+    
+    // Mostra a tab selecionada
+    document.getElementById('tabContent' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).style.display = 'block';
+    let activeBtn = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    if(activeBtn) activeBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.15))';
+    
+    if(tabName === 'skilltree') renderSkillTree();
+}
+
+function renderSkillTree() {
+    let html = '';
+    evolutionData.skillTree.forEach(skill => {
+        let canAfford = evolutionData.skillPoints >= skill.cost;
+        let hasPrereq = !skill.requires || skill.requires.every(reqId => {
+            let req = evolutionData.skillTree.find(s => s.id === reqId);
+            return req && req.level > 0;
+        });
+        let meetsLevel = player.level >= skill.reqLevel;
+        let canUnlock = canAfford && hasPrereq && meetsLevel && skill.level < skill.maxLevel;
+        
+        let bg = skill.level > 0 ? 'rgba(255,215,0,0.2)' : (canUnlock ? 'rgba(100,255,100,0.15)' : 'rgba(255,255,255,0.05)');
+        let border = skill.level > 0 ? 'border: 2px solid gold;' : (canUnlock ? 'border: 2px solid lime;' : 'border: 2px solid #555;');
+        let opacity = (hasPrereq && meetsLevel) ? 1 : 0.5;
+        
+        html += `
+            <div style="background:${bg}; padding:12px; margin:8px 0; border-radius:10px; ${border} opacity:${opacity}; display:flex; align-items:center; gap:12px;">
+                <span style="font-size:28px;">${skill.icon}</span>
+                <div style="flex:1;">
+                    <div style="font-weight:bold; color:${skill.level > 0 ? 'gold' : 'white'};">${skill.name} ${skill.level > 0 ? '(Lv.' + skill.level + ')' : ''}</div>
+                    <div style="font-size:12px; color:#ccc;">${skill.desc}</div>
+                    <div style="font-size:11px; color:#888; margin-top:4px;">Requer Nível ${skill.reqLevel}${skill.requires ? ' • Desbloqueia após: ' + skill.requires.map(r => evolutionData.skillTree.find(s=>s.id===r)?.name).join(', ') : ''}</div>
+                </div>
+                <div style="text-align:right;">
+                    ${skill.level < skill.maxLevel ? 
+                        `<button onclick="buySkill('${skill.id}')" style="padding:8px 16px; background:${canUnlock ? 'linear-gradient(135deg, #4CAF50, #45a049)' : 'linear-gradient(135deg, #666, #555)'}; border:none; border-radius:6px; color:white; cursor:${canUnlock ? 'pointer' : 'not-allowed'}; font-weight:bold;" ${!canUnlock ? 'disabled' : ''}>
+                            💎 ${skill.cost} SP
+                        </button>` : 
+                        '<span style="color:gold; font-weight:bold;">✓ MAX</span>'
+                    }
+                </div>
+            </div>
+        `;
+    });
+    document.getElementById('skillTreePanel').innerHTML = html;
+}
+
+function buySkill(skillId) {
+    let skill = evolutionData.skillTree.find(s => s.id === skillId);
+    if(!skill) return;
+    
+    // Verifica pré-requisitos
+    if(skill.requires && !skill.requires.every(reqId => {
+        let req = evolutionData.skillTree.find(s => s.id === reqId);
+        return req && req.level > 0;
+    })) {
+        log(`<span style='color:red'>❌ Pré-requisitos não atendidos!</span>`);
+        return;
+    }
+    
+    // Verifica nível
+    if(player.level < skill.reqLevel) {
+        log(`<span style='color:red'>❌ Nível ${skill.reqLevel} necessário!</span>`);
+        return;
+    }
+    
+    // Verifica se já está no máximo
+    if(skill.level >= skill.maxLevel) {
+        log(`<span style='color:orange'>⚠️ Habilidade já está no nível máximo!</span>`);
+        return;
+    }
+    
+    // Verifica skill points
+    if(evolutionData.skillPoints < skill.cost) {
+        log(`<span style='color:red'>❌ Skill Points insuficientes!</span>`);
+        return;
+    }
+    
+    // Compra a habilidade
+    evolutionData.skillPoints -= skill.cost;
+    skill.level++;
+    skill.effect();
+    
+    floatingText(`+${skill.name}`, hero.position, "magenta");
+    log(`<span style='color:magenta'>✨ Habilidade desbloqueada: ${skill.name}!</span>`);
+    
+    updateEvolutionUI();
+    renderSkillTree();
+}
+
 function updateEvolutionUI() {
-    // Atualiza nível e XP total
+    // Atualiza nível, XP total e Skill Points
     document.getElementById('playerRankLevel').textContent = player.level;
     document.getElementById('playerXPPoints').textContent = evolutionData.totalXP;
+    document.getElementById('playerSkillPoints').textContent = evolutionData.skillPoints;
     
     // Atualiza missões ativas
-    let questsHTML = '';
+    let activeQuestsHTML = '';
     evolutionData.quests.forEach(quest => {
         if(!quest.completed) {
             let percent = Math.min(100, Math.floor((quest.progress / quest.target) * 100));
-            questsHTML += `
+            activeQuestsHTML += `
                 <div style="background:rgba(255,255,255,0.08); padding:10px; margin:8px 0; border-radius:8px; border-left:4px solid gold;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:bold;">${quest.icon} ${quest.name}</span>
@@ -451,12 +611,31 @@ function updateEvolutionUI() {
                     <div style="height:6px; background:rgba(0,0,0,0.3); border-radius:3px; overflow:hidden;">
                         <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, gold, #ffaa00);"></div>
                     </div>
+                    <div style="font-size:11px; color:#aaa; margin-top:5px;">Recompensa: ${quest.rewardGold} Gold, ${quest.rewardXP} XP${quest.rewardSP > 0 ? ', ' + quest.rewardSP + ' SP' : ''}</div>
                 </div>
             `;
         }
     });
-    if(questsHTML === '') questsHTML = '<div style="text-align:center; color:#888; padding:20px;">Nenhuma missão ativa</div>';
-    document.getElementById('activeQuestsPanel').innerHTML = questsHTML;
+    if(activeQuestsHTML === '') activeQuestsHTML = '<div style="text-align:center; color:#888; padding:20px;">Nenhuma missão ativa</div>';
+    document.getElementById('activeQuestsPanel').innerHTML = activeQuestsHTML;
+    
+    // Atualiza missões completas
+    let completedQuestsHTML = '';
+    evolutionData.quests.forEach(quest => {
+        if(quest.completed) {
+            completedQuestsHTML += `
+                <div style="background:rgba(100,255,100,0.08); padding:10px; margin:8px 0; border-radius:8px; border-left:4px solid lime; opacity:0.7;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold; color:lime;">✅ ${quest.icon} ${quest.name}</span>
+                        <span style="color:#aaa; font-size:12px;">Completa</span>
+                    </div>
+                    <div style="font-size:11px; color:#aaa; margin-top:5px;">Recompensa recebida: ${quest.rewardGold} Gold, ${quest.rewardXP} XP${quest.rewardSP > 0 ? ', ' + quest.rewardSP + ' SP' : ''}</div>
+                </div>
+            `;
+        }
+    });
+    if(completedQuestsHTML === '') completedQuestsHTML = '<div style="text-align:center; color:#888; padding:20px;">Nenhuma missão completa ainda</div>';
+    document.getElementById('completedQuestsPanel').innerHTML = completedQuestsHTML;
     
     // Atualiza conquistas
     let achievementsHTML = '';
@@ -468,11 +647,12 @@ function updateEvolutionUI() {
             <div style="background:${bg}; padding:10px; margin:8px 0; border-radius:8px; ${border} opacity:${opacity};">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <span style="font-size:24px;">${ach.icon}</span>
-                    <div>
+                    <div style="flex:1;">
                         <div style="font-weight:bold; color:${ach.unlocked ? 'gold' : '#aaa'};">${ach.name}</div>
                         <div style="font-size:12px; color:#ccc;">${ach.desc}</div>
+                        ${ach.unlocked ? `<div style="font-size:11px; color:gold; margin-top:3px;">+${ach.rewardSP} SP, +${ach.rewardGold} Gold</div>` : ''}
                     </div>
-                    ${ach.unlocked ? '<span style="margin-left:auto; color:lime; font-weight:bold;">✓</span>' : ''}
+                    ${ach.unlocked ? '<span style="color:lime; font-weight:bold; font-size:18px;">✓</span>' : ''}
                 </div>
             </div>
         `;
@@ -491,6 +671,14 @@ function checkAchievements() {
             floatingText("🏆 " + ach.name, hero.position, "gold");
             log(`<span style='color:gold'>🏆 Conquista Desbloqueada: ${ach.name}!</span>`);
             evolutionData.totalXP += 25; // Bonus XP por conquista
+            evolutionData.skillPoints += (ach.rewardSP || 0); // Adiciona Skill Points
+            if(ach.rewardGold > 0) {
+                player.gold += ach.rewardGold;
+                log(`<span style='color:gold'>+${ach.rewardGold} Gold de recompensa!</span>`);
+            }
+            if(ach.rewardSP > 0) {
+                log(`<span style='color:magenta'>+${ach.rewardSP} Skill Points!</span>`);
+            }
         }
     });
     updateEvolutionUI();
@@ -506,8 +694,13 @@ function updateQuestProgress(type, amount) {
                 quest.completed = true;
                 player.gold += quest.rewardGold;
                 evolutionData.totalXP += quest.rewardXP;
+                if(quest.rewardSP > 0) {
+                    evolutionData.skillPoints += quest.rewardSP;
+                }
                 floatingText(`+${quest.rewardXP} XP`, hero.position, "cyan");
-                log(`<span style='color:cyan'>✅ Missão Completa: ${quest.name}! +${quest.rewardGold} Gold, +${quest.rewardXP} XP</span>`);
+                let rewardText = `+${quest.rewardGold} Gold, +${quest.rewardXP} XP`;
+                if(quest.rewardSP > 0) rewardText += `, +${quest.rewardSP} SP`;
+                log(`<span style='color:cyan'>✅ Missão Completa: ${quest.name}! ${rewardText}</span>`);
             }
         }
     });
@@ -786,6 +979,26 @@ function killMonster(m){
         evolutionData.stats.dragonKills++;
         updateQuestProgress('dragon_kills', 1);
     }
+    if(monsterName.includes('goblin')) {
+        evolutionData.stats.goblinKills++;
+        updateQuestProgress('goblin_kills', 1);
+    }
+    if(monsterName.includes('treant')) {
+        evolutionData.stats.treantKills++;
+        updateQuestProgress('treant_kills', 1);
+    }
+    if(monsterName.includes('bandit') || monsterName.includes('scorpion') || monsterName.includes('worm') || monsterName.includes('mummy')) {
+        evolutionData.stats.desertKills++;
+        updateQuestProgress('desert_kills', 1);
+    }
+    if(monsterName.includes('ice') || monsterName.includes('yeti') || monsterName.includes('frost') || monsterName.includes('snow')) {
+        evolutionData.stats.iceKills++;
+        updateQuestProgress('ice_kills', 1);
+    }
+    if(monsterName.includes('fire') || monsterName.includes('lava') || monsterName.includes('obsidian') || monsterName.includes('imp')) {
+        evolutionData.stats.fireKills++;
+        updateQuestProgress('fire_kills', 1);
+    }
     
     if(m.userData.isBoss) {
         evolutionData.stats.bossKills++;
@@ -901,6 +1114,11 @@ function checkLevel(){
         
         // Verifica conquistas relacionadas a nível
         checkAchievements();
+        
+        // Concede 1 Skill Point por nível
+        evolutionData.skillPoints++;
+        floatingText("+1 SP", hero.position, "magenta");
+        
         recalcStats();
     }
 }
@@ -953,11 +1171,19 @@ function castAOI(){
     floatingText("💥 AOI!", hero.position, "purple");
     log("✨ Habilidades das Trevas liberadas! Dano em área ativado!");
     
+    // Incrementa contador de uso de AOI para conquistas
+    evolutionData.stats.aoiUses++;
+    
     // Aplica dano imediato a todos os monstros na área
     monsters.forEach(monster => {
         let dist = monster.mesh.position.distanceTo(hero.position);
         if(dist <= 4){
-            let dmg = Math.max(1, player.atk * 2.5 - monster.def);
+            let baseDmg = player.atk * 2.5;
+            // Aplica bônus de dano da skill tree
+            if(player.aoiDamageBonus) {
+                baseDmg *= (1 + player.aoiDamageBonus / 100);
+            }
+            let dmg = Math.max(1, baseDmg - monster.def);
             monster.hp -= dmg;
             floatingText(Math.round(dmg), monster.mesh.position, "purple");
             createHitVisual(monster.mesh.position, 0x9933ff);
@@ -1459,7 +1685,14 @@ function animate(time){
         let f = fireballs[i]; f.mesh.position.add(f.dir.clone().multiplyScalar(0.8)); f.life--;
         monsters.forEach(m=>{
             if(f.mesh.position.distanceTo(m.position)<3.5){
-                m.userData.hp -= 40; floatingText("-40", m.position, "red"); f.life=0;
+                let baseDmg = 40;
+                // Aplica bônus de dano da skill tree
+                if(player.fireballDamageBonus) {
+                    baseDmg *= (1 + player.fireballDamageBonus / 100);
+                }
+                m.userData.hp -= baseDmg; 
+                floatingText("-" + Math.round(baseDmg), m.position, "red"); 
+                f.life=0;
                 if(m.userData.hp <= 0) killMonster(m);
             }
         });
