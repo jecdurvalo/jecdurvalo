@@ -186,6 +186,25 @@ let lastSpawnTime = 0;
 let bossSpawned = false;
 let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
 let gamePaused = false; // Controle de pausa do jogo
+let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
+
+// Função para adicionar item ao inventário com stacking
+function addItemToInventory(baseItem) {
+    let newItem = createItem(baseItem);
+    
+    // Se for stackable, procura item igual no inventário
+    if(newItem.stackable) {
+        let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot);
+        if(existingIndex >= 0) {
+            inventory[existingIndex].quantity += 1;
+            return true; // Item foi stackado
+        }
+    }
+    
+    // Se não for stackable ou não encontrou igual, adiciona novo
+    inventory.push(newItem);
+    return false; // Item foi adicionado como novo
+}
 
 const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
@@ -200,11 +219,14 @@ const lootTable=[
     { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true }
 ];
 
-// Adicionar durabilidade aos itens
+// Adicionar durabilidade aos itens e quantidade para stackables
 function createItem(baseItem) {
     let item = JSON.parse(JSON.stringify(baseItem));
     item.durability = 100; // Durabilidade inicial
     item.maxDurability = 100;
+    if(item.stackable) {
+        item.quantity = 1; // Quantidade inicial para itens stackables
+    }
     return item;
 }
 
@@ -661,8 +683,8 @@ function updatePanels(){
             }
         }
         let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
-        let durabInfo = `<small style="color:${it.durability < 30 ? 'red' : '#aaa'}"> (${it.durability}/${it.maxDurability})</small>`;
-        let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:10px; font-size:12px; margin-left:8px;">x${it.quantity}</span>` : '';
+        let durabInfo = (!it.stackable && it.slot !== 'consumable') ? `<small style="color:${it.durability < 30 ? 'red' : '#aaa'}"> (${Math.round(it.durability)}/${it.maxDurability})</small>` : '';
+        let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
         inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:45px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;\">[${it.slot}] ${it.desc||''} ${durabInfo}</small></div></div>`;
     });
     shopInventoryPanel.innerHTML="";
@@ -676,7 +698,7 @@ function updatePanels(){
                 break;
             }
         }
-        let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:10px; font-size:12px; margin-left:8px;">x${it.quantity}</span>` : '';
+        let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
         let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button>`;
         shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped ? 0.5 : 1};"><span>${icon}${qtyText} ${it.name}</span>${sellBtn}</div>`;
     });
@@ -784,23 +806,17 @@ function animate(time){
         
         // Checar se jogador está perto para coletar
         if(hero.position.distanceTo(drop.mesh.position) < 1.5) {
-            // Verificar se é item stackable e se já existe no inventário
-            let stacked = false;
-            if(drop.item.stackable) {
-                // Procurar item igual no inventário
-                let existingIndex = inventory.findIndex(it => it.name === drop.item.name && it.slot === drop.item.slot);
-                if(existingIndex >= 0) {
-                    // Empilhar item
-                    inventory[existingIndex].quantity += drop.item.quantity;
-                    floatingText("📦 " + drop.item.name + " x" + drop.item.quantity, hero.position, "cyan");
-                    log("<span style='color:cyan'>Coletou: " + drop.item.icon + " " + drop.item.name + " (Total: " + inventory[existingIndex].quantity + ")</span>");
-                    stacked = true;
-                }
-            }
+            // Usar função de adicionar item com stacking
+            let wasStacked = addItemToInventory(drop.item);
             
-            if(!stacked) {
-                inventory.push(drop.item);
-                let qtyText = drop.item.quantity ? " x" + drop.item.quantity : "";
+            if(wasStacked) {
+                // Encontrar o item stackado para mostrar quantidade
+                let stackedItem = inventory.find(it => it.name === drop.item.name && it.slot === drop.item.slot);
+                floatingText("📦 " + drop.item.name + " x" + stackedItem.quantity, hero.position, "cyan");
+                log("<span style='color:cyan'>Coletou: " + drop.item.icon + " " + drop.item.name + " (Total: " + stackedItem.quantity + ")</span>");
+            } else {
+                let newItem = inventory[inventory.length - 1];
+                let qtyText = newItem.quantity ? " x" + newItem.quantity : "";
                 floatingText("📦 " + drop.item.name + qtyText, hero.position, "cyan");
                 log("<span style='color:cyan'>Coletou: " + drop.item.icon + " " + drop.item.name + "</span>");
             }
@@ -1055,6 +1071,7 @@ document.body.appendChild(gameOverOverlay);
 
 function showGameOver() {
     gamePaused = true;
+    savedLevel = player.level; // Salva o nível atual para usar se reviver
     let cost = Math.floor(player.gold * 0.5);
     let canRevive = player.gold >= 10; // Precisa de pelo menos 10 gold para reviver (metade seria 5)
     
@@ -1088,6 +1105,7 @@ function revivePlayer() {
         player.gold -= cost;
         player.hp = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
         player.sp = player.maxSp + (equipped.cape?.sp||0);
+        player.level = savedLevel; // Mantém o nível salvo ao reviver
         hero.position.set(0, 0, 0);
         gameOverOverlay.style.display = 'none';
         gamePaused = false;
@@ -1108,6 +1126,7 @@ function resetGame() {
     equipped = { weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
     bossSpawned = false;
     currentBiome = 0;
+    savedLevel = 1; // Reseta nível salvo
     
     // Resetar posição do herói
     hero.position.set(0, 0, 0);
