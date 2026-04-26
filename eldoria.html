@@ -230,32 +230,50 @@ const lootTable=[
     { name:"Dragon Slayer", slot:"weapon", atk:25, desc:"Espada lendária.", icon:"🐉", stackable:true, value:150 },
     { name:"Shadow Dagger", slot:"weapon", atk:15, sp:10, desc:"Adaga das sombras.", icon:"🗡️", stackable:true, value:70 },
     { name:"Fire Axe", slot:"weapon", atk:20, desc:"Machado de fogo.", icon:"🪓", stackable:true, value:100 },
+    { name:"Frost Blade", slot:"weapon", atk:22, sp:15, desc:"Lâmina congelante.", icon:"❄️", stackable:true, value:110 },
+    { name:"Thunder Spear", slot:"weapon", atk:28, desc:"Lança do trovão.", icon:"⚡", stackable:true, value:160 },
+    { name:"Void Scythe", slot:"weapon", atk:35, hp:-10, desc:"Foice do vazio.", icon:"💀", stackable:true, value:200 },
+    { name:"Holy Mace", slot:"weapon", atk:16, hp:25, desc:"Maça sagrada.", icon:"✨", stackable:true, value:95 },
+    { name:"Assassin Dagger", slot:"weapon", atk:30, sp:20, desc:"Adaga assassina.", icon:"🗡️", stackable:true, value:180 },
     
     // Escudos (shield)
     { name:"Wooden Shield", slot:"shield", def:3, desc:"Escudo de madeira.", icon:"🛡️", stackable:true, value:15 },
     { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️", stackable:true, value:40 },
     { name:"Tower Shield", slot:"shield", def:15, desc:"Escudo de torre.", icon:"🛡️", stackable:true, value:90 },
     { name:"Dragon Shield", slot:"shield", def:22, hp:20, desc:"Escudo dracônico.", icon:"🐉", stackable:true, value:140 },
+    { name:"Mirror Shield", slot:"shield", def:18, sp:15, desc:"Reflete magia.", icon:"🪞", stackable:true, value:115 },
+    { name:"Phoenix Shield", slot:"shield", def:25, hp:35, desc:"Escudo da fênix.", icon:"🔥", stackable:true, value:170 },
+    { name:"Ice Barrier", slot:"shield", def:20, sp:25, desc:"Barreira de gelo.", icon:"❄️", stackable:true, value:130 },
     
     // Capas (cape)
     { name:"Cloth Cape", slot:"cape", def:2, desc:"Capa de tecido.", icon:"🧥", stackable:true, value:12 },
     { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥", stackable:true, value:60 },
     { name:"Royal Cape", slot:"cape", def:8, sp:35, desc:"Capa real.", icon:"👑", stackable:true, value:100 },
+    { name:"Wind Cape", slot:"cape", def:6, sp:25, speed:0.05, desc:"Capa dos ventos.", icon:"💨", stackable:true, value:85 },
+    { name:"Star Cloak", slot:"cape", def:10, sp:50, desc:"Manto estelar.", icon:"⭐", stackable:true, value:145 },
+    { name:"Demon Wings", slot:"cape", def:12, sp:40, hp:15, desc:"Asas demoníacas.", icon:"🦇", stackable:true, value:155 },
     
     // Botas (boots)
-    { name":"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true, value:30 },
+    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true, value:30 },
     { name:"Swift Boots", slot:"boots", def:4, speed:0.12, desc:"Botas rápidas.", icon:"👢", stackable:true, value:70 },
     { name:"Dragon Boots", slot:"boots", def:7, speed:0.15, hp:15, desc:"Botas dracônicas.", icon:"🐉", stackable:true, value:120 },
+    { name:"Mercury Boots", slot:"boots", def:5, speed:0.20, sp:10, desc:"Velocidade extrema.", icon:"⚡", stackable:true, value:100 },
+    { name:"Titan Greaves", slot:"boots", def:12, speed:0.10, hp:30, desc:"Greaves titânicas.", icon:"🦵", stackable:true, value:135 },
     
     // Anéis (ring)
     { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍", stackable:true, value:35 },
     { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎", stackable:true, value:40 },
     { name:"Ring of Defense", slot:"ring", def:6, desc:"Anel protetor.", icon:"💍", stackable:true, value:45 },
     { name:"Dragon Ring", slot:"ring", atk:10, hp:20, desc:"Anel do dragão.", icon:"🐉", stackable:true, value:130 },
+    { name:"Ring of Wisdom", slot:"ring", sp:40, desc:"Anel da sabedoria.", icon:"💍", stackable:true, value:55 },
+    { name:"Twin Ring", slot:"ring", atk:8, def:8, sp:15, desc:"Anel gêmeo.", icon:"💞", stackable:true, value:95 },
+    { name:"Eternal Ring", slot:"ring", atk:15, hp:50, sp:25, desc:"Anel eterno.", icon:"♾️", stackable:true, value:220 },
     
     // Consumíveis
     { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true, value:20 },
-    { name:"Super Potion", slot:"consumable", heal:100, desc:"Recupera 100 HP.", icon:"🧪", stackable:true, value:40 }
+    { name:"Super Potion", slot:"consumable", heal:100, desc:"Recupera 100 HP.", icon:"🧪", stackable:true, value:40 },
+    { name:"Ultra Potion", slot:"consumable", heal:200, desc:"Recupera 200 HP.", icon:"🧪", stackable:true, value:75 },
+    { name:"Elixir", slot:"consumable", heal:500, desc:"Recupera 500 HP.", icon:"💧", stackable:true, value:150 }
 ];
 
 // Adicionar durabilidade aos itens e quantidade para stackables
@@ -932,12 +950,12 @@ function usePotion() {
     let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.quantity > 0);
     if(potionIndex >= 0) {
         let potion = inventory[potionIndex];
-        let maxHpTotal = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
-        if(player.hp >= maxHpTotal) {
+        // Usa player.maxHp diretamente (já inclui bônus de equipamentos via recalcStats)
+        if(player.hp >= player.maxHp) {
             log("<span style='color:orange'>HP já está cheio!</span>");
             return;
         }
-        player.hp = Math.min(maxHpTotal, player.hp + potion.heal);
+        player.hp = Math.min(player.maxHp, player.hp + potion.heal);
         potion.quantity--;
         floatingText("🧪 +" + potion.heal + " HP", hero.position, "lime");
         log("<span style='color:cyan'>Poção usada! +" + potion.heal + " HP</span>");
@@ -989,7 +1007,8 @@ function animate(time){
     // Atualizar bioma baseado no nível
     updateBiome();
     
-    player.sp = Math.min(player.maxSp + (equipped.cape?.sp||0), player.sp+0.1);
+    // Regeneração de SP (usa player.maxSp que já inclui bônus via recalcStats)
+    player.sp = Math.min(player.maxSp, player.sp+0.1);
 
     // Coletar itens do chão
     for(let i = droppedItems.length - 1; i >= 0; i--) {
@@ -1060,14 +1079,14 @@ function animate(time){
                 player.hp -= dmg; m.userData.lastAttack=time; floatingText("-"+dmg, hero.position, "red");
                 
                 // Verificar se tem poção no inventário e usar automaticamente se HP < 30%
-                let maxHpTotal = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
-                let hpPercent = player.hp / maxHpTotal;
+                // Usa player.maxHp diretamente (já inclui bônus de equipamentos via recalcStats)
+                let hpPercent = player.hp / player.maxHp;
                 if(player.hp <= 0 || hpPercent < 0.3) {
                     // Procurar poção no inventário
                     let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.quantity > 0);
                     if(potionIndex >= 0) {
                         let potion = inventory[potionIndex];
-                        player.hp = Math.min(maxHpTotal, player.hp + potion.heal);
+                        player.hp = Math.min(player.maxHp, player.hp + potion.heal);
                         potion.quantity--;
                         floatingText("🧪 +" + potion.heal + " HP", hero.position, "lime");
                         log("<span style='color:cyan'>Poção usada automaticamente!</span>");
@@ -1130,8 +1149,9 @@ function animate(time){
     camera.lookAt(hero.position);
     renderer.render(scene, camera);
 
-    hp.style.width=(player.hp/(player.maxHp+(equipped.ring1?.hp||0)+(equipped.ring2?.hp||0))*100)+"%";
-    sp.style.width=(player.sp/(player.maxSp+(equipped.cape?.sp||0))*100)+"%";
+    // Atualiza barras de HP e SP (player.maxHp e player.maxSp já incluem bônus via recalcStats)
+    hp.style.width=(player.hp/player.maxHp*100)+"%";
+    sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
 
@@ -1276,7 +1296,6 @@ function showGameOver() {
     
     // BUG FIX: Resetar HP do player para 0 antes de mostrar game over
     // Isso evita que o player herde o % de vida do boss
-    let maxHpTotal = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
     player.hp = 0;
     
     let cost = Math.floor(player.gold * 0.5);
@@ -1311,8 +1330,9 @@ function revivePlayer() {
     let cost = Math.floor(player.gold * 0.5);
     if(player.gold >= cost) {
         player.gold -= cost;
-        player.hp = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
-        player.sp = player.maxSp + (equipped.cape?.sp||0);
+        // Usa player.maxHp e player.maxSp diretamente (já incluem bônus via recalcStats)
+        player.hp = player.maxHp;
+        player.sp = player.maxSp;
         player.level = savedLevel; // Mantém o nível salvo ao reviver
         hero.position.set(0, 0, 0);
         gameOverOverlay.style.display = 'none';
@@ -1379,15 +1399,19 @@ function resetGame() {
     fireballs.forEach(f => scene.remove(f.mesh));
     fireballs = [];
     
+    // Primeiro recalcula stats com equipamentos (que estão todos null)
+    recalcStats();
+    
+    // Agora define HP e SP para os máximos corretos (já calculados pelo recalcStats)
+    player.hp = player.maxHp;
+    player.sp = player.maxSp;
+    
     // Atualizar UI com valores corretos do level 1
-    let maxHpReset = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
-    let maxSpReset = player.maxSp + (equipped.cape?.sp||0);
-    hp.style.width=(player.hp/maxHpReset*100)+"%";
-    sp.style.width=(player.sp/maxSpReset*100)+"%";
+    hp.style.width=(player.hp/player.maxHp*100)+"%";
+    sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
     applyEquipVisual();
-    recalcStats();
     updateBiome(); // Atualiza bioma para o level 1
     updatePanels(); // Atualiza painéis com os valores corretos
     
