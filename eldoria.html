@@ -1244,15 +1244,12 @@ function killMonster(m){
         updateQuestProgress('kills', 1);
     }
     
-    // Verifica conquistas
-    checkAchievements();
-    
     // Drop de gold (sempre dropa um pouco de gold)
     let goldDrop = Math.floor(m.userData.level * 2 + Math.random() * 5);
     if(m.userData.isBoss) goldDrop *= 3; // Boss dropa 3x mais gold
     player.gold += goldDrop;
     floatingText("+"+goldDrop+" Gold", m.position, "gold");
-    checkAchievements(); // Verifica conquistas após ganhar gold do drop
+    checkAchievements(); // Verifica conquistas após kill + gold
     
     // Drop de itens no chão (randomico)
     let dropCount = m.userData.isBoss ? 5 : Math.floor(Math.random() * 3); // Boss dropa mais itens
@@ -1333,6 +1330,18 @@ function createDeathParticles(pos, color, count){
         scene.add(particle);
         visuals.push(particle);
     }
+}
+
+function createHitVisual(pos, color) {
+    let ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.2, 0.6, 16),
+        new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.9, side: THREE.DoubleSide})
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.copy(pos);
+    ring.position.y = 0.1;
+    scene.add(ring);
+    setTimeout(() => scene.remove(ring), 200);
 }
 
 function checkLevel(){
@@ -1429,7 +1438,7 @@ function castAOE(){
             }
             // Garante que o dano seja pelo menos 50% da vida máxima do monstro
             let minDmg = Math.floor(monster.userData.maxHp * 0.5);
-            let calcDmg = Math.max(1, baseDmg - monster.def);
+            let calcDmg = Math.max(1, baseDmg - monster.userData.def);
             let dmg = Math.max(calcDmg, minDmg);
             monster.userData.hp -= dmg;
             floatingText(Math.round(dmg), monster.mesh.position, "purple");
@@ -1970,6 +1979,62 @@ function floatingText(txt,pos,color){
     document.body.appendChild(d); floatTexts.push({div:d, pos:pos.clone(), life:60, txt});
 }
 
+/* -------- SAVE / LOAD -------- */
+function saveGame() {
+    try {
+        let saveData = {
+            player: player,
+            inventory: inventory,
+            equipped: equipped,
+            evolutionData: {
+                totalXP: evolutionData.totalXP,
+                skillPoints: evolutionData.skillPoints,
+                stats: evolutionData.stats,
+                achievements: evolutionData.achievements.map(a => ({ id: a.id, unlocked: a.unlocked })),
+                quests: evolutionData.quests.map(q => ({ id: q.id, progress: q.progress, completed: q.completed })),
+                skillTree: evolutionData.skillTree.map(s => ({ id: s.id, level: s.level }))
+            }
+        };
+        localStorage.setItem('eldoria_save', JSON.stringify(saveData));
+        log("<span style='color:#888'>💾 Jogo salvo.</span>");
+    } catch(e) {
+        console.warn('Auto-save falhou:', e);
+    }
+}
+
+function loadGame() {
+    try {
+        let raw = localStorage.getItem('eldoria_save');
+        if(!raw) return;
+        let save = JSON.parse(raw);
+        if(save.player) Object.assign(player, save.player);
+        if(save.inventory) inventory = save.inventory;
+        if(save.equipped) Object.assign(equipped, save.equipped);
+        if(save.evolutionData) {
+            evolutionData.totalXP = save.evolutionData.totalXP || 0;
+            evolutionData.skillPoints = save.evolutionData.skillPoints || 0;
+            if(save.evolutionData.stats) Object.assign(evolutionData.stats, save.evolutionData.stats);
+            (save.evolutionData.achievements || []).forEach(saved => {
+                let a = evolutionData.achievements.find(a => a.id === saved.id);
+                if(a) a.unlocked = saved.unlocked;
+            });
+            (save.evolutionData.quests || []).forEach(saved => {
+                let q = evolutionData.quests.find(q => q.id === saved.id);
+                if(q) { q.progress = saved.progress; q.completed = saved.completed; }
+            });
+            (save.evolutionData.skillTree || []).forEach(saved => {
+                let s = evolutionData.skillTree.find(s => s.id === saved.id);
+                if(s) s.level = saved.level;
+            });
+        }
+        recalcStats();
+        applyEquipVisual();
+        log("<span style='color:cyan'>💾 Progresso carregado!</span>");
+    } catch(e) {
+        console.warn('Falha ao carregar save:', e);
+    }
+}
+
 /* -------- LOOP DE JOGO -------- */
 function animate(time){
     requestAnimationFrame(animate);
@@ -2206,11 +2271,12 @@ function animate(time){
         }
     }
 
-    floatTexts.forEach((f,i)=>{
+    for(let i=floatTexts.length-1; i>=0; i--){
+        let f=floatTexts[i];
         f.pos.y+=.05; let v=f.pos.clone().project(camera);
         f.div.style.left=(v.x*.5+.5)*innerWidth+"px"; f.div.style.top=(-v.y*.5+.5)*innerHeight+"px";
         f.div.innerHTML=f.txt; if(--f.life<=0){ f.div.remove(); floatTexts.splice(i,1); }
-    });
+    }
 
     let hv=hero.position.clone().project(camera);
     heroLabel.style.left=((hv.x*.5+.5)*innerWidth-65)+"px"; heroLabel.style.top=((-hv.y*.5+.5)*innerHeight-85)+"px";
@@ -2227,8 +2293,8 @@ function animate(time){
     
     // Sistema de Auto-Save: verificar se passou o intervalo
     if(time - lastAutoSaveTime > AUTO_SAVE_INTERVAL) {
+        lastAutoSaveTime = time; // Atualiza ANTES de salvar para não repetir em caso de erro
         saveGame();
-        lastAutoSaveTime = time;
     }
 
     // MINI-MAPA
@@ -2301,13 +2367,13 @@ window.addEventListener('resize', () => {
 
 // Adicionar árvores/rochas para decorar biomas (decorações simples)
 function addBiomeDecorations() {
-    // Limpar decorações antigas
-    visuals.forEach(v => {
-        if(v.userData.isDecoration) {
-            scene.remove(v);
-            visuals.splice(visuals.indexOf(v), 1);
+    // Limpar decorações antigas (iteração reversa para evitar bug de splice em forEach)
+    for(let i=visuals.length-1; i>=0; i--) {
+        if(visuals[i].userData && visuals[i].userData.isDecoration) {
+            scene.remove(visuals[i]);
+            visuals.splice(i, 1);
         }
-    });
+    }
     
     // Adicionar novas decorações baseadas no bioma
     let decorationCount = 30;
@@ -2428,94 +2494,78 @@ function revivePlayer() {
 }
 
 function resetGame() {
-    // Resetar variáveis do jogo para o level 1
-    player = { level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
-    inventory = [];
+    // 1. Limpar cena ANTES de zerar os arrays (era o bug principal)
+    monsters.forEach(m => {
+        scene.remove(m);
+        if(m.userData.ui && m.userData.ui.bar) m.userData.ui.bar.remove();
+        if(m.userData.label) m.userData.label.remove();
+    });
+    droppedItems.forEach(d => scene.remove(d.mesh));
+    fireballs.forEach(f => scene.remove(f.mesh));
+    aoes.forEach(a => {
+        if(a.effectMesh) scene.remove(a.effectMesh);
+        if(a.lightMesh) scene.remove(a.lightMesh);
+    });
+    floatTexts.forEach(f => f.div.remove());
+
+    // 2. Limpar decorações
+    visuals.forEach(v => { if(v.userData && v.userData.isDecoration) scene.remove(v); });
+    visuals = visuals.filter(v => !(v.userData && v.userData.isDecoration));
+
+    // 3. Zerar arrays agora que a cena está limpa
     monsters = [];
     droppedItems = [];
     fireballs = [];
     aoes = [];
+    floatTexts = [];
+    inventory = [];
+
+    // 4. Resetar estado do jogador
+    player = { level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
     equipped = { weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
     bossSpawned = false;
     currentBiome = 0;
-    savedLevel = 1; // Reseta nível salvo
-    
-    // Resetar posição do herói
+    savedLevel = 1;
+
+    // 5. Resetar dados de evolução/missões/conquistas
+    evolutionData.totalXP = 0;
+    evolutionData.skillPoints = 0;
+    evolutionData.achievements.forEach(a => a.unlocked = false);
+    evolutionData.quests.forEach(q => { q.progress = 0; q.completed = false; });
+    evolutionData.skillTree.forEach(s => s.level = 0);
+    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0 };
+
+    // 6. Resetar posição e recriar decorações
     hero.position.set(0, 0, 0);
-    
-    // Remover decorações do bioma
-    visuals.forEach(v => {
-        if(v.userData.isDecoration) {
-            scene.remove(v);
-        }
-    });
-    visuals = visuals.filter(v => !v.userData.isDecoration);
-    
-    // Recriar decorações do bioma inicial
     addBiomeDecorations();
-    
-    // Remover monstros da cena
-    monsters.forEach(m => {
-        scene.remove(m.mesh);
-        if(m.mesh.userData.ui && m.mesh.userData.ui.bar) {
-            m.mesh.userData.ui.bar.remove();
-        }
-        if(m.mesh.userData.label) {
-            m.mesh.userData.label.remove();
-        }
-    });
-    monsters = [];
-    
-    // Remover itens do chão
-    droppedItems.forEach(d => {
-        scene.remove(d.mesh);
-        if(d.mesh.userData.label) {
-            d.mesh.userData.label.remove();
-        }
-    });
-    droppedItems = [];
-    
-    // Limpar textos flutuantes
-    floatTexts.forEach(f => f.div.remove());
-    floatTexts = [];
-    
-    // Limpar fireballs
-    fireballs.forEach(f => scene.remove(f.mesh));
-    fireballs = [];
-    
-    // Limpar efeitos AOE
-    aoes.forEach(aoi => {
-        if(aoi.effectMesh) scene.remove(aoi.effectMesh);
-        if(aoi.lightMesh) scene.remove(aoi.lightMesh);
-    });
-    aoes = [];
-    
-    // Primeiro recalcula stats com equipamentos (que estão todos null)
+
+    // 7. Recalcular stats e atualizar UI
     recalcStats();
-    
-    // Agora define HP e SP para os máximos corretos (já calculados pelo recalcStats)
     player.hp = player.maxHp;
     player.sp = player.maxSp;
-    
-    // Atualizar UI com valores corretos do level 1
+
     hp.style.width=(player.hp/player.maxHp*100)+"%";
     sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
-    heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level; // Atualiza label do nível
+    heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level;
     applyEquipVisual();
-    updateBiome(); // Atualiza bioma para o level 1
-    updatePanels(); // Atualiza painéis com os valores corretos
-    
-    // Esconder game over overlay
+    updateBiome();
+    updatePanels();
+
     gameOverOverlay.style.display = 'none';
     statusWindow.style.display = 'none';
     shopWindow.style.display = 'none';
-    
     gamePaused = false;
-    
+
+    // Limpar save ao reiniciar
+    try { localStorage.removeItem('eldoria_save'); } catch(e) {}
+
     log("<span style='color:cyan'>🔄 Voltou para o Level 1!</span>");
 }
+
+// Carregar save antes de iniciar
+loadGame();
 
 animate();
 log("Eldoria Mobile Restaurado!");
