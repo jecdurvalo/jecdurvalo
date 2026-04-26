@@ -192,26 +192,14 @@ let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 function addItemToInventory(baseItem) {
     let newItem = createItem(baseItem);
     
-    // Se for stackable, procura item igual no inventário
-    if(newItem.stackable) {
-        let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot);
-        if(existingIndex >= 0) {
-            inventory[existingIndex].quantity += 1;
-            return true; // Item foi stackado
-        }
+    // Para TODOS os itens (incluindo equipamentos), procura item IGUAL (mesmo nome e slot) para empilhar
+    let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot);
+    if(existingIndex >= 0) {
+        inventory[existingIndex].quantity = (inventory[existingIndex].quantity || 1) + 1;
+        return true; // Item foi stackado
     }
     
-    // Para equipamentos, procura item IGUAL (mesmo nome e slot) para empilhar
-    // Equipamentos só empilham se forem exatamente o mesmo item
-    if(!newItem.stackable && newItem.slot !== "consumable") {
-        let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot && !it.stackable);
-        if(existingIndex >= 0) {
-            inventory[existingIndex].quantity = (inventory[existingIndex].quantity || 1) + 1;
-            return true; // Item foi stackado
-        }
-    }
-    
-    // Se não for stackable ou não encontrou igual, adiciona novo
+    // Se não encontrou igual, adiciona novo
     inventory.push(newItem);
     return false; // Item foi adicionado como novo
 }
@@ -462,6 +450,9 @@ function killMonster(m){
             // Adicionar quantidade se for stackable (poção)
             if(itemCopy.stackable) {
                 itemCopy.quantity = Math.floor(Math.random() * 3) + 1; // 1-3 poções
+            } else {
+                // Para equipamentos, sempre começa com quantidade 1
+                itemCopy.quantity = 1;
             }
             
             // Criar item visual no chão
@@ -696,7 +687,7 @@ function updatePanels(){
             }
         }
         let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
-        let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
+        let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
         inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small></div></div>`;
     });
     shopInventoryPanel.innerHTML="";
@@ -710,7 +701,7 @@ function updatePanels(){
                 break;
             }
         }
-        let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
+        let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
         let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button>`;
         shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped ? 0.5 : 1};"><span>${icon}${qtyText} ${it.name}</span>${sellBtn}</div>`;
     });
@@ -1118,6 +1109,7 @@ function showGameOver() {
     if(!canRevive) {
         setTimeout(() => {
             resetGame();
+            updateBiome(); // Atualiza bioma para o level 1
         }, 3000);
     }
 }
