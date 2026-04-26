@@ -64,6 +64,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 #btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
 #btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
 #btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
+#btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
 
 #controls{
     position:fixed; top:18px; right:18px; background:linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
@@ -158,12 +159,13 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="btnSkill" class="mobile-btn">Z</div>
     <div id="btnInv" class="mobile-btn">V</div>
     <div id="btnShop" class="mobile-btn">E</div>
+    <div id="btnEvo" class="mobile-btn">🏆</div>
 </div>
 
 <div id="controls">
     WASD ou Setas mover | SPACE ou ↑ atacar<br>
     Z Fireball | E Loja (NPC)<br>
-    V Personagem | F Fullscreen<br>
+    V Personagem | B Evolução | F Fullscreen<br>
     <span style="color:yellow; font-weight:bold;">P Pausar Jogo</span>
 </div>
 
@@ -190,6 +192,29 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="shopInventoryPanel" class="inventory-grid"></div>
 </div>
 
+<div id="evolutionWindow">
+    <button onclick="toggleEvolution()" class="close-btn">×</button>
+    <h2>🏆 Evolução & Conquistas</h2>
+    <div style="display:flex; gap:15px; margin-bottom:15px;">
+        <div style="flex:1; background:rgba(255,255,255,0.1); padding:15px; border-radius:10px; text-align:center;">
+            <div style="font-size:24px; margin-bottom:5px;">⭐ Nível de Jogador</div>
+            <div id="playerRankLevel" style="font-size:32px; color:gold; font-weight:bold;">1</div>
+            <div style="font-size:12px; color:#aaa;">Rank Atual</div>
+        </div>
+        <div style="flex:1; background:rgba(255,255,255,0.1); padding:15px; border-radius:10px; text-align:center;">
+            <div style="font-size:24px; margin-bottom:5px;">🎯 Pontos de XP</div>
+            <div id="playerXPPoints" style="font-size:32px; color:cyan; font-weight:bold;">0</div>
+            <div style="font-size:12px; color:#aaa;">XP Total</div>
+        </div>
+    </div>
+    
+    <h3>📜 Missões Ativas</h3>
+    <div id="activeQuestsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:15px; max-height:150px; overflow-y:auto;"></div>
+    
+    <h3>🏅 Conquistas</h3>
+    <div id="achievementsPanel" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
@@ -210,6 +235,37 @@ let bossSpawned = false;
 let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
 let gamePaused = false; // Controle de pausa do jogo
 let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
+
+// Sistema de Evolução - Conquistas e Missões
+let evolutionData = {
+    totalXP: 0,
+    achievements: [
+        { id: 'first_blood', name: 'Primeiro Sangue', desc: 'Derrote seu primeiro inimigo', icon: '⚔️', unlocked: false, condition: (data) => data.kills >= 1 },
+        { id: 'killer_10', name: 'Caçador', desc: 'Derrote 10 inimigos', icon: '🎯', unlocked: false, condition: (data) => data.kills >= 10 },
+        { id: 'killer_50', name: 'Guerreiro', desc: 'Derrote 50 inimigos', icon: '🏅', unlocked: false, condition: (data) => data.kills >= 50 },
+        { id: 'killer_100', name: 'Lenda', desc: 'Derrote 100 inimigos', icon: '👑', unlocked: false, condition: (data) => data.kills >= 100 },
+        { id: 'level_5', name: 'Aprendiz', desc: 'Alcance o nível 5', icon: '⭐', unlocked: false, condition: (data) => data.level >= 5 },
+        { id: 'level_10', name: 'Veterano', desc: 'Alcance o nível 10', icon: '🌟', unlocked: false, condition: (data) => data.level >= 10 },
+        { id: 'level_20', name: 'Mestre', desc: 'Alcance o nível 20', icon: '💫', unlocked: false, condition: (data) => data.level >= 20 },
+        { id: 'looter', name: 'Saqueador', desc: 'Colete 20 itens', icon: '📦', unlocked: false, condition: (data) => data.itemsCollected >= 20 },
+        { id: 'rich', name: 'Mercador', desc: 'Acumule 500 gold', icon: '💰', unlocked: false, condition: (data) => data.gold >= 500 },
+        { id: 'explorer', name: 'Explorador', desc: 'Visite todos os biomas', icon: '🗺️', unlocked: false, condition: (data) => data.biomesVisited >= 5 }
+    ],
+    quests: [
+        { id: 'quest_1', name: 'Iniciante', desc: 'Derrote 5 Slimes', icon: '🐌', target: 5, progress: 0, type: 'kills', completed: false, rewardXP: 50, rewardGold: 25 },
+        { id: 'quest_2', name: 'Caçador de Lobos', desc: 'Derrote 10 Lobos', icon: '🐺', target: 10, progress: 0, type: 'wolf_kills', completed: false, rewardXP: 100, rewardGold: 50 },
+        { id: 'quest_3', name: 'Coletor', desc: 'Colete 15 itens', icon: '🎒', target: 15, progress: 0, type: 'items', completed: false, rewardXP: 75, rewardGold: 40 },
+        { id: 'quest_4', name: 'Boss Slayer', desc: 'Derrote 3 Bosses', icon: '👹', target: 3, progress: 0, type: 'boss_kills', completed: false, rewardXP: 200, rewardGold: 150 }
+    ],
+    stats: {
+        kills: 0,
+        wolfKills: 0,
+        bossKills: 0,
+        itemsCollected: 0,
+        biomesVisited: 0,
+        visitedBiomes: []
+    }
+};
 
 // Função para adicionar item ao inventário com stacking
 function addItemToInventory(baseItem) {
@@ -324,6 +380,102 @@ const biomes = [
 
 function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
 
+// Funções do Sistema de Evolução
+function updateEvolutionUI() {
+    // Atualiza nível e XP total
+    document.getElementById('playerRankLevel').textContent = player.level;
+    document.getElementById('playerXPPoints').textContent = evolutionData.totalXP;
+    
+    // Atualiza missões ativas
+    let questsHTML = '';
+    evolutionData.quests.forEach(quest => {
+        if(!quest.completed) {
+            let percent = Math.min(100, Math.floor((quest.progress / quest.target) * 100));
+            questsHTML += `
+                <div style="background:rgba(255,255,255,0.08); padding:10px; margin:8px 0; border-radius:8px; border-left:4px solid gold;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold;">${quest.icon} ${quest.name}</span>
+                        <span style="color:#aaa; font-size:12px;">${quest.progress}/${quest.target}</span>
+                    </div>
+                    <div style="font-size:12px; color:#ccc; margin:5px 0;">${quest.desc}</div>
+                    <div style="height:6px; background:rgba(0,0,0,0.3); border-radius:3px; overflow:hidden;">
+                        <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, gold, #ffaa00);"></div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    if(questsHTML === '') questsHTML = '<div style="text-align:center; color:#888; padding:20px;">Nenhuma missão ativa</div>';
+    document.getElementById('activeQuestsPanel').innerHTML = questsHTML;
+    
+    // Atualiza conquistas
+    let achievementsHTML = '';
+    evolutionData.achievements.forEach(ach => {
+        let opacity = ach.unlocked ? 1 : 0.4;
+        let bg = ach.unlocked ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.05)';
+        let border = ach.unlocked ? 'border-left:4px solid gold;' : 'border-left:4px solid #555;';
+        achievementsHTML += `
+            <div style="background:${bg}; padding:10px; margin:8px 0; border-radius:8px; ${border} opacity:${opacity};">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px;">${ach.icon}</span>
+                    <div>
+                        <div style="font-weight:bold; color:${ach.unlocked ? 'gold' : '#aaa'};">${ach.name}</div>
+                        <div style="font-size:12px; color:#ccc;">${ach.desc}</div>
+                    </div>
+                    ${ach.unlocked ? '<span style="margin-left:auto; color:lime; font-weight:bold;">✓</span>' : ''}
+                </div>
+            </div>
+        `;
+    });
+    document.getElementById('achievementsPanel').innerHTML = achievementsHTML;
+}
+
+function checkAchievements() {
+    let data = evolutionData.stats;
+    data.level = player.level;
+    data.gold = player.gold;
+    
+    evolutionData.achievements.forEach(ach => {
+        if(!ach.unlocked && ach.condition(data)) {
+            ach.unlocked = true;
+            floatingText("🏆 " + ach.name, hero.position, "gold");
+            log(`<span style='color:gold'>🏆 Conquista Desbloqueada: ${ach.name}!</span>`);
+            evolutionData.totalXP += 25; // Bonus XP por conquista
+        }
+    });
+    updateEvolutionUI();
+}
+
+function updateQuestProgress(type, amount) {
+    evolutionData.quests.forEach(quest => {
+        if(quest.completed) return;
+        
+        if(quest.type === type || (type === 'kills' && quest.type === 'kills')) {
+            quest.progress += amount;
+            if(quest.progress >= quest.target) {
+                quest.completed = true;
+                player.gold += quest.rewardGold;
+                evolutionData.totalXP += quest.rewardXP;
+                floatingText(`+${quest.rewardXP} XP`, hero.position, "cyan");
+                log(`<span style='color:cyan'>✅ Missão Completa: ${quest.name}! +${quest.rewardGold} Gold, +${quest.rewardXP} XP</span>`);
+            }
+        }
+    });
+    updateEvolutionUI();
+}
+
+function toggleEvolution() {
+    let win = document.getElementById('evolutionWindow');
+    if(win.style.display === 'block') {
+        win.style.display = 'none';
+        gamePaused = false;
+    } else {
+        win.style.display = 'block';
+        updateEvolutionUI();
+        gamePaused = true;
+    }
+}
+
 /* -------- ENGINE 3D -------- */
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x87ceeb);
@@ -370,6 +522,13 @@ function updateBiome() {
         
         floatingText("🌍 " + biome.name, hero.position, "white");
         log("<span style='color:cyan'>Entrou em: " + biome.name + "</span>");
+        
+        // Atualizar estatísticas de biomas visitados
+        if(!evolutionData.stats.visitedBiomes.includes(currentBiome)) {
+            evolutionData.stats.visitedBiomes.push(currentBiome);
+            evolutionData.stats.biomesVisited = evolutionData.stats.visitedBiomes.length;
+            checkAchievements();
+        }
         
         // Atualizar decorações do bioma
         addBiomeDecorations();
@@ -523,7 +682,24 @@ function spawnMonster(elite=false){
 
 function killMonster(m){
     player.xp += m.userData.xp;
+    evolutionData.totalXP += m.userData.xp; // Adiciona XP total para evolução
     floatingText("+"+m.userData.xp+" XP", m.position, "lime");
+    
+    // Atualiza estatísticas de kills
+    evolutionData.stats.kills++;
+    if(m.userData.name.includes('Wolf')) {
+        evolutionData.stats.wolfKills++;
+        updateQuestProgress('wolf_kills', 1);
+    }
+    if(m.userData.isBoss) {
+        evolutionData.stats.bossKills++;
+        updateQuestProgress('boss_kills', 1);
+    } else {
+        updateQuestProgress('kills', 1);
+    }
+    
+    // Verifica conquistas
+    checkAchievements();
     
     // Drop de itens no chão (randomico)
     let dropCount = m.userData.isBoss ? 5 : Math.floor(Math.random() * 3); // Boss dropa mais itens
@@ -627,6 +803,8 @@ function checkLevel(){
             spawnMonster(true); // Spawn boss
         }
         
+        // Verifica conquistas relacionadas a nível
+        checkAchievements();
         recalcStats();
     }
 }
@@ -737,6 +915,7 @@ document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.prev
 document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
 document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
 document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
+document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
 
 /* -------- UI E LOJA -------- */
 function recalcStats(){
@@ -1071,6 +1250,11 @@ function animate(time){
             // Usar função de adicionar item com stacking
             let wasStacked = addItemToInventory(drop.item);
             
+            // Atualiza estatísticas de coleta
+            evolutionData.stats.itemsCollected++;
+            updateQuestProgress('items', 1);
+            checkAchievements();
+            
             if(wasStacked) {
                 // Encontrar o item stackado para mostrar quantidade
                 let stackedItem = inventory.find(it => it.name === drop.item.name && it.slot === drop.item.slot);
@@ -1257,6 +1441,7 @@ window.onkeydown=e=>{
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
+    if(e.key.toLowerCase()==="b") toggleEvolution(); // Tecla B para Evolução
     if(e.key.toLowerCase()==="f") document.documentElement.requestFullscreen();
     if(e.key.toLowerCase()==="p") togglePause(); // Tecla P para pausar
     if(e.key.toLowerCase()==="q") usePotion(); // Tecla Q para usar poção
