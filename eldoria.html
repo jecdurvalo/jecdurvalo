@@ -1982,10 +1982,33 @@ function floatingText(txt,pos,color){
 }
 
 /* -------- SAVE / LOAD -------- */
+// Chave de save é única por nome de herói
+function getSaveKey(name) {
+    return 'eldoria_save_' + (name || playerName).toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
+// Retorna todos os saves existentes no localStorage
+function getAllSaves() {
+    let saves = [];
+    for(let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        if(key && key.startsWith('eldoria_save_')) {
+            try {
+                let data = JSON.parse(localStorage.getItem(key));
+                if(data && data.playerName) saves.push({ key, data });
+            } catch(e) {}
+        }
+    }
+    // Ordena por data de save mais recente
+    saves.sort((a, b) => (b.data.savedAt || 0) - (a.data.savedAt || 0));
+    return saves;
+}
+
 function saveGame() {
     try {
         let saveData = {
             playerName: playerName,
+            savedAt: Date.now(),
             player: player,
             inventory: inventory,
             equipped: equipped,
@@ -1998,7 +2021,7 @@ function saveGame() {
                 skillTree: evolutionData.skillTree.map(s => ({ id: s.id, level: s.level }))
             }
         };
-        localStorage.setItem('eldoria_save', JSON.stringify(saveData));
+        localStorage.setItem(getSaveKey(), JSON.stringify(saveData));
         log("<span style='color:#888'>💾 Jogo salvo.</span>");
     } catch(e) {
         console.warn('Auto-save falhou:', e);
@@ -2007,10 +2030,9 @@ function saveGame() {
 
 function loadGame() {
     try {
-        let raw = localStorage.getItem('eldoria_save');
-        if(!raw) return;
+        let raw = localStorage.getItem(getSaveKey());
+        if(!raw) return; // Sem save para este nome → jogo novo
         let save = JSON.parse(raw);
-        if(save.playerName) playerName = save.playerName;
         if(save.player) Object.assign(player, save.player);
         if(save.inventory) inventory = save.inventory;
         if(save.equipped) Object.assign(equipped, save.equipped);
@@ -2569,82 +2591,180 @@ function resetGame() {
     shopWindow.style.display = 'none';
     gamePaused = false;
 
-    // Limpar save ao reiniciar
-    try { localStorage.removeItem('eldoria_save'); } catch(e) {}
+    // Limpar save do herói atual ao reiniciar
+    try { localStorage.removeItem(getSaveKey()); } catch(e) {}
 
     log("<span style='color:cyan'>🔄 Voltou para o Level 1!</span>");
 }
 
-// -------- TELA INICIAL --------
+// -------- TELA INICIAL COM SELEÇÃO DE SAVE --------
 let startOverlay = document.createElement('div');
 startOverlay.id = 'startOverlay';
 startOverlay.style.cssText = `
-    display:flex; position:fixed; inset:0; z-index:20000;
+    display:flex; position:fixed; inset:0; z-index:20000; overflow-y:auto;
     background:linear-gradient(160deg, #02071a 0%, #080d28 40%, #0a1530 100%);
-    align-items:center; justify-content:center; flex-direction:column;
-    font-family:'Segoe UI', Arial, sans-serif;
-`;
-startOverlay.innerHTML = `
-    <div style="text-align:center; max-width:420px; padding:30px;">
-        <div style="font-size:72px; margin-bottom:10px;">⚔️</div>
-        <h1 style="color:#5ab9ff; font-size:48px; margin:0 0 6px 0; text-shadow:0 0 30px rgba(90,185,255,0.6); letter-spacing:3px;">ELDORIA</h1>
-        <p style="color:#7ea8cc; font-size:14px; margin:0 0 40px 0; letter-spacing:2px;">LEGENDS OF ELDORIA</p>
-        <label style="color:#aac8e8; font-size:16px; display:block; margin-bottom:12px; text-align:left;">Seu nome de herói:</label>
-        <input id="startNameInput" type="text" maxlength="20" placeholder="Aventureiro"
-            style="width:100%; box-sizing:border-box; padding:14px 18px; font-size:22px; border-radius:12px;
-                   border:2px solid #5ab9ff; background:rgba(10,25,60,0.9); color:#ffd66b;
-                   outline:none; font-family:inherit; letter-spacing:1px; margin-bottom:24px;"
-        />
-        <button id="startBtn"
-            style="width:100%; padding:16px; font-size:22px; font-weight:bold; border-radius:12px;
-                   background:linear-gradient(135deg,#2d7fff,#1a50cc); color:white; border:none;
-                   cursor:pointer; letter-spacing:2px; box-shadow:0 4px 20px rgba(45,127,255,0.5);
-                   transition:transform 0.1s,box-shadow 0.2s;">
-            ▶ JOGAR
-        </button>
-        <p id="startSaveHint" style="color:#556688; font-size:13px; margin-top:18px; display:none;">
-            💾 Progresso salvo encontrado — continuando a aventura!
-        </p>
-    </div>
+    align-items:flex-start; justify-content:center;
+    font-family:'Segoe UI', Arial, sans-serif; padding:30px 15px;
 `;
 document.body.appendChild(startOverlay);
 
-// Botão com efeito hover
-let startBtn = document.getElementById('startBtn');
-startBtn.addEventListener('mouseover', () => { startBtn.style.transform='scale(1.04)'; startBtn.style.boxShadow='0 6px 28px rgba(45,127,255,0.7)'; });
-startBtn.addEventListener('mouseout',  () => { startBtn.style.transform='scale(1)';    startBtn.style.boxShadow='0 4px 20px rgba(45,127,255,0.5)'; });
-startBtn.addEventListener('mousedown', () => { startBtn.style.transform='scale(0.97)'; });
-startBtn.addEventListener('mouseup',   () => { startBtn.style.transform='scale(1.04)'; });
+function formatSaveDate(ts) {
+    if(!ts) return '';
+    let d = new Date(ts);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+}
 
-// Verifica se há save e pré-preenche o nome
-(function checkSaveForStartScreen() {
-    try {
-        let raw = localStorage.getItem('eldoria_save');
-        if(raw) {
-            let peek = JSON.parse(raw);
-            if(peek.playerName) document.getElementById('startNameInput').value = peek.playerName;
-            document.getElementById('startSaveHint').style.display = 'block';
-        }
-    } catch(e) {}
-})();
+function renderStartScreen() {
+    let saves = getAllSaves();
+    let hasSaves = saves.length > 0;
 
-function startGame() {
+    startOverlay.innerHTML = `
+        <div style="width:100%; max-width:460px; padding-bottom:40px;">
+            <!-- Logo -->
+            <div style="text-align:center; margin-bottom:32px; padding-top:20px;">
+                <div style="font-size:64px; margin-bottom:8px;">⚔️</div>
+                <h1 style="color:#5ab9ff; font-size:44px; margin:0 0 4px 0;
+                    text-shadow:0 0 30px rgba(90,185,255,0.6); letter-spacing:3px;">ELDORIA</h1>
+                <p style="color:#4a6a8a; font-size:12px; margin:0; letter-spacing:3px;">LEGENDS OF ELDORIA</p>
+            </div>
+
+            <!-- Saves existentes -->
+            ${hasSaves ? `
+            <div style="margin-bottom:28px;">
+                <p style="color:#7ea8cc; font-size:13px; letter-spacing:2px; margin:0 0 14px 0; text-transform:uppercase;">⚔ Heróis Salvos</p>
+                <div id="savesList"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:28px;">
+                <div style="flex:1; height:1px; background:rgba(90,185,255,0.2);"></div>
+                <span style="color:#3a5070; font-size:13px; white-space:nowrap;">ou crie um novo herói</span>
+                <div style="flex:1; height:1px; background:rgba(90,185,255,0.2);"></div>
+            </div>
+            ` : ''}
+
+            <!-- Novo herói -->
+            <div>
+                ${!hasSaves ? '<p style="color:#7ea8cc; font-size:13px; letter-spacing:2px; margin:0 0 14px 0; text-transform:uppercase;">⚔ Novo Herói</p>' : ''}
+                <input id="startNameInput" type="text" maxlength="20" placeholder="Nome do herói..."
+                    style="width:100%; box-sizing:border-box; padding:14px 18px; font-size:20px; border-radius:12px;
+                           border:2px solid rgba(90,185,255,0.4); background:rgba(10,25,60,0.9); color:#ffd66b;
+                           outline:none; font-family:inherit; letter-spacing:1px; margin-bottom:14px;
+                           transition:border-color 0.2s;"
+                />
+                <button id="startBtn"
+                    style="width:100%; padding:15px; font-size:18px; font-weight:bold; border-radius:12px;
+                           background:linear-gradient(135deg,#2d7fff,#1a50cc); color:white; border:none;
+                           cursor:pointer; letter-spacing:2px; box-shadow:0 4px 20px rgba(45,127,255,0.4);
+                           transition:transform 0.1s,box-shadow 0.2s;">
+                    ▶ NOVO JOGO
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Renderiza os cards de save
+    if(hasSaves) {
+        let list = document.getElementById('savesList');
+        saves.forEach(({ key, data }) => {
+            let card = document.createElement('div');
+            card.style.cssText = `
+                display:flex; align-items:center; gap:14px;
+                background:rgba(10,25,55,0.8); border:1px solid rgba(90,185,255,0.25);
+                border-radius:14px; padding:16px 18px; margin-bottom:10px;
+                transition:border-color 0.2s, background 0.2s; cursor:default;
+            `;
+            card.innerHTML = `
+                <div style="font-size:36px; flex-shrink:0;">🧙</div>
+                <div style="flex:1; min-width:0;">
+                    <div style="color:#ffd66b; font-size:18px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${data.playerName}
+                    </div>
+                    <div style="color:#7ea8cc; font-size:13px; margin-top:3px;">
+                        Lv.${data.player?.level || 1} &nbsp;·&nbsp;
+                        🪙 ${data.player?.gold || 0} &nbsp;·&nbsp;
+                        ⚔️ ${data.evolutionData?.stats?.kills || 0} kills
+                    </div>
+                    <div style="color:#3a5878; font-size:11px; margin-top:4px;">${formatSaveDate(data.savedAt)}</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; flex-shrink:0;">
+                    <button class="continueBtn" data-key="${key}" data-name="${data.playerName}"
+                        style="padding:9px 18px; font-size:14px; font-weight:bold; border-radius:9px;
+                               background:linear-gradient(135deg,#2d7fff,#1a50cc); color:white; border:none;
+                               cursor:pointer; letter-spacing:1px; white-space:nowrap;">
+                        ▶ Continuar
+                    </button>
+                    <button class="deleteBtn" data-key="${key}" data-name="${data.playerName}"
+                        style="padding:6px 12px; font-size:12px; border-radius:9px;
+                               background:rgba(180,30,30,0.3); color:#ff7777; border:1px solid rgba(180,30,30,0.5);
+                               cursor:pointer; letter-spacing:1px;">
+                        🗑 Deletar
+                    </button>
+                </div>
+            `;
+            list.appendChild(card);
+
+            // Hover no card
+            card.addEventListener('mouseenter', () => { card.style.background='rgba(20,45,90,0.8)'; card.style.borderColor='rgba(90,185,255,0.5)'; });
+            card.addEventListener('mouseleave', () => { card.style.background='rgba(10,25,55,0.8)'; card.style.borderColor='rgba(90,185,255,0.25)'; });
+        });
+
+        // Eventos de continuar
+        document.querySelectorAll('.continueBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playerName = btn.dataset.name;
+                launchGame(true);
+            });
+        });
+
+        // Eventos de deletar
+        document.querySelectorAll('.deleteBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if(confirm(`Deletar save de "${btn.dataset.name}"? Isso não pode ser desfeito.`)) {
+                    localStorage.removeItem(btn.dataset.key);
+                    renderStartScreen(); // Rerenderiza a lista
+                }
+            });
+        });
+    }
+
+    // Input focus style
+    let input = document.getElementById('startNameInput');
+    input.addEventListener('focus',  () => { input.style.borderColor='rgba(90,185,255,0.9)'; });
+    input.addEventListener('blur',   () => { input.style.borderColor='rgba(90,185,255,0.4)'; });
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') launchNewGame(); });
+
+    // Botão novo jogo
+    let startBtn = document.getElementById('startBtn');
+    startBtn.addEventListener('mouseover', () => { startBtn.style.transform='scale(1.03)'; });
+    startBtn.addEventListener('mouseout',  () => { startBtn.style.transform='scale(1)'; });
+    startBtn.addEventListener('click', launchNewGame);
+}
+
+function launchNewGame() {
     let inputName = document.getElementById('startNameInput').value.trim();
-    playerName = inputName || "Aventureiro";
-    // Atualiza o nameplate com o nome escolhido
+    if(!inputName) {
+        let input = document.getElementById('startNameInput');
+        input.style.borderColor = '#ff4444';
+        input.placeholder = 'Digite um nome para continuar!';
+        setTimeout(() => {
+            input.style.borderColor = 'rgba(90,185,255,0.4)';
+            input.placeholder = 'Nome do herói...';
+        }, 1500);
+        return;
+    }
+    playerName = inputName;
+    launchGame(false);
+}
+
+function launchGame(loadSave) {
     heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv.1";
     startOverlay.style.display = 'none';
-    // Carrega save e inicia loop
-    loadGame();
+    if(loadSave) loadGame(); // Só carrega se foi pedido (herói existente)
     animate();
     log("Eldoria Mobile Restaurado!");
     log("<span style='color:gold'>🎮 Bem-vindo, " + playerName + "! Derrote inimigos, colete itens e explore os biomas!</span>");
 }
 
-startBtn.addEventListener('click', startGame);
-document.getElementById('startNameInput').addEventListener('keydown', e => {
-    if(e.key === 'Enter') startGame();
-});
+renderStartScreen();
 </script>
 </body>
 </html>
