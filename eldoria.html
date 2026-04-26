@@ -139,8 +139,99 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 .sell-btn:hover { background: linear-gradient(135deg, #f08e33, #d97b2a); transform: scale(1.05); }
 .sell-btn:active { transform: scale(0.95); }
 
+#controls-btn {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 50px; height: 50px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(20, 20, 40, 0.6));
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+#controls-btn:hover {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 40, 0.8));
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+#controls-tooltip {
+    position: fixed;
+    bottom: 75px;
+    right: 20px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(20, 20, 40, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    color: white;
+    font-size: 13px;
+    z-index: 998;
+    min-width: 220px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+#controls-btn:hover + #controls-tooltip,
+#controls-tooltip:hover {
+    opacity: 1;
+    visibility: visible;
+}
+
+#controls-tooltip h4 {
+    margin: 0 0 10px 0;
+    color: #ffd700;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 8px;
+}
+
+#controls-tooltip ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#controls-tooltip li {
+    padding: 4px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+#controls-tooltip .key {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#controls-tooltip .desc {
+    flex: 1;
+    color: #d8e7ff;
+}
+
+#controls-tooltip .highlight {
+    color: #ffd700;
+    font-weight: bold;
+}
+
 /* Esconde controles desktop no mobile e vice-versa */
-@media (max-width: 800px) { #controls { display: none; } }
+@media (max-width: 800px) { #controls-btn, #controls-tooltip { display: none; } }
 @media (min-width: 801px) { #mobileControls { display: none; } }
 </style>
 </head>
@@ -164,11 +255,20 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="btnEvo" class="mobile-btn">🏆</div>
 </div>
 
-<div id="controls">
-    WASD ou Setas mover | SPACE ou ↑ atacar<br>
-    Z Fireball | X AOI (nível 12+) | E Loja (NPC)<br>
-    V Personagem | B Evolução | F Fullscreen<br>
-    <span style="color:yellow; font-weight:bold;">P Pausar Jogo</span>
+<div id="controls-btn">🎮</div>
+<div id="controls-tooltip">
+    <h4>🎮 Controles</h4>
+    <ul>
+        <li><span class="key">WASD</span><span class="desc">Mover</span></li>
+        <li><span class="key">SPACE</span><span class="desc">Atacar</span></li>
+        <li><span class="key">Z</span><span class="desc">Fireball</span></li>
+        <li><span class="key">X</span><span class="desc">AOI (Área)</span></li>
+        <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
+        <li><span class="key">V</span><span class="desc">Inventário</span></li>
+        <li><span class="key">B</span><span class="desc">Evolução</span></li>
+        <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
+        <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
+    </ul>
 </div>
 
 <div id="minimapContainer">
@@ -1558,8 +1658,29 @@ function unequipInternal(k){
         equipped[k] = null;
     }
 }
-function toggleV(){ statusWindow.style.display = statusWindow.style.display==="block"?"none":"block"; updatePanels(); }
-function toggleShop(){ shopWindow.style.display = shopWindow.style.display==="block"?"none":"block"; updatePanels(); }
+function toggleV(){ 
+    let win = document.getElementById('statusWindow');
+    if(win.style.display === 'block') {
+        win.style.display = 'none';
+        gamePaused = false;
+    } else {
+        win.style.display = 'block';
+        updatePanels();
+        gamePaused = true;
+    }
+}
+
+function toggleShop(){ 
+    let win = document.getElementById('shopWindow');
+    if(win.style.display === 'block') {
+        win.style.display = 'none';
+        gamePaused = false;
+    } else {
+        win.style.display = 'block';
+        updatePanels();
+        gamePaused = true;
+    }
+}
 
 // Função para usar poção manualmente (tecla Q)
 function usePotion() {
@@ -1947,6 +2068,11 @@ let lastBiomeForDeco = -1;
 
 // Adicionar decorações iniciais
 addBiomeDecorations();
+
+// Referências para janelas modais
+const statusWindow = document.getElementById('statusWindow');
+const shopWindow = document.getElementById('shopWindow');
+const evolutionWindow = document.getElementById('evolutionWindow');
 
 // Overlay e tela de Game Over
 let gameOverOverlay = document.createElement('div');
