@@ -16,13 +16,38 @@
         }
 
         body {
-            background-color: #111;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
             overflow: hidden;
-            font-family: 'Arial', sans-serif;
+            position: relative;
+        }
+
+        /* Efeito de estrelas/pixels no fundo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 50px 160px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 90px 40px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 130px 80px, #fff, transparent);
+            background-size: 200px 200px;
+            animation: twinkle 5s ease-in-out infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
         }
 
         #game-container {
