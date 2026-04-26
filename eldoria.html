@@ -607,8 +607,11 @@ function createDeathParticles(pos, color, count){
 }
 
 function checkLevel(){
-    if(player.xp >= player.next){
-        player.level++; player.xp=0; player.next *= 1.5;
+    // Verifica se pode subir múltiplos níveis de uma vez
+    while(player.xp >= player.next){
+        player.level++; 
+        player.xp -= player.next; // Subtrai o XP necessário em vez de zerar
+        player.next = Math.floor(player.next * 1.5);
         let bonus = "";
         let r = Math.random();
         if(r < 0.25) { player.baseAtk += 5; bonus = "+5 ATK"; }
