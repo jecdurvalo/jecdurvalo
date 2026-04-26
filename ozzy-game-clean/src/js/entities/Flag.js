@@ -7,13 +7,14 @@ class Flag {
     /**
      * @param {number} x - Posição X
      * @param {number} y - Posição Y
+     * @param {boolean} visible - Se a bandeira está visível
      */
-    constructor(x, y) {
+    constructor(x, y, visible = true) {
         this.x = x;
         this.y = y;
-        this.width = 60;
-        this.height = 100;
-        this.poleHeight = 80;
+        this.w = 10;
+        this.h = 100;
+        this.visible = visible;
     }
 
     /**
@@ -23,37 +24,20 @@ class Flag {
      * @param {number} frames 
      */
     draw(ctx, cameraX, frames) {
-        const drawX = this.x - cameraX;
-
-        // Poste
-        ctx.fillStyle = '#888';
-        ctx.fillRect(drawX + 5, this.y, 8, this.poleHeight);
-
-        // Base do poste
-        ctx.fillStyle = '#654321';
-        ctx.fillRect(drawX, this.y + this.poleHeight - 10, 18, 10);
-
-        // Bandeira (animação de ondulação)
-        const wave = Math.sin(frames * 0.05) * 3;
+        if (!this.visible) return;
         
-        ctx.fillStyle = '#00ff00';
-        ctx.beginPath();
-        ctx.moveTo(drawX + 13, this.y + 10);
-        ctx.lineTo(drawX + 55 + wave, this.y + 25);
-        ctx.lineTo(drawX + 13, this.y + 40);
-        ctx.closePath();
-        ctx.fill();
-
-        // Estrela na bandeira
+        const drawX = this.x - cameraX;
+        
+        // Haste branca (igual ao ozzy-mario.html)
         ctx.fillStyle = '#fff';
+        ctx.fillRect(drawX, this.y, 5, 100);
+        
+        // Bandeira vermelha triangular
+        ctx.fillStyle = '#ff0000';
         ctx.beginPath();
-        ctx.arc(drawX + 30 + wave / 2, this.y + 25, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Efeito de brilho
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-        ctx.beginPath();
-        ctx.arc(drawX + 30, this.y + 50, 30, 0, Math.PI * 2);
+        ctx.moveTo(drawX + 5, this.y);
+        ctx.lineTo(drawX + 40, this.y + 15);
+        ctx.lineTo(drawX + 5, this.y + 30);
         ctx.fill();
     }
 
@@ -66,9 +50,9 @@ class Flag {
         const bounds = player.getBounds();
         
         return this.x < bounds.x + bounds.width &&
-               this.x + this.width > bounds.x &&
+               this.x + this.w > bounds.x &&
                this.y < bounds.y + bounds.height &&
-               this.y + this.height > bounds.y;
+               this.y + this.h > bounds.y;
     }
 
     /**
@@ -79,8 +63,8 @@ class Flag {
         return {
             x: this.x,
             y: this.y,
-            width: this.width,
-            height: this.height,
+            width: this.w,
+            height: this.h,
         };
     }
 }

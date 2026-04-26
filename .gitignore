@@ -3,25 +3,22 @@
 dist/
 build/
 *.js.map
-*.min.js
 
 # Dependencies
 node_modules/
 
-# Logs and temp files
-*.log
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 *.tmp
+
+# Logs
+*.log
 
 # Environment
 .env
 .env.local
-.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# OS generated files
-.DS_Store
-Thumbs.db
+*.env.*
 ```
