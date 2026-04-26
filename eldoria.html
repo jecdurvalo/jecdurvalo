@@ -180,7 +180,7 @@ heroBody.position.y=1; hero.add(heroBody);
 let hair=new THREE.Mesh(new THREE.BoxGeometry(.9,.2,.8), new THREE.MeshStandardMaterial({color:0x2d160d}));
 hair.position.y=1.95; hero.add(hair);
 let hand=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshStandardMaterial({color:0xffdbac}));
-hand.position.set(0.6,1,0.4); hand.visible=false;
+hand.position.set(0.6,1,0.4); hand.visible=true;
 hero.add(hand);
 scene.add(hero);
 
@@ -189,14 +189,28 @@ heroLabel.className="nameplate";
 heroLabel.innerHTML=`<span class='guild'>[Legends of Eldoria]</span><span class='playerName'>John Legend Lv.1</span><span class='title'>Dragon Slayer</span>`;
 document.body.appendChild(heroLabel);
 
+// Grupo para armas animadas
+let weaponGroup = null;
+
 function applyEquipVisual(){
     visuals.forEach(v=>hero.remove(v));
     visuals=[];
+    weaponGroup = null; // Reset weapon group reference
+    
     if(equipped.weapon){
         let w = new THREE.Group();
         let blade=new THREE.Mesh(new THREE.BoxGeometry(.15,1.6,.15), new THREE.MeshStandardMaterial({color:0xf0f0f0}));
         blade.position.y = 0.8; w.add(blade);
-        w.position.set(0.8, 1, 0.3); hero.add(w); visuals.push(w);
+        let hilt=new THREE.Mesh(new THREE.BoxGeometry(.15,0.3,.15), new THREE.MeshStandardMaterial({color:0x8b4513}));
+        hilt.position.y = 0.15; w.add(hilt);
+        w.position.set(0.8, 1, 0.3); 
+        w.rotation.x = Math.PI / 4; // Angulo inicial da espada
+        hero.add(w); 
+        visuals.push(w);
+        weaponGroup = w; // Referência para animação
+        hand.visible = false; // Esconde a mão quando tem arma
+    } else {
+        hand.visible = true; // Mostra a mão quando não tem arma
     }
     if(equipped.shield){
         let s=new THREE.Mesh(new THREE.BoxGeometry(.9,1,.2), new THREE.MeshStandardMaterial({color:0x777}));
@@ -287,19 +301,50 @@ function castFireball(){
 
 function attack(){
     if(isAttacking) return;
-    isAttacking = true; hand.visible = true;
+    isAttacking = true;
+    
     let t = 0;
-    let anim = setInterval(()=>{
-        t += 0.3; hand.position.z = 0.4 + Math.sin(t)*0.8;
-        if(t >= Math.PI){ clearInterval(anim); hand.visible=false; hand.position.z=0.4; isAttacking=false; }
-    }, 20);
-    monsters.forEach(m => {
-        if(hero.position.distanceTo(m.position) < 4.5){
-            let dmg = player.atk + Math.floor(Math.random()*5);
-            m.userData.hp -= dmg; floatingText("-"+dmg, m.position, "orange");
-            if(m.userData.hp <= 0) killMonster(m);
+    let animSpeed = 0.25;
+    
+    // Animação da espada ou da mão
+    function animateAttack() {
+        t += animSpeed;
+        
+        if (weaponGroup) {
+            // Animação da espada: rotação para frente e volta
+            weaponGroup.rotation.x = Math.PI / 4 - Math.sin(t) * 1.8;
+            weaponGroup.rotation.z = Math.sin(t) * 0.5;
+        } else {
+            // Animação da mão quando não tem arma
+            hand.position.z = 0.4 + Math.sin(t) * 0.8;
         }
-    });
+        
+        // Detecta hit no meio da animação (quando t ~ PI/2)
+        if (t >= Math.PI / 2 && t < Math.PI / 2 + animSpeed) {
+            monsters.forEach(m => {
+                if(hero.position.distanceTo(m.position) < 4.5){
+                    let dmg = player.atk + Math.floor(Math.random()*5);
+                    m.userData.hp -= dmg; 
+                    floatingText("-"+dmg, m.position, "orange");
+                    if(m.userData.hp <= 0) killMonster(m);
+                }
+            });
+        }
+        
+        if(t >= Math.PI){ 
+            if (weaponGroup) {
+                weaponGroup.rotation.x = Math.PI / 4;
+                weaponGroup.rotation.z = 0;
+            } else {
+                hand.position.z = 0.4;
+            }
+            isAttacking = false;
+        } else {
+            requestAnimationFrame(animateAttack);
+        }
+    }
+    
+    animateAttack();
 }
 
 /* -------- JOYSTICK LOGIC -------- */
