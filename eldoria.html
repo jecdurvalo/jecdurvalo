@@ -62,7 +62,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 }
 #btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(211, 51, 51, 0.5), rgba(150, 30, 30, 0.5)); font-size: 18px; }
 #btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
-#btnAOI { bottom: 230px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(153, 51, 255, 0.5), rgba(100, 30, 180, 0.5)); font-weight: bold; }
+#btnAOE { bottom: 230px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(153, 51, 255, 0.5), rgba(100, 30, 180, 0.5)); font-weight: bold; }
 #btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
 #btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
 #btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
@@ -249,7 +249,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="joystickArea"><div id="joystickStick"></div></div>
     <div id="btnAtk" class="mobile-btn">ATK</div>
     <div id="btnSkill" class="mobile-btn">Z</div>
-    <div id="btnAOI" class="mobile-btn">X</div>
+    <div id="btnAOE" class="mobile-btn">X</div>
     <div id="btnInv" class="mobile-btn">V</div>
     <div id="btnShop" class="mobile-btn">E</div>
     <div id="btnEvo" class="mobile-btn">🏆</div>
@@ -353,7 +353,7 @@ let droppedItems=[]; // Itens no chão
 let keys={};
 let floatTexts=[];
 let fireballs=[];
-let aois=[]; // Habilidades de área (AOE)
+let aoes=[]; // Habilidades de área (AOE)
 let visuals=[];
 let lastDir = new THREE.Vector3(0,0,1);
 let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
@@ -383,7 +383,7 @@ let evolutionData = {
         { id: 'rich_1000', name: 'Magnata', desc: 'Acumule 1000 gold', icon: '💎', unlocked: false, condition: (data) => data.gold >= 1000, rewardSP: 2, rewardGold: 100 },
         { id: 'explorer', name: 'Explorador', desc: 'Visite todos os biomas', icon: '🗺️', unlocked: false, condition: (data) => data.biomesVisited >= 5, rewardSP: 2, rewardGold: 100 },
         { id: 'boss_slayer', name: 'Matador de Bosses', desc: 'Derrote 10 bosses', icon: '👹', unlocked: false, condition: (data) => data.bossKills >= 10, rewardSP: 3, rewardGold: 200 },
-        { id: 'aoi_master', name: 'Mestre do AOE', desc: 'Use AOI 50 vezes', icon: '💥', unlocked: false, condition: (data) => data.aoiUses >= 50, rewardSP: 2, rewardGold: 75 }
+        { id: 'aoe_master', name: 'Mestre do AOE', desc: 'Use AOE 50 vezes', icon: '💥', unlocked: false, condition: (data) => data.aoeUses >= 50, rewardSP: 2, rewardGold: 75 }
     ],
     quests: [
         { id: 'quest_1', name: 'Iniciante', desc: 'Derrote 5 Slimes', icon: '🐌', target: 5, progress: 0, type: 'slime_kills', completed: false, rewardXP: 50, rewardGold: 25, rewardSP: 0 },
@@ -413,7 +413,7 @@ let evolutionData = {
         { id: 'lifesteal', name: 'Vampirismo', desc: 'Roubo de vida: 3%', icon: '🩸', cost: 3, maxLevel: 1, level: 0, effect: () => { if(!player.lifesteal) player.lifesteal = 0; player.lifesteal += 3; }, reqLevel: 15 },
         { id: 'atk_boost_3', name: 'Força Bruta III', desc: '+20% de dano físico', icon: '⚔️', cost: 3, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.2); }, reqLevel: 20, requires: ['atk_boost_2'] },
         { id: 'def_boost_3', name: 'Pele de Ferro III', desc: '+20% de defesa', icon: '🛡️', cost: 3, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.2); }, reqLevel: 20, requires: ['def_boost_2'] },
-        { id: 'aoi_mastery', name: 'Mestre do AOE', desc: 'AOI causa +50% de dano', icon: '💥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.aoiDamageBonus) player.aoiDamageBonus = 0; player.aoiDamageBonus += 50; }, reqLevel: 20 },
+        { id: 'aoe_mastery', name: 'Mestre do AOE', desc: 'AOE causa +50% de dano', icon: '💥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.aoeDamageBonus) player.aoeDamageBonus = 0; player.aoeDamageBonus += 50; }, reqLevel: 20 },
         { id: 'fireball_mastery', name: 'Mestre da Fireball', desc: 'Fireball causa +50% de dano', icon: '🔥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.fireballDamageBonus) player.fireballDamageBonus = 0; player.fireballDamageBonus += 50; }, reqLevel: 20 },
         { id: 'legendary_strength', name: 'Força Lendária', desc: '+30% de dano físico', icon: '👑', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.3); }, reqLevel: 25, requires: ['atk_boost_3'] },
         { id: 'legendary_defense', name: 'Defesa Lendária', desc: '+30% de defesa', icon: '🏆', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.3); }, reqLevel: 25, requires: ['def_boost_3'] }
@@ -436,7 +436,7 @@ let evolutionData = {
         scorpionKills: 0,
         mummyKills: 0,
         wormKills: 0,
-        aoiUses: 0,
+        aoeUses: 0,
         desertKills: 0,
         iceKills: 0,
         fireKills: 0
@@ -446,33 +446,33 @@ let evolutionData = {
 // Tipos de monstros por bioma
 const monsterTypes = {
     0: [ // Plains (Nível 1-4)
-        { name: 'Slime', baseHp: 30, baseAtk: 3, baseXp: 15, color: 0x66cc66, eyeColor: 0x338833, size: 1.2, icon: '🟢' },
-        { name: 'Wolf', baseHp: 50, baseAtk: 5, baseXp: 20, color: 0x6a3399, eyeColor: 0xffff00, size: 1.5, icon: '🐺' },
-        { name: 'Goblin', baseHp: 40, baseAtk: 4, baseXp: 18, color: 0x55aa55, eyeColor: 0xff6600, size: 1.3, icon: '👺' }
+        { name: 'Slime', baseHp: 30, baseAtk: 5, baseXp: 15, color: 0x66cc66, eyeColor: 0x338833, size: 1.2, icon: '🟢', canBeMob: false },
+        { name: 'Wolf', baseHp: 50, baseAtk: 5, baseXp: 20, color: 0x6a3399, eyeColor: 0xffff00, size: 1.5, icon: '🐺', canBeMob: true },
+        { name: 'Goblin', baseHp: 40, baseAtk: 4, baseXp: 18, color: 0x55aa55, eyeColor: 0xff6600, size: 1.3, icon: '👺', canBeMob: true }
     ],
     1: [ // Forest (Nível 5-9)
-        { name: 'Forest Wolf', baseHp: 80, baseAtk: 8, baseXp: 35, color: 0x2d5a2d, eyeColor: 0xff3300, size: 1.6, icon: '🐺' },
-        { name: 'Treant', baseHp: 120, baseAtk: 10, baseXp: 45, color: 0x4a3728, eyeColor: 0x00ff00, size: 2.0, icon: '🌳' },
-        { name: 'Spider', baseHp: 60, baseAtk: 12, baseXp: 40, color: 0x333333, eyeColor: 0xff0000, size: 1.4, icon: '🕷️' },
-        { name: 'Orc Scout', baseHp: 90, baseAtk: 9, baseXp: 38, color: 0x556b2f, eyeColor: 0xffaa00, size: 1.7, icon: '👹' }
+        { name: 'Forest Wolf', baseHp: 80, baseAtk: 8, baseXp: 35, color: 0x2d5a2d, eyeColor: 0xff3300, size: 1.6, icon: '🐺', canBeMob: true },
+        { name: 'Treant', baseHp: 120, baseAtk: 14, baseXp: 45, color: 0x4a3728, eyeColor: 0x00ff00, size: 2.0, icon: '🌳', canBeMob: false },
+        { name: 'Spider', baseHp: 60, baseAtk: 16, baseXp: 40, color: 0x333333, eyeColor: 0xff0000, size: 1.4, icon: '🕷️', canBeMob: true },
+        { name: 'Orc Scout', baseHp: 90, baseAtk: 13, baseXp: 38, color: 0x556b2f, eyeColor: 0xffaa00, size: 1.7, icon: '👹', canBeMob: true }
     ],
     2: [ // Desert (Nível 10-14)
-        { name: 'Sand Worm', baseHp: 150, baseAtk: 14, baseXp: 60, color: 0xd4c96e, eyeColor: 0x8b4513, size: 1.8, icon: '🪱' },
-        { name: 'Desert Bandit', baseHp: 110, baseAtk: 16, baseXp: 55, color: 0xc4a574, eyeColor: 0x0000ff, size: 1.6, icon: '🥷' },
-        { name: 'Scorpion', baseHp: 130, baseAtk: 18, baseXp: 65, color: 0x8b7355, eyeColor: 0xff00ff, size: 1.5, icon: '🦂' },
-        { name: 'Mummy', baseHp: 140, baseAtk: 15, baseXp: 58, color: 0xf5deb3, eyeColor: 0x00ffff, size: 1.7, icon: '🧟' }
+        { name: 'Sand Worm', baseHp: 150, baseAtk: 20, baseXp: 60, color: 0xd4c96e, eyeColor: 0x8b4513, size: 1.8, icon: '🪱', canBeMob: false },
+        { name: 'Desert Bandit', baseHp: 110, baseAtk: 22, baseXp: 55, color: 0xc4a574, eyeColor: 0x0000ff, size: 1.6, icon: '🥷', canBeMob: true },
+        { name: 'Scorpion', baseHp: 130, baseAtk: 24, baseXp: 65, color: 0x8b7355, eyeColor: 0xff00ff, size: 1.5, icon: '🦂', canBeMob: false },
+        { name: 'Mummy', baseHp: 140, baseAtk: 21, baseXp: 58, color: 0xf5deb3, eyeColor: 0x00ffff, size: 1.7, icon: '🧟', canBeMob: false }
     ],
     3: [ // Snow (Nível 15-19)
-        { name: 'Ice Wolf', baseHp: 180, baseAtk: 20, baseXp: 80, color: 0x6688aa, eyeColor: 0x00ffff, size: 1.7, icon: '🐺' },
-        { name: 'Yeti', baseHp: 250, baseAtk: 25, baseXp: 100, color: 0xffffff, eyeColor: 0x0000ff, size: 2.5, icon: '🦍' },
-        { name: 'Frost Spirit', baseHp: 160, baseAtk: 22, baseXp: 85, color: 0xb0e0e6, eyeColor: 0x00ffff, size: 1.4, icon: '❄️' },
-        { name: 'Snow Golem', baseHp: 220, baseAtk: 18, baseXp: 90, color: 0xe0ffff, eyeColor: 0x4169e1, size: 2.2, icon: '⛄' }
+        { name: 'Ice Wolf', baseHp: 180, baseAtk: 20, baseXp: 80, color: 0x6688aa, eyeColor: 0x00ffff, size: 1.7, icon: '🐺', canBeMob: true },
+        { name: 'Yeti', baseHp: 250, baseAtk: 32, baseXp: 100, color: 0xffffff, eyeColor: 0x0000ff, size: 2.5, icon: '🦍', canBeMob: false },
+        { name: 'Frost Spirit', baseHp: 160, baseAtk: 28, baseXp: 85, color: 0xb0e0e6, eyeColor: 0x00ffff, size: 1.4, icon: '❄️', canBeMob: false },
+        { name: 'Snow Golem', baseHp: 220, baseAtk: 26, baseXp: 90, color: 0xe0ffff, eyeColor: 0x4169e1, size: 2.2, icon: '⛄', canBeMob: false }
     ],
     4: [ // Volcanic (Nível 20+)
-        { name: 'Fire Imp', baseHp: 280, baseAtk: 30, baseXp: 120, color: 0xaa4433, eyeColor: 0xff4500, size: 1.5, icon: '👿' },
-        { name: 'Lava Elemental', baseHp: 350, baseAtk: 35, baseXp: 150, color: 0xff4500, eyeColor: 0xffff00, size: 2.3, icon: '🔥' },
-        { name: 'Obsidian Golem', baseHp: 400, baseAtk: 32, baseXp: 140, color: 0x2f2f2f, eyeColor: 0xff0000, size: 2.4, icon: '🗿' },
-        { name: 'Flame Dragon', baseHp: 320, baseAtk: 38, baseXp: 160, color: 0xdc143c, eyeColor: 0xffd700, size: 2.0, icon: '🐉' }
+        { name: 'Fire Imp', baseHp: 280, baseAtk: 38, baseXp: 120, color: 0xaa4433, eyeColor: 0xff4500, size: 1.5, icon: '👿', canBeMob: true },
+        { name: 'Lava Elemental', baseHp: 350, baseAtk: 45, baseXp: 150, color: 0xff4500, eyeColor: 0xffff00, size: 2.3, icon: '🔥', canBeMob: false },
+        { name: 'Obsidian Golem', baseHp: 400, baseAtk: 42, baseXp: 140, color: 0x2f2f2f, eyeColor: 0xff0000, size: 2.4, icon: '🗿', canBeMob: false },
+        { name: 'Flame Dragon', baseHp: 320, baseAtk: 48, baseXp: 160, color: 0xdc143c, eyeColor: 0xffd700, size: 2.0, icon: '🐉', canBeMob: false }
     ]
 };
 
@@ -968,7 +968,12 @@ function spawnMonster(elite=false, mobMode=false){
     
     // Selecionar tipo de monstro baseado no bioma
     let biomeMonsters = monsterTypes[currentBiome] || monsterTypes[0];
-    let monsterType = biomeMonsters[Math.floor(Math.random() * biomeMonsters.length)];
+    
+    // Se for mob, selecionar apenas monstros que podem ser mob (canBeMob: true)
+    let availableMonsters = mobMode ? biomeMonsters.filter(m => m.canBeMob) : biomeMonsters;
+    if(availableMonsters.length === 0) availableMonsters = biomeMonsters; // Fallback
+    
+    let monsterType = availableMonsters[Math.floor(Math.random() * availableMonsters.length)];
     
     let size = elite ? 4 : (mobMode ? monsterType.size * 0.8 : monsterType.size);
     
@@ -1034,6 +1039,7 @@ function spawnMonster(elite=false, mobMode=false){
         maxHp: hp, 
         xp: xpGain, 
         atk: atkGain, 
+        def: Math.floor(monsterType.baseAtk * 0.3), // Defesa baseada no ataque base
         isBoss: elite, 
         isMob: mobMode,
         lastAttack: 0, 
@@ -1242,7 +1248,7 @@ function castFireball(){
 }
 
 // Habilidade AOE (Area of Effect) - desbloqueada no nível 12
-function castAOI(){
+function castAOE(){
     if(player.level < 12){
         log("🔒 AOE desbloqueia no nível 12!");
         floatingText("🔒 Nível 12 necessário!", hero.position, "purple");
@@ -1252,13 +1258,13 @@ function castAOI(){
     player.sp -= 50;
 
     // Cria efeito visual de explosão em área
-    let aoiMesh = new THREE.Mesh(
+    let aoeMesh = new THREE.Mesh(
         new THREE.RingGeometry(0.5, 4, 32),
         new THREE.MeshBasicMaterial({color:0x9933ff, transparent:true, opacity:0.7, side:THREE.DoubleSide})
     );
-    aoiMesh.rotation.x = -Math.PI / 2;
-    aoiMesh.position.copy(hero.position).y = 0.1;
-    scene.add(aoiMesh);
+    aoeMesh.rotation.x = -Math.PI / 2;
+    aoeMesh.position.copy(hero.position).y = 0.1;
+    scene.add(aoeMesh);
 
     // Adiciona partícula de luz central
     let lightMesh = new THREE.Mesh(
@@ -1268,8 +1274,8 @@ function castAOI(){
     lightMesh.position.copy(hero.position).y = 1.5;
     scene.add(lightMesh);
 
-    aois.push({
-        effectMesh: aoiMesh,
+    aoes.push({
+        effectMesh: aoeMesh,
         lightMesh: lightMesh,
         center: hero.position.clone(),
         radius: 4,
@@ -1281,7 +1287,7 @@ function castAOI(){
     log("✨ Habilidades das Trevas liberadas! Dano em área ativado!");
 
     // Incrementa contador de uso de AOE para conquistas
-    evolutionData.stats.aoiUses++;
+    evolutionData.stats.aoeUses++;
 
     // Aplica dano imediato a todos os monstros na área (pelo menos 50% da vida do monstro)
     monsters.forEach(monster => {
@@ -1289,8 +1295,8 @@ function castAOI(){
         if(dist <= 4){
             let baseDmg = player.atk * 2.5;
             // Aplica bônus de dano da skill tree
-            if(player.aoiDamageBonus) {
-                baseDmg *= (1 + player.aoiDamageBonus / 100);
+            if(player.aoeDamageBonus) {
+                baseDmg *= (1 + player.aoeDamageBonus / 100);
             }
             // Garante que o dano seja pelo menos 50% da vida máxima do monstro
             let minDmg = Math.floor(monster.userData.maxHp * 0.5);
@@ -1416,7 +1422,7 @@ window.addEventListener('touchend', () => {
 /* Mobile Buttons */
 document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
 document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
-document.getElementById('btnAOI').addEventListener('touchstart', (e) => { e.preventDefault(); castAOI(); });
+document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); castAOE(); });
 document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
 document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
 document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
@@ -1424,7 +1430,7 @@ document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.prev
 // Adicionar eventos de click para desktop
 document.getElementById('btnAtk').addEventListener('click', () => { attack(); });
 document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
-document.getElementById('btnAOI').addEventListener('click', () => { castAOI(); });
+document.getElementById('btnAOE').addEventListener('click', () => { castAOE(); });
 document.getElementById('btnInv').addEventListener('click', () => { toggleV(); });
 document.getElementById('btnShop').addEventListener('click', () => { toggleShop(); });
 document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
@@ -1489,7 +1495,7 @@ function getSkillBonuses() {
                 case 'lifesteal':
                     bonuses.lifesteal += 3 * skill.level;
                     break;
-                case 'aoi_mastery':
+                case 'aoe_mastery':
                     bonuses.aoeDamageBonus += 50 * skill.level;
                     break;
                 case 'fireball_mastery':
@@ -1535,7 +1541,7 @@ function recalcStats(){
     // Atribui bônus de habilidades de stat
     player.critChance = skillBonuses.critChance;
     player.lifesteal = skillBonuses.lifesteal;
-    player.aoiDamageBonus = skillBonuses.aoeDamageBonus;
+    player.aoeDamageBonus = skillBonuses.aoeDamageBonus;
     player.fireballDamageBonus = skillBonuses.fireballDamageBonus;
     
     // Atualiza HP e SP máximos com base nos equipamentos
@@ -1952,9 +1958,9 @@ function animate(time){
         if(f.life<=0){ scene.remove(f.mesh); fireballs.splice(i,1); }
     }
     
-    // AOI - Atualização dos efeitos visuais
-    for(let i=aois.length-1; i>=0; i--){
-        let aoi = aois[i];
+    // AOE - Atualização dos efeitos visuais
+    for(let i=aoes.length-1; i>=0; i--){
+        let aoe = aoes[i];
         aoi.life--;
         
         // Fade out do efeito
@@ -1970,7 +1976,7 @@ function animate(time){
         if(aoi.life <= 0){
             if(aoi.effectMesh) scene.remove(aoi.effectMesh);
             if(aoi.lightMesh) scene.remove(aoi.lightMesh);
-            aois.splice(i, 1);
+            aoes.splice(i, 1);
         }
     }
 
@@ -2121,7 +2127,7 @@ window.onkeydown=e=>{
     keys[e.key.toLowerCase()]=true; 
     if(e.code==="Space" || e.key==="ArrowUp") attack();
     if(e.key.toLowerCase()==="z") castFireball();
-    if(e.key.toLowerCase()==="x") castAOI(); // Tecla X para habilidade AOI (nível 12+)
+    if(e.key.toLowerCase()==="x") castAOE(); // Tecla X para habilidade AOE (nível 12+)
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
     if(e.key.toLowerCase()==="b") toggleEvolution(); // Tecla B para Evolução
@@ -2272,7 +2278,7 @@ function resetGame() {
     monsters = [];
     droppedItems = [];
     fireballs = [];
-    aois = [];
+    aoes = [];
     equipped = { weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
     bossSpawned = false;
     currentBiome = 0;
@@ -2321,12 +2327,12 @@ function resetGame() {
     fireballs.forEach(f => scene.remove(f.mesh));
     fireballs = [];
     
-    // Limpar efeitos AOI
-    aois.forEach(aoi => {
+    // Limpar efeitos AOE
+    aoes.forEach(aoi => {
         if(aoi.effectMesh) scene.remove(aoi.effectMesh);
         if(aoi.lightMesh) scene.remove(aoi.lightMesh);
     });
-    aois = [];
+    aoes = [];
     
     // Primeiro recalcula stats com equipamentos (que estão todos null)
     recalcStats();
