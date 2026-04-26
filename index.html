@@ -208,6 +208,25 @@
             box-shadow: 0 10px 30px rgba(78, 205, 196, 0.5);
         }
 
+        .eldoria-card .game-icon {
+            filter: drop-shadow(0 0 10px #f4a460);
+        }
+
+        .eldoria-card:hover {
+            border-color: #f4a460;
+            box-shadow: 
+                0 20px 40px rgba(244, 164, 96, 0.4),
+                0 0 20px rgba(244, 164, 96, 0.2);
+        }
+
+        .eldoria-card .play-btn {
+            background: linear-gradient(45deg, #f4a460, #d2691e);
+        }
+
+        .eldoria-card .play-btn:hover {
+            box-shadow: 0 10px 30px rgba(244, 164, 96, 0.5);
+        }
+
         /* Responsividade */
         @media (max-width: 768px) {
             .title {
@@ -232,6 +251,10 @@
 
         .game-card:nth-child(2) {
             animation-delay: 0.2s;
+        }
+
+        .game-card:nth-child(3) {
+            animation-delay: 0.4s;
         }
 
         @keyframes fadeInUp {
@@ -266,6 +289,14 @@
                 <h2 class="game-title">Flappy Bird</h2>
                 <p class="game-description">Desvie dos obstáculos e voe alto!</p>
                 <a href="flappy-bird.html" class="play-btn">JOGAR</a>
+            </div>
+
+            <!-- Card do Eldoria RPG -->
+            <div class="game-card eldoria-card" onclick="window.location.href='eldoria.html'">
+                <span class="game-icon">⚔️</span>
+                <h2 class="game-title">Eldoria ARPG</h2>
+                <p class="game-description">RPG de aventura em 3D. Explore, lute e sobreviva!</p>
+                <a href="eldoria.html" class="play-btn">JOGAR</a>
             </div>
         </div>
     </div>
