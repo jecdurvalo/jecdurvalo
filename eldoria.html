@@ -192,11 +192,25 @@ let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 function addItemToInventory(baseItem) {
     let newItem = createItem(baseItem);
     
-    // Para TODOS os itens (incluindo equipamentos), procura item IGUAL (mesmo nome e slot) para empilhar
-    let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot);
-    if(existingIndex >= 0) {
-        inventory[existingIndex].quantity = (inventory[existingIndex].quantity || 1) + 1;
-        return true; // Item foi stackado
+    // Para equipamentos com durabilidade, não empilha se a durabilidade for diferente
+    if(newItem.durability !== undefined && newItem.durability < 100) {
+        // Procura item IGUAL com mesma durabilidade para empilhar
+        let existingIndex = inventory.findIndex(it => 
+            it.name === newItem.name && 
+            it.slot === newItem.slot && 
+            it.durability === newItem.durability
+        );
+        if(existingIndex >= 0) {
+            inventory[existingIndex].quantity = (inventory[existingIndex].quantity || 1) + 1;
+            return true; // Item foi stackado
+        }
+    } else {
+        // Para itens sem durabilidade ou com durabilidade cheia (100), empilha normalmente
+        let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot);
+        if(existingIndex >= 0) {
+            inventory[existingIndex].quantity = (inventory[existingIndex].quantity || 1) + 1;
+            return true; // Item foi stackado
+        }
     }
     
     // Se não encontrou igual, adiciona novo
@@ -208,20 +222,23 @@ const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
 
 const lootTable=[
-    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado.", icon:"🗡️" },
-    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️" },
-    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥" },
-    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢" },
-    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍" },
-    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎" },
+    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado.", icon:"🗡️", stackable:true },
+    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️", stackable:true },
+    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥", stackable:true },
+    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true },
+    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍", stackable:true },
+    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎", stackable:true },
     { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true }
 ];
 
 // Adicionar durabilidade aos itens e quantidade para stackables
 function createItem(baseItem) {
     let item = JSON.parse(JSON.stringify(baseItem));
-    item.durability = 100; // Durabilidade inicial
-    item.maxDurability = 100;
+    // Apenas equipamentos não-consumíveis têm durabilidade
+    if(item.slot !== 'consumable') {
+        item.durability = 100; // Durabilidade inicial
+        item.maxDurability = 100;
+    }
     if(item.stackable) {
         item.quantity = 1; // Quantidade inicial para itens stackables
     }
@@ -447,12 +464,9 @@ function killMonster(m){
             let randomItem = lootTable[Math.floor(Math.random() * lootTable.length)];
             let itemCopy = createItem(randomItem); // Usa funcao para criar item com durabilidade
             
-            // Adicionar quantidade se for stackable (poção)
+            // Adicionar quantidade se for stackable
             if(itemCopy.stackable) {
-                itemCopy.quantity = Math.floor(Math.random() * 3) + 1; // 1-3 poções
-            } else {
-                // Para equipamentos, sempre começa com quantidade 1
-                itemCopy.quantity = 1;
+                itemCopy.quantity = Math.floor(Math.random() * 3) + 1; // 1-3 itens
             }
             
             // Criar item visual no chão
@@ -669,9 +683,9 @@ function updatePanels(){
     for(let k in equipped) {
         let item = equipped[k];
         let icon = item?.icon || '❓';
-        let durabInfo = item ? `<small style="color:${item.durability < 30 ? 'red' : '#aaa'}"> (${item.durability}%)</small>` : '';
-        // Barra de durabilidade para itens equipados
-        let durabBar = item && !item.stackable && item.slot !== 'consumable' ? 
+        let durabInfo = item && item.durability ? `<small style="color:${item.durability < 30 ? 'red' : '#aaa'}"> (${item.durability}%)</small>` : '';
+        // Barra de durabilidade para itens equipados (apenas equipamentos com durabilidade)
+        let durabBar = item && item.durability !== undefined ? 
             `<div style="display:flex; align-items:center; gap:5px; margin-top:5px;"><div style="width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;"><div style="width:${item.durability}%; height:100%; background:${item.durability > 60 ? '#4CAF50' : (item.durability > 30 ? '#FFC107' : '#f44336')}; transition:width 0.3s;"></div></div><small style="color:#fff; min-width:35px;">${item.durability}%</small></div>` : '';
         equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:50px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}${durabBar}</div>`;
     }
@@ -702,35 +716,163 @@ function updatePanels(){
             }
         }
         let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
-        let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button>`;
+        let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='openSellModal(${i})'>Vender</button>`;
         shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped ? 0.5 : 1};"><span>${icon}${qtyText} ${it.name}</span>${sellBtn}</div>`;
     });
 }
 
-function sellItem(i){ 
-    // Não permite vender item equipado
+// Modal de venda com seleção de quantidade
+let sellModal = document.createElement('div');
+sellModal.id = 'sellModal';
+sellModal.style.cssText = 'display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#222; padding:25px; border-radius:12px; border:2px solid gold; z-index:10000; min-width:300px; box-shadow:0 0 30px rgba(0,0,0,0.8);';
+sellModal.innerHTML = `
+    <h3 style="margin:0 0 15px 0; color:#fff;">Vender Item</h3>
+    <div id="sellModalContent" style="color:#ccc; margin-bottom:15px;"></div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+        <label style="color:#fff;">Quantidade:</label>
+        <input type="number" id="sellQuantity" min="1" value="1" style="width:80px; padding:8px; border-radius:6px; border:1px solid #444; background:#333; color:#fff; font-size:16px; text-align:center;">
+        <span id="sellMaxQty" style="color:#aaa;"></span>
+    </div>
+    <div style="margin-bottom:20px; color:gold; font-size:18px;">Total: <span id="sellTotal">0</span> Gold</div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button onclick="closeSellModal()" style="padding:10px 20px; border-radius:6px; border:none; background:#666; color:#fff; cursor:pointer;">Cancelar</button>
+        <button onclick="confirmSell()" style="padding:10px 20px; border-radius:6px; border:none; background:#4CAF50; color:#fff; cursor:pointer;">Vender</button>
+    </div>
+`;
+document.body.appendChild(sellModal);
+
+let currentSellIndex = -1;
+
+function openSellModal(i) {
     let it = inventory[i];
+    
+    // Verifica se o item está equipado
     for(let k in equipped) {
         if(equipped[k] === it) {
             log("<span style='color:red'>Não é possível vender equipamento em uso!</span>");
             return;
         }
     }
-    // Se for item stackable com quantidade > 1, vende apenas uma unidade
-    if(it.stackable && it.quantity > 1) {
-        it.quantity--;
-    } else {
-        inventory.splice(i,1);
+    
+    currentSellIndex = i;
+    let maxQty = it.quantity || 1;
+    let basePrice = 25;
+    let totalValue = basePrice * maxQty;
+    
+    document.getElementById('sellModalContent').innerHTML = `
+        <div style="font-size:24px; margin-bottom:10px;">${it.icon || '📦'} ${it.name}</div>
+        <div style="color:#aaa;">Preço unitário: ${basePrice} Gold</div>
+        <div style="color:#aaa;">Disponível: ${maxQty}</div>
+    `;
+    
+    let qtyInput = document.getElementById('sellQuantity');
+    qtyInput.max = maxQty;
+    qtyInput.value = maxQty;
+    document.getElementById('sellMaxQty').textContent = `/ ${maxQty}`;
+    document.getElementById('sellTotal').textContent = totalValue;
+    
+    qtyInput.oninput = function() {
+        let qty = parseInt(this.value) || 1;
+        if(qty < 1) qty = 1;
+        if(qty > maxQty) qty = maxQty;
+        this.value = qty;
+        document.getElementById('sellTotal').textContent = qty * basePrice;
+    };
+    
+    sellModal.style.display = 'block';
+    gamePaused = true;
+}
+
+function closeSellModal() {
+    sellModal.style.display = 'none';
+    currentSellIndex = -1;
+    gamePaused = false;
+}
+
+function confirmSell() {
+    if(currentSellIndex < 0 || currentSellIndex >= inventory.length) {
+        closeSellModal();
+        return;
     }
-    player.gold += 25; 
-    updatePanels(); 
+    
+    let it = inventory[currentSellIndex];
+    let qtyToSell = parseInt(document.getElementById('sellQuantity').value) || 1;
+    let basePrice = 25;
+    let totalGold = qtyToSell * basePrice;
+    
+    if(it.stackable && it.quantity > 1) {
+        it.quantity -= qtyToSell;
+        if(it.quantity <= 0) {
+            inventory.splice(currentSellIndex, 1);
+        }
+    } else {
+        inventory.splice(currentSellIndex, 1);
+    }
+    
+    player.gold += totalGold;
+    log(`<span style='color:gold'>Vendeu ${qtyToSell}x ${it.name} por ${totalGold} Gold!</span>`);
+    updatePanels();
+    closeSellModal();
+}
+
+function sellItem(i){ 
+    // Função legacy - redireciona para o modal
+    openSellModal(i);
 }
 function equip(i){
-    let it=inventory[i]; let s = it.slot;
+    let it = inventory[i];
+    let s = it.slot;
+    
+    // Se for anel, escolhe ring1 ou ring2
     if(s === "ring") s = !equipped.ring1 ? "ring1" : "ring2";
-    equipped[s]=it; recalcStats(); applyEquipVisual(); updatePanels();
+    
+    // Se o item é stackable com quantidade > 1, cria uma cópia única para equipar
+    if(it.stackable && it.quantity > 1) {
+        it.quantity--;
+        // Cria uma cópia do item sem ser stackable para equipar
+        let equippedItem = JSON.parse(JSON.stringify(it));
+        equippedItem.quantity = undefined; // Remove quantidade pois está equipado
+        equipped[s] = equippedItem;
+    } else {
+        equipped[s] = it;
+        // Remove do inventário se não for stackable ou se quantity for 1
+        if(!it.stackable || (it.quantity && it.quantity <= 1)) {
+            inventory.splice(i, 1);
+        }
+    }
+    
+    recalcStats();
+    applyEquipVisual();
+    updatePanels();
 }
-function unequip(k){ equipped[k]=null; recalcStats(); applyEquipVisual(); updatePanels(); }
+function unequip(k){
+    let item = equipped[k];
+    if(item) {
+        // Adiciona o item de volta ao inventário (como stackable se for equipamento comum)
+        let baseItem = {
+            name: item.name,
+            slot: item.slot,
+            icon: item.icon,
+            desc: item.desc,
+            atk: item.atk,
+            def: item.def,
+            hp: item.hp,
+            sp: item.sp,
+            speed: item.speed,
+            stackable: true  // Agora equipamentos são stackables quando estão na mochila
+        };
+        // Preserva durabilidade restante se existir
+        if(item.durability !== undefined) {
+            baseItem.durability = item.durability;
+            baseItem.maxDurability = item.maxDurability;
+        }
+        addItemToInventory(baseItem);
+        equipped[k] = null;
+    }
+    recalcStats();
+    applyEquipVisual();
+    updatePanels();
+}
 function toggleV(){ statusWindow.style.display = statusWindow.style.display==="block"?"none":"block"; updatePanels(); }
 function toggleShop(){ shopWindow.style.display = shopWindow.style.display==="block"?"none":"block"; updatePanels(); }
 
