@@ -364,6 +364,14 @@ let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
 let gamePaused = false; // Controle de pausa do jogo
 let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 
+// Sistema de Auto-Save
+let lastAutoSaveTime = 0;
+const AUTO_SAVE_INTERVAL = 30000; // 30 segundos em milissegundos
+
+// Sistema de Spawn Dinâmico
+const MAX_MONSTERS = 30; // Limite global aumentado de 15 para 30
+const MOB_SPAWN_CHANCE = 0.35; // Chance de spawn em grupo aumentada de 15% para 35%
+
 // Sistema de Evolução - Conquistas e Missões
 let evolutionData = {
     totalXP: 0,
@@ -957,9 +965,20 @@ function makeLabel(t){
     document.body.appendChild(d); d.innerHTML=t; return d;
 }
 
-function spawnMonster(elite=false, mobMode=false){
-    let sX = hero.position.x + (Math.random()-0.5)*150;
-    let sZ = hero.position.z + (Math.random()-0.5)*150;
+function spawnMonster(elite=false, mobMode=false, emergencySpawn=false){
+    let sX, sZ;
+    
+    // Spawn de emergência: spawnar mais perto do jogador (40-60 unidades)
+    if(emergencySpawn) {
+        let angle = Math.random() * Math.PI * 2;
+        let distance = 40 + Math.random() * 20; // 40-60 unidades
+        sX = hero.position.x + Math.cos(angle) * distance;
+        sZ = hero.position.z + Math.sin(angle) * distance;
+    } else {
+        // Spawn normal: 150 unidades de distância
+        sX = hero.position.x + (Math.random()-0.5)*150;
+        sZ = hero.position.z + (Math.random()-0.5)*150;
+    }
     
     // Boss só aparece via checkLevel, não aleatoriamente
     elite = elite || false;
@@ -1057,10 +1076,120 @@ function spawnMonster(elite=false, mobMode=false){
     }
 }
 
+// Função para spawnar Boss com escalonamento baseado na árvore de habilidades
+function spawnBossWithScaling() {
+    // Calcular % da Árvore Desbloqueada
+    let totalSkills = evolutionData.skillTree.length;
+    let unlockedSkills = evolutionData.skillTree.filter(s => s.level > 0).length;
+    let skillProgress = unlockedSkills / totalSkills;
+    
+    // Multiplicador: 1 + (%Desbloqueada * 0.8)
+    // Ex: 50% desbloqueado = 1 + (0.5 * 0.8) = 1.4 (40% mais stats)
+    let bossMultiplier = 1 + (skillProgress * 0.8);
+    
+    // Spawnar boss normal primeiro
+    let sX = hero.position.x + (Math.random()-0.5)*150;
+    let sZ = hero.position.z + (Math.random()-0.5)*150;
+    
+    let lv = player.level * 2;
+    
+    // Selecionar tipo de monstro baseado no bioma
+    let biomeMonsters = monsterTypes[currentBiome] || monsterTypes[0];
+    let monsterType = biomeMonsters[Math.floor(Math.random() * biomeMonsters.length)];
+    
+    let size = 4;
+    
+    // Criar modelo de inimigo mais detalhado
+    let monsterGroup = new THREE.Group();
+    
+    // Corpo principal - cor baseada no tipo de monstro
+    let bodyColor = 0x8b0000;
+    let bodyMat = new THREE.MeshStandardMaterial({color: bodyColor});
+    let body = new THREE.Mesh(new THREE.BoxGeometry(size, size*0.6, size*0.7), bodyMat);
+    body.position.y = size * 0.5;
+    monsterGroup.add(body);
+    
+    // Cabeça
+    let head = new THREE.Mesh(new THREE.BoxGeometry(size*0.7, size*0.5, size*0.6), bodyMat);
+    head.position.y = size * 1.05;
+    monsterGroup.add(head);
+    
+    // Olhos brilhantes
+    let eyeMat = new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8});
+    let eye1 = new THREE.Mesh(new THREE.SphereGeometry(size*0.12), eyeMat);
+    eye1.position.set(-size*0.15, size*1.1, size*0.35);
+    monsterGroup.add(eye1);
+    let eye2 = eye1.clone();
+    eye2.position.set(size*0.15, size*1.1, size*0.35);
+    monsterGroup.add(eye2);
+    
+    // Chifres/orelhas para elite
+    let hornMat = new THREE.MeshStandardMaterial({color: 0x333333});
+    let horn1 = new THREE.Mesh(new THREE.ConeGeometry(size*0.1, size*0.4, 8), hornMat);
+    horn1.position.set(-size*0.25, size*1.4, 0);
+    horn1.rotation.z = -0.3;
+    monsterGroup.add(horn1);
+    let horn2 = horn1.clone();
+    horn2.position.set(size*0.25, size*1.4, 0);
+    horn2.rotation.z = 0.3;
+    monsterGroup.add(horn2);
+    
+    // Braços
+    let armMat = new THREE.MeshStandardMaterial({color: bodyColor});
+    let arm1 = new THREE.Mesh(new THREE.BoxGeometry(size*0.25, size*0.5, size*0.25), armMat);
+    arm1.position.set(-size*0.6, size*0.7, 0);
+    monsterGroup.add(arm1);
+    let arm2 = arm1.clone();
+    arm2.position.set(size*0.6, size*0.7, 0);
+    monsterGroup.add(arm2);
+    
+    monsterGroup.position.set(sX, 0, sZ);
+    
+    // Stats do Boss com escalonamento baseado na progressão da árvore de habilidades
+    let baseHp = 1200 + (player.level * 100);
+    let baseAtk = 25 + (player.level * 3);
+    let baseXp = 500 + (player.level * 50);
+    
+    // Aplicar multiplicador nos stats
+    let hp = Math.floor(baseHp * bossMultiplier);
+    let atk = Math.floor(baseAtk * bossMultiplier);
+    let xpGain = Math.floor(baseXp * bossMultiplier); // XP também escala
+    
+    monsterGroup.userData={ 
+        name: "BOSS Demon", 
+        level: lv, 
+        hp, 
+        maxHp: hp, 
+        xp: xpGain, 
+        atk, 
+        def: Math.floor(monsterType.baseAtk * 0.3 * bossMultiplier),
+        isBoss: true, 
+        isMob: false,
+        lastAttack: 0, 
+        ui: hpBar(), 
+        label: makeLabel("BOSS Demon Lv." + lv + " (x" + bossMultiplier.toFixed(2) + ")"), 
+        mesh: monsterGroup, 
+        breatheOffset: Math.random() * Math.PI * 2,
+        monsterType: monsterType,
+        bossMultiplier: bossMultiplier // Guardar multiplicador para referência
+    };
+    scene.add(monsterGroup); monsters.push(monsterGroup);
+    
+    floatingText("⚠️ BOSS SPAWNED! (x" + bossMultiplier.toFixed(2) + ")", hero.position, "red");
+    log("<span style='color:red; font-weight:bold;'>👹 UM BOSS APARECEU! Poder: x" + bossMultiplier.toFixed(2) + "</span>");
+}
+
 function killMonster(m){
-    player.xp += m.userData.xp;
-    evolutionData.totalXP += m.userData.xp; // Adiciona XP total para evolução
-    floatingText("+"+m.userData.xp+" XP", m.position, "lime");
+    // Recompensa Massiva por Matar o Boss: +100% de XP BONUS
+    let xpGain = m.userData.xp;
+    if(m.userData.isBoss) {
+        xpGain = m.userData.xp * 2; // +100% de XP (totaliza 2x o valor base, que já é maior que monstro comum)
+        floatingText("👹 BOSS KILL! +100% XP BONUS!", m.position, "gold");
+    }
+    
+    player.xp += xpGain;
+    evolutionData.totalXP += xpGain; // Adiciona XP total para evolução
+    floatingText("+"+xpGain+" XP", m.position, "lime");
     
     // Atualiza estatísticas de kills
     evolutionData.stats.kills++;
@@ -1224,7 +1353,7 @@ function checkLevel(){
         
         // Boss aparece a cada 5 níveis (level 5, 10, 15, 20...)
         if(player.level >= 5 && player.level % 5 === 0) {
-            spawnMonster(true); // Spawn boss
+            spawnBossWithScaling(); // Spawn boss com escalonamento baseado na árvore de habilidades
         }
         
         // Verifica conquistas relacionadas a nível
@@ -1870,21 +1999,42 @@ function animate(time){
         hero.rotation.y = Math.atan2(move.x, move.z);
     }
 
-    // Spawn de monstros - chance maior para mobs em grupo
-    if(time - lastSpawnTime > 2500){ 
-        if(monsters.length < 15) {
+    // Sistema de Spawn Dinâmico e Inteligente (Anti-"Mapa Vazio")
+    // Contar inimigos próximos (raio de 50 unidades)
+    let nearbyEnemies = monsters.filter(m => m.position.distanceTo(hero.position) < 50).length;
+    
+    // Calcular intervalo de spawn baseado na quantidade de inimigos próximos
+    let spawnInterval = 2500;
+    if(nearbyEnemies < 3) {
+        spawnInterval = 800; // Spawn urgente quando há poucos inimigos
+    } else if(nearbyEnemies >= 3 && nearbyEnemies <= 5) {
+        spawnInterval = 1200;
+    } else if(nearbyEnemies > 5 && nearbyEnemies <= 8) {
+        spawnInterval = 1800;
+    } else if(nearbyEnemies > 8) {
+        spawnInterval = 2500; // Pausa quando há muitos inimigos
+    }
+    
+    // Verificar se é hora de spawnar
+    if(time - lastSpawnTime > spawnInterval) { 
+        if(monsters.length < MAX_MONSTERS) {
             let isElite = Math.random() > 0.97;
-            // Chance de spawnar mob (grupo de monstros) em biomas específicos
-            let isMobMode = !isElite && Math.random() > 0.85 && currentBiome >= 1;
+            
+            // Spawn de emergência: se houver < 2 inimigos perto, forçar spawn próximo
+            let emergencySpawn = nearbyEnemies < 2;
+            
+            // Chance de spawnar mob (grupo de monstros) aumentada para 35%
+            let isMobMode = !isElite && (Math.random() < MOB_SPAWN_CHANCE) && currentBiome >= 1;
+            
             if(isMobMode) {
-                // Spawn de 3-5 monstros em grupo
-                let mobCount = Math.floor(Math.random() * 3) + 3;
+                // Spawn de 3-6 monstros em grupo (aumentado de 3-5 para 3-6)
+                let mobCount = Math.floor(Math.random() * 4) + 3;
                 for(let i = 0; i < mobCount; i++) {
-                    setTimeout(() => spawnMonster(false, true), i * 200);
+                    setTimeout(() => spawnMonster(false, true, emergencySpawn), i * 150);
                 }
                 log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
             } else {
-                spawnMonster(isElite);
+                spawnMonster(isElite, false, emergencySpawn);
             }
         }
         lastSpawnTime = time; 
@@ -2074,6 +2224,12 @@ function animate(time){
     sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
+    
+    // Sistema de Auto-Save: verificar se passou o intervalo
+    if(time - lastAutoSaveTime > AUTO_SAVE_INTERVAL) {
+        saveGame();
+        lastAutoSaveTime = time;
+    }
 
     // MINI-MAPA
     ctxM.clearRect(0, 0, 180, 180);
