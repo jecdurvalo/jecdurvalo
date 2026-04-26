@@ -252,10 +252,13 @@ let evolutionData = {
         { id: 'explorer', name: 'Explorador', desc: 'Visite todos os biomas', icon: '🗺️', unlocked: false, condition: (data) => data.biomesVisited >= 5 }
     ],
     quests: [
-        { id: 'quest_1', name: 'Iniciante', desc: 'Derrote 5 Slimes', icon: '🐌', target: 5, progress: 0, type: 'kills', completed: false, rewardXP: 50, rewardGold: 25 },
+        { id: 'quest_1', name: 'Iniciante', desc: 'Derrote 5 Slimes', icon: '🐌', target: 5, progress: 0, type: 'slime_kills', completed: false, rewardXP: 50, rewardGold: 25 },
         { id: 'quest_2', name: 'Caçador de Lobos', desc: 'Derrote 10 Lobos', icon: '🐺', target: 10, progress: 0, type: 'wolf_kills', completed: false, rewardXP: 100, rewardGold: 50 },
         { id: 'quest_3', name: 'Coletor', desc: 'Colete 15 itens', icon: '🎒', target: 15, progress: 0, type: 'items', completed: false, rewardXP: 75, rewardGold: 40 },
-        { id: 'quest_4', name: 'Boss Slayer', desc: 'Derrote 3 Bosses', icon: '👹', target: 3, progress: 0, type: 'boss_kills', completed: false, rewardXP: 200, rewardGold: 150 }
+        { id: 'quest_4', name: 'Boss Slayer', desc: 'Derrote 3 Bosses', icon: '👹', target: 3, progress: 0, type: 'boss_kills', completed: false, rewardXP: 200, rewardGold: 150 },
+        { id: 'quest_5', name: 'Caçador de Aranhas', desc: 'Derrote 8 Aranhas', icon: '🕷️', target: 8, progress: 0, type: 'spider_kills', completed: false, rewardXP: 80, rewardGold: 45 },
+        { id: 'quest_6', name: 'Orc Hunter', desc: 'Derrote 12 Orcs', icon: '👹', target: 12, progress: 0, type: 'orc_kills', completed: false, rewardXP: 120, rewardGold: 60 },
+        { id: 'quest_7', name: 'Dragon Slayer', desc: 'Derrote 5 Dragões', icon: '🐉', target: 5, progress: 0, type: 'dragon_kills', completed: false, rewardXP: 300, rewardGold: 200 }
     ],
     stats: {
         kills: 0,
@@ -263,8 +266,45 @@ let evolutionData = {
         bossKills: 0,
         itemsCollected: 0,
         biomesVisited: 0,
-        visitedBiomes: []
+        visitedBiomes: [],
+        slimeKills: 0,
+        spiderKills: 0,
+        orcKills: 0,
+        dragonKills: 0
     }
+};
+
+// Tipos de monstros por bioma
+const monsterTypes = {
+    0: [ // Plains (Nível 1-4)
+        { name: 'Slime', baseHp: 30, baseAtk: 3, baseXp: 15, color: 0x66cc66, eyeColor: 0x338833, size: 1.2, icon: '🟢' },
+        { name: 'Wolf', baseHp: 50, baseAtk: 5, baseXp: 20, color: 0x6a3399, eyeColor: 0xffff00, size: 1.5, icon: '🐺' },
+        { name: 'Goblin', baseHp: 40, baseAtk: 4, baseXp: 18, color: 0x55aa55, eyeColor: 0xff6600, size: 1.3, icon: '👺' }
+    ],
+    1: [ // Forest (Nível 5-9)
+        { name: 'Forest Wolf', baseHp: 80, baseAtk: 8, baseXp: 35, color: 0x2d5a2d, eyeColor: 0xff3300, size: 1.6, icon: '🐺' },
+        { name: 'Treant', baseHp: 120, baseAtk: 10, baseXp: 45, color: 0x4a3728, eyeColor: 0x00ff00, size: 2.0, icon: '🌳' },
+        { name: 'Spider', baseHp: 60, baseAtk: 12, baseXp: 40, color: 0x333333, eyeColor: 0xff0000, size: 1.4, icon: '🕷️' },
+        { name: 'Orc Scout', baseHp: 90, baseAtk: 9, baseXp: 38, color: 0x556b2f, eyeColor: 0xffaa00, size: 1.7, icon: '👹' }
+    ],
+    2: [ // Desert (Nível 10-14)
+        { name: 'Sand Worm', baseHp: 150, baseAtk: 14, baseXp: 60, color: 0xd4c96e, eyeColor: 0x8b4513, size: 1.8, icon: '🪱' },
+        { name: 'Desert Bandit', baseHp: 110, baseAtk: 16, baseXp: 55, color: 0xc4a574, eyeColor: 0x0000ff, size: 1.6, icon: '🥷' },
+        { name: 'Scorpion', baseHp: 130, baseAtk: 18, baseXp: 65, color: 0x8b7355, eyeColor: 0xff00ff, size: 1.5, icon: '🦂' },
+        { name: 'Mummy', baseHp: 140, baseAtk: 15, baseXp: 58, color: 0xf5deb3, eyeColor: 0x00ffff, size: 1.7, icon: '🧟' }
+    ],
+    3: [ // Snow (Nível 15-19)
+        { name: 'Ice Wolf', baseHp: 180, baseAtk: 20, baseXp: 80, color: 0x6688aa, eyeColor: 0x00ffff, size: 1.7, icon: '🐺' },
+        { name: 'Yeti', baseHp: 250, baseAtk: 25, baseXp: 100, color: 0xffffff, eyeColor: 0x0000ff, size: 2.5, icon: '🦍' },
+        { name: 'Frost Spirit', baseHp: 160, baseAtk: 22, baseXp: 85, color: 0xb0e0e6, eyeColor: 0x00ffff, size: 1.4, icon: '❄️' },
+        { name: 'Snow Golem', baseHp: 220, baseAtk: 18, baseXp: 90, color: 0xe0ffff, eyeColor: 0x4169e1, size: 2.2, icon: '⛄' }
+    ],
+    4: [ // Volcanic (Nível 20+)
+        { name: 'Fire Imp', baseHp: 280, baseAtk: 30, baseXp: 120, color: 0xaa4433, eyeColor: 0xff4500, size: 1.5, icon: '👿' },
+        { name: 'Lava Elemental', baseHp: 350, baseAtk: 35, baseXp: 150, color: 0xff4500, eyeColor: 0xffff00, size: 2.3, icon: '🔥' },
+        { name: 'Obsidian Golem', baseHp: 400, baseAtk: 32, baseXp: 140, color: 0x2f2f2f, eyeColor: 0xff0000, size: 2.4, icon: '🗿' },
+        { name: 'Flame Dragon', baseHp: 320, baseAtk: 38, baseXp: 160, color: 0xdc143c, eyeColor: 0xffd700, size: 2.0, icon: '🐉' }
+    ]
 };
 
 // Função para adicionar item ao inventário com stacking
@@ -450,7 +490,7 @@ function updateQuestProgress(type, amount) {
     evolutionData.quests.forEach(quest => {
         if(quest.completed) return;
         
-        if(quest.type === type || (type === 'kills' && quest.type === 'kills')) {
+        if(quest.type === type) {
             quest.progress += amount;
             if(quest.progress >= quest.target) {
                 quest.completed = true;
@@ -612,7 +652,7 @@ function makeLabel(t){
     document.body.appendChild(d); d.innerHTML=t; return d;
 }
 
-function spawnMonster(elite=false){
+function spawnMonster(elite=false, mobMode=false){
     let sX = hero.position.x + (Math.random()-0.5)*150;
     let sZ = hero.position.z + (Math.random()-0.5)*150;
     
@@ -620,13 +660,18 @@ function spawnMonster(elite=false){
     elite = elite || false;
     
     let lv = elite ? player.level * 2 : player.level + Math.floor(Math.random()*3);
-    let size = elite ? 4 : 1.5;
+    
+    // Selecionar tipo de monstro baseado no bioma
+    let biomeMonsters = monsterTypes[currentBiome] || monsterTypes[0];
+    let monsterType = biomeMonsters[Math.floor(Math.random() * biomeMonsters.length)];
+    
+    let size = elite ? 4 : (mobMode ? monsterType.size * 0.8 : monsterType.size);
     
     // Criar modelo de inimigo mais detalhado
     let monsterGroup = new THREE.Group();
     
-    // Corpo principal - cor baseada no bioma
-    let bodyColor = elite ? 0x8b0000 : (currentBiome === 3 ? 0x6688aa : (currentBiome === 4 ? 0xaa4433 : 0x6a3399));
+    // Corpo principal - cor baseada no tipo de monstro
+    let bodyColor = elite ? 0x8b0000 : monsterType.color;
     let bodyMat = new THREE.MeshStandardMaterial({color: bodyColor});
     let body = new THREE.Mesh(new THREE.BoxGeometry(size, size*0.6, size*0.7), bodyMat);
     body.position.y = size * 0.5;
@@ -638,7 +683,7 @@ function spawnMonster(elite=false){
     monsterGroup.add(head);
     
     // Olhos brilhantes
-    let eyeMat = new THREE.MeshStandardMaterial({color: elite ? 0xff0000 : 0xffff00, emissive: elite ? 0xff0000 : 0xffff00, emissiveIntensity: 0.8});
+    let eyeMat = new THREE.MeshStandardMaterial({color: elite ? 0xff0000 : monsterType.eyeColor, emissive: elite ? 0xff0000 : monsterType.eyeColor, emissiveIntensity: 0.8});
     let eye1 = new THREE.Mesh(new THREE.SphereGeometry(size*0.12), eyeMat);
     eye1.position.set(-size*0.15, size*1.1, size*0.35);
     monsterGroup.add(eye1);
@@ -669,9 +714,30 @@ function spawnMonster(elite=false){
     monsterGroup.add(arm2);
     
     monsterGroup.position.set(sX, 0, sZ);
-    let hp = elite ? 1200 + (player.level * 100) : 50 + (lv * 10);
-    let name = elite ? "BOSS Demon" : (currentBiome === 3 ? "Ice Wolf" : (currentBiome === 4 ? "Fire Imp" : "Wolf"));
-    monsterGroup.userData={ name: name, level: lv, hp, maxHp: hp, xp: elite?500+(player.level*50):20+(lv*5), atk: elite?25+(player.level*3):5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(name + " Lv." + lv), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
+    
+    // Stats baseados no tipo de monstro e nível
+    let hpMult = elite ? 20 : (mobMode ? 0.7 : 1);
+    let hp = elite ? 1200 + (player.level * 100) : Math.floor((monsterType.baseHp + (lv * 10)) * hpMult);
+    let name = elite ? "BOSS Demon" : monsterType.name;
+    let xpGain = elite ? 500+(player.level*50) : Math.floor((monsterType.baseXp + (lv*5)) * (mobMode ? 0.5 : 1));
+    let atkGain = elite ? 25+(player.level*3) : Math.floor((monsterType.baseAtk + (lv*2)) * (mobMode ? 0.8 : 1));
+    
+    monsterGroup.userData={ 
+        name: name, 
+        level: lv, 
+        hp, 
+        maxHp: hp, 
+        xp: xpGain, 
+        atk: atkGain, 
+        isBoss: elite, 
+        isMob: mobMode,
+        lastAttack: 0, 
+        ui: hpBar(), 
+        label: makeLabel(name + " Lv." + lv), 
+        mesh: monsterGroup, 
+        breatheOffset: Math.random() * Math.PI * 2,
+        monsterType: monsterType
+    };
     scene.add(monsterGroup); monsters.push(monsterGroup);
     
     if(elite) {
@@ -687,10 +753,30 @@ function killMonster(m){
     
     // Atualiza estatísticas de kills
     evolutionData.stats.kills++;
-    if(m.userData.name.includes('Wolf')) {
+    
+    // Contabilizar kills por tipo de monstro para missões
+    let monsterName = m.userData.name.toLowerCase();
+    if(monsterName.includes('wolf')) {
         evolutionData.stats.wolfKills++;
         updateQuestProgress('wolf_kills', 1);
     }
+    if(monsterName.includes('slime')) {
+        evolutionData.stats.slimeKills++;
+        updateQuestProgress('slime_kills', 1);
+    }
+    if(monsterName.includes('spider')) {
+        evolutionData.stats.spiderKills++;
+        updateQuestProgress('spider_kills', 1);
+    }
+    if(monsterName.includes('orc')) {
+        evolutionData.stats.orcKills++;
+        updateQuestProgress('orc_kills', 1);
+    }
+    if(monsterName.includes('dragon')) {
+        evolutionData.stats.dragonKills++;
+        updateQuestProgress('dragon_kills', 1);
+    }
+    
     if(m.userData.isBoss) {
         evolutionData.stats.bossKills++;
         updateQuestProgress('boss_kills', 1);
@@ -1236,7 +1322,25 @@ function animate(time){
         hero.rotation.y = Math.atan2(move.x, move.z);
     }
 
-    if(time - lastSpawnTime > 2500){ if(monsters.length < 15) spawnMonster(Math.random()>0.97); lastSpawnTime = time; }
+    // Spawn de monstros - chance maior para mobs em grupo
+    if(time - lastSpawnTime > 2500){ 
+        if(monsters.length < 15) {
+            let isElite = Math.random() > 0.97;
+            // Chance de spawnar mob (grupo de monstros) em biomas específicos
+            let isMobMode = !isElite && Math.random() > 0.85 && currentBiome >= 1;
+            if(isMobMode) {
+                // Spawn de 3-5 monstros em grupo
+                let mobCount = Math.floor(Math.random() * 3) + 3;
+                for(let i = 0; i < mobCount; i++) {
+                    setTimeout(() => spawnMonster(false, true), i * 200);
+                }
+                log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
+            } else {
+                spawnMonster(isElite);
+            }
+        }
+        lastSpawnTime = time; 
+    }
     
     // Atualizar bioma baseado no nível
     updateBiome();
