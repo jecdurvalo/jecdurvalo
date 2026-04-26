@@ -62,6 +62,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 }
 #btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(211, 51, 51, 0.5), rgba(150, 30, 30, 0.5)); font-size: 18px; }
 #btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
+#btnAOI { bottom: 230px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(153, 51, 255, 0.5), rgba(100, 30, 180, 0.5)); font-weight: bold; }
 #btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
 #btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
 #btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
@@ -157,6 +158,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="joystickArea"><div id="joystickStick"></div></div>
     <div id="btnAtk" class="mobile-btn">ATK</div>
     <div id="btnSkill" class="mobile-btn">Z</div>
+    <div id="btnAOI" class="mobile-btn">X</div>
     <div id="btnInv" class="mobile-btn">V</div>
     <div id="btnShop" class="mobile-btn">E</div>
     <div id="btnEvo" class="mobile-btn">🏆</div>
@@ -164,7 +166,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="controls">
     WASD ou Setas mover | SPACE ou ↑ atacar<br>
-    Z Fireball | E Loja (NPC)<br>
+    Z Fireball | X AOI (nível 12+) | E Loja (NPC)<br>
     V Personagem | B Evolução | F Fullscreen<br>
     <span style="color:yellow; font-weight:bold;">P Pausar Jogo</span>
 </div>
@@ -177,18 +179,18 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="statusWindow">
     <button onclick="toggleV()" class="close-btn">×</button>
-    <h2>Ficha do Herói</h2>
+    <h2>📜 Grimório do Herói</h2>
     <div id="statsPanel" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin-bottom:10px;"></div>
-    <h3>Equipado</h3>
+    <h3>⚔️ Equipamento</h3>
     <div id="equippedPanel"></div>
-    <h3>Mochila</h3>
+    <h3>🎒 Alforje</h3>
     <div id="inventoryPanel" class="inventory-grid"></div>
 </div>
 
 <div id="shopWindow">
     <button onclick="toggleShop()" class="close-btn">×</button>
-    <h2>Ferreiro João</h2>
-    <p>Venda seus itens. O valor depende da qualidade do item.</p>
+    <h2>🏪 Mercador Real</h2>
+    <p>Negocie seus tesouros. O valor depende da raridade e qualidade do item.</p>
     <div id="shopInventoryPanel" class="inventory-grid"></div>
 </div>
 
@@ -226,6 +228,7 @@ let droppedItems=[]; // Itens no chão
 let keys={};
 let floatTexts=[];
 let fireballs=[];
+let aois=[]; // Habilidades de área (AOI)
 let visuals=[];
 let lastDir = new THREE.Vector3(0,0,1);
 let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
@@ -270,7 +273,14 @@ let evolutionData = {
         slimeKills: 0,
         spiderKills: 0,
         orcKills: 0,
-        dragonKills: 0
+        dragonKills: 0,
+        goblinKills: 0,
+        treantKills: 0,
+        yetiKills: 0,
+        banditKills: 0,
+        scorpionKills: 0,
+        mummyKills: 0,
+        wormKills: 0
     }
 };
 
@@ -904,6 +914,57 @@ function castFireball(){
     fireballs.push({ mesh: fb, dir: lastDir.clone().normalize(), life: 80 });
 }
 
+// Habilidade AOI (Area of Impact) - desbloqueada no nível 12
+function castAOI(){
+    if(player.level < 12){ 
+        log("🔒 AOI desbloqueia no nível 12!"); 
+        floatingText("🔒 Nível 12 necessário!", hero.position, "purple");
+        return; 
+    }
+    if(player.sp < 50){ log("SP insuficiente!"); return; }
+    player.sp -= 50;
+    
+    // Cria efeito visual de explosão em área
+    let aoiMesh = new THREE.Mesh(
+        new THREE.RingGeometry(0.5, 4, 32), 
+        new THREE.MeshBasicMaterial({color:0x9933ff, transparent:true, opacity:0.7, side:THREE.DoubleSide})
+    );
+    aoiMesh.rotation.x = -Math.PI / 2;
+    aoiMesh.position.copy(hero.position).y = 0.1;
+    scene.add(aoiMesh);
+    
+    // Adiciona partícula de luz central
+    let lightMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1.5, 16, 16),
+        new THREE.MeshBasicMaterial({color:0xcc66ff, transparent:true, opacity:0.5})
+    );
+    lightMesh.position.copy(hero.position).y = 1.5;
+    scene.add(lightMesh);
+    
+    aois.push({ 
+        effectMesh: aoiMesh, 
+        lightMesh: lightMesh,
+        center: hero.position.clone(),
+        radius: 4,
+        damage: player.atk * 2.5,
+        life: 20 
+    });
+    
+    floatingText("💥 AOI!", hero.position, "purple");
+    log("✨ Habilidades das Trevas liberadas! Dano em área ativado!");
+    
+    // Aplica dano imediato a todos os monstros na área
+    monsters.forEach(monster => {
+        let dist = monster.mesh.position.distanceTo(hero.position);
+        if(dist <= 4){
+            let dmg = Math.max(1, player.atk * 2.5 - monster.def);
+            monster.hp -= dmg;
+            floatingText(Math.round(dmg), monster.mesh.position, "purple");
+            createHitVisual(monster.mesh.position, 0x9933ff);
+        }
+    });
+}
+
 function attack(){
     if(isAttacking || gamePaused) return;
     isAttacking = true;
@@ -999,6 +1060,7 @@ window.addEventListener('touchend', () => {
 /* Mobile Buttons */
 document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
 document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
+document.getElementById('btnAOI').addEventListener('touchstart', (e) => { e.preventDefault(); castAOI(); });
 document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
 document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
 document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
@@ -1006,6 +1068,7 @@ document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.prev
 // Adicionar eventos de click para desktop
 document.getElementById('btnAtk').addEventListener('click', () => { attack(); });
 document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
+document.getElementById('btnAOI').addEventListener('click', () => { castAOI(); });
 document.getElementById('btnInv').addEventListener('click', () => { toggleV(); });
 document.getElementById('btnShop').addEventListener('click', () => { toggleShop(); });
 document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
@@ -1402,6 +1465,28 @@ function animate(time){
         });
         if(f.life<=0){ scene.remove(f.mesh); fireballs.splice(i,1); }
     }
+    
+    // AOI - Atualização dos efeitos visuais
+    for(let i=aois.length-1; i>=0; i--){
+        let aoi = aois[i];
+        aoi.life--;
+        
+        // Fade out do efeito
+        if(aoi.effectMesh){
+            aoi.effectMesh.material.opacity = (aoi.life / 20) * 0.7;
+            aoi.effectMesh.scale.multiplyScalar(1.05);
+        }
+        if(aoi.lightMesh){
+            aoi.lightMesh.material.opacity = (aoi.life / 20) * 0.5;
+            aoi.lightMesh.scale.multiplyScalar(1.03);
+        }
+        
+        if(aoi.life <= 0){
+            if(aoi.effectMesh) scene.remove(aoi.effectMesh);
+            if(aoi.lightMesh) scene.remove(aoi.lightMesh);
+            aois.splice(i, 1);
+        }
+    }
 
     // Monstros - animação de respiração e atualização
     monsters.forEach((m)=>{
@@ -1550,6 +1635,7 @@ window.onkeydown=e=>{
     keys[e.key.toLowerCase()]=true; 
     if(e.code==="Space" || e.key==="ArrowUp") attack();
     if(e.key.toLowerCase()==="z") castFireball();
+    if(e.key.toLowerCase()==="x") castAOI(); // Tecla X para habilidade AOI (nível 12+)
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
     if(e.key.toLowerCase()==="b") toggleEvolution(); // Tecla B para Evolução
@@ -1695,6 +1781,7 @@ function resetGame() {
     monsters = [];
     droppedItems = [];
     fireballs = [];
+    aois = [];
     equipped = { weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
     bossSpawned = false;
     currentBiome = 0;
@@ -1742,6 +1829,13 @@ function resetGame() {
     // Limpar fireballs
     fireballs.forEach(f => scene.remove(f.mesh));
     fireballs = [];
+    
+    // Limpar efeitos AOI
+    aois.forEach(aoi => {
+        if(aoi.effectMesh) scene.remove(aoi.effectMesh);
+        if(aoi.lightMesh) scene.remove(aoi.lightMesh);
+    });
+    aois = [];
     
     // Primeiro recalcula stats com equipamentos (que estão todos null)
     recalcStats();
