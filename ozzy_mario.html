@@ -180,6 +180,8 @@
         <br>
         <button class="info" onclick="showScreen('instructions-screen')">COMO JOGAR</button>
         <button class="secondary" onclick="showScreen('credits-screen')">CRÉDITOS</button>
+        <br>
+        <button class="secondary" onclick="window.location.href='index.html'">VOLTAR PARA O MENU</button>
     </div>
 
     <!-- Tela de Instruções -->
@@ -215,6 +217,7 @@
         <p>Jogo pausado</p>
         <button onclick="resumeGame()">CONTINUAR</button>
         <button class="secondary" onclick="resetGame()">SAIR DO JOGO</button>
+        <button class="secondary" onclick="window.location.href='index.html'">VOLTAR PARA O MENU</button>
     </div>
 
     <!-- Tela Game Over -->
@@ -222,6 +225,7 @@
         <h1 style="color: red;">GAME OVER</h1>
         <p>Ozzy foi pego!</p>
         <button onclick="resetGame()">TENTAR DE NOVO</button>
+        <button class="secondary" onclick="window.location.href='index.html'">VOLTAR PARA O MENU</button>
     </div>
 
     <!-- Tela Vitória -->
@@ -230,6 +234,7 @@
         <p>Parabéns! Ozzy completou a aventura.</p>
         <p>Pontuação Final: <span id="final-score">0</span></p>
         <button onclick="resetGame()">JOGAR NOVAMENTE</button>
+        <button class="secondary" onclick="window.location.href='index.html'">VOLTAR PARA O MENU</button>
     </div>
 
     <!-- Controles Mobile -->
