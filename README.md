@@ -27,9 +27,9 @@ Todos os projetos são hospedados na plataforma **Vercel**, garantindo performan
 |---------|-----------|--------|
 | `index.html` | 🏠 Página principal do portfólio | ✅ Concluído |
 | `flappy-bird.html` | 🐦 Clássico jogo Flappy Bird | ✅ Concluído |
+| `eldoria.html` | ⚔️ RPG de aventura em 3D | ✅ Concluído |
 | `ozzy-mario.html` | 🎮 Jogo Ozzy Mario (padronizado) | ✅ Concluído |
-| `consorcio-landing/` | 💼 Landing page institucional | ✅ Concluído |
-| `ozzy-game/` | 🕹️ Versão completa do jogo Ozzy | ✅ Concluído |
+| `consorcio-landing/` | 💼 Landing page institucional (Vite) | ✅ Concluído |
 | `ozzy-game-clean/` | ✨ Versão otimizada do jogo Ozzy | ✅ Concluído |
 
 ---
@@ -42,7 +42,8 @@ Todos os projetos são hospedados na plataforma **Vercel**, garantindo performan
 |-----------|-------------|--------|
 | ![HTML5](https://img.shields.io/badge/HTML5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white) | ![Canvas API](https://img.shields.io/badge/Canvas_API-%23000000.svg?style=for-the-badge&logo=html5&logoColor=white) | ![Vercel](https://img.shields.io/badge/Vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white) |
 | ![CSS3](https://img.shields.io/badge/CSS3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white) | ![Vite](https://img.shields.io/badge/Vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white) | |
-| ![JavaScript](https://img.shields.io/badge/JavaScript-%23F7DF1E.svg?style=for-the-badge&logo=javascript&logoColor=black) | | |
+| ![JavaScript](https://img.shields.io/badge/JavaScript-%23F7DF1E.svg?style=for-the-badge&logo=javascript&logoColor=black) | ![React](https://img.shields.io/badge/React-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) | |
+| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) | | |
 
 </div>
 
@@ -51,8 +52,10 @@ Todos os projetos são hospedados na plataforma **Vercel**, garantindo performan
 - **HTML5** — Estruturação semântica e acessível
 - **CSS3** — Estilização moderna com animações fluidas
 - **JavaScript (ES6+)** — Lógica robusta e interatividade
+- **React 19** — Biblioteca UI componentizada
+- **Tailwind CSS 4** — Utilitários CSS modernos
 - **Canvas API** — Renderização performática de jogos 2D
-- **Vite** — Build tool ultrarrápido para otimização
+- **Vite 8** — Build tool ultrarrápido para otimização
 - **Vercel** — Deploy contínuo com CDN global
 
 ---
