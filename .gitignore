@@ -1,4 +1,1 @@
-```
-# Source code and config files were deleted, but no build artifacts, dependencies, or temp files detected in changes
-# No additional ignores needed beyond standard project files
-```
+Nothing should be ignored based on the provided file changes, as they only contain HTML source files (.html) which are legitimate source code files that should be tracked in version control.
