@@ -140,7 +140,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 .sell-btn:active { transform: scale(0.95); }
 
 #controls-btn {
-    position: fixed; bottom: 20px; right: 20px;
+    position: fixed; top: 20px; right: 20px;
     width: 50px; height: 50px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(20, 20, 40, 0.6));
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -151,7 +151,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 999;
+    z-index: 9999;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
@@ -165,7 +165,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 #controls-tooltip {
     position: fixed;
-    bottom: 75px;
+    top: 75px;
     right: 20px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(20, 20, 40, 0.85));
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -173,7 +173,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     padding: 15px;
     color: white;
     font-size: 13px;
-    z-index: 998;
+    z-index: 9998;
     min-width: 220px;
     opacity: 0;
     visibility: hidden;
