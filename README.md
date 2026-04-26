@@ -88,7 +88,13 @@ npx serve .
 
 ## 🌐 Links de Demo
 
-> 🔗 *Em breve: links para as versões deployadas na Vercel*
+<div align="center">
+
+🎮 **[Testar Projetos em Produção](https://jecdurvalo.vercel.app/)**
+
+</div>
+
+> Acesse o portfólio completo com todos os jogos e aplicações deployadas na Vercel.
 
 ---
 
