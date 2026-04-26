@@ -79,7 +79,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     color:#d8e7ff; font-size:13px; z-index:1200; pointer-events: none;
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
-#statusWindow, #shopWindow{
+#statusWindow, #shopWindow, #evolutionWindow{
     display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     width:90%; max-width: 680px; height:80vh; overflow:auto; 
     background:linear-gradient(135deg, #0a1930, #152545);
@@ -916,6 +916,13 @@ document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.pr
 document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
 document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
 document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
+
+// Adicionar eventos de click para desktop
+document.getElementById('btnAtk').addEventListener('click', () => { attack(); });
+document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
+document.getElementById('btnInv').addEventListener('click', () => { toggleV(); });
+document.getElementById('btnShop').addEventListener('click', () => { toggleShop(); });
+document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
 
 /* -------- UI E LOJA -------- */
 function recalcStats(){
