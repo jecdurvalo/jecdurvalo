@@ -163,6 +163,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 let player={ level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
 let inventory=[];
 let monsters=[];
+let droppedItems=[]; // Itens no chão
 let keys={};
 let floatTexts=[];
 let fireballs=[];
@@ -171,6 +172,8 @@ let lastDir = new THREE.Vector3(0,0,1);
 let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
 let isAttacking = false;
 let lastSpawnTime = 0;
+let bossSpawned = false;
+let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
 
 const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
@@ -182,6 +185,15 @@ const lootTable=[
     { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢" },
     { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍" },
     { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎" }
+];
+
+// Biomas com cores e características diferentes
+const biomes = [
+    { name: "Green Plains", groundColor: 0x3ea55e, skyColor: 0x87ceeb, fogColor: 0x87ceeb, level: 1 },
+    { name: "Dark Forest", groundColor: 0x2d5a2d, skyColor: 0x4a6b4a, fogColor: 0x3d5a3d, level: 5 },
+    { name: "Golden Desert", groundColor: 0xd4c96e, skyColor: 0xffd7a0, fogColor: 0xe8c890, level: 10 },
+    { name: "Frozen Snow", groundColor: 0xe8f4f8, skyColor: 0xb0d4e8, fogColor: 0xc8e0e8, level: 15 },
+    { name: "Volcanic Lands", groundColor: 0x4a2a2a, skyColor: 0xff6b35, fogColor: 0x8b4513, level: 20 }
 ];
 
 function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
@@ -200,9 +212,43 @@ let sun=new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(20,30,20);
 scene.add(sun);
 
-let ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000), new THREE.MeshStandardMaterial({color:0x3ea55e}));
+// Adicionar névoa para atmosfera
+scene.fog = new THREE.Fog(biomes[0].fogColor, 50, 150);
+
+let ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000), new THREE.MeshStandardMaterial({color:biomes[0].groundColor}));
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
+
+// Função para mudar bioma baseado no nível
+function updateBiome() {
+    let newBiomeIndex = 0;
+    for(let i = biomes.length - 1; i >= 0; i--) {
+        if(player.level >= biomes[i].level) {
+            newBiomeIndex = i;
+            break;
+        }
+    }
+    
+    if(newBiomeIndex !== currentBiome) {
+        currentBiome = newBiomeIndex;
+        let biome = biomes[currentBiome];
+        
+        // Mudar cor do chão
+        ground.material.color.setHex(biome.groundColor);
+        
+        // Mudar céu e névoa
+        scene.background.setHex(biome.skyColor);
+        scene.fog.color.setHex(biome.fogColor);
+        scene.fog.near = 30;
+        scene.fog.far = 120;
+        
+        floatingText("🌍 " + biome.name, hero.position, "white");
+        log("<span style='color:cyan'>Entrou em: " + biome.name + "</span>");
+        
+        // Atualizar decorações do bioma
+        addBiomeDecorations();
+    }
+}
 
 /* -------- PERSONAGEM E VISUAIS -------- */
 let hero=new THREE.Group();
@@ -284,14 +330,19 @@ function makeLabel(t){
 function spawnMonster(elite=false){
     let sX = hero.position.x + (Math.random()-0.5)*150;
     let sZ = hero.position.z + (Math.random()-0.5)*150;
-    let lv = elite ? 10 : player.level + Math.floor(Math.random()*3);
+    
+    // Boss aparece a cada 5 níveis
+    let shouldSpawnBoss = player.level % 5 === 0 && !bossSpawned && Math.random() > 0.7;
+    elite = elite || shouldSpawnBoss;
+    
+    let lv = elite ? player.level * 2 : player.level + Math.floor(Math.random()*3);
     let size = elite ? 4 : 1.5;
     
     // Criar modelo de inimigo mais detalhado
     let monsterGroup = new THREE.Group();
     
-    // Corpo principal
-    let bodyColor = elite ? 0x8b0000 : 0x6a3399;
+    // Corpo principal - cor baseada no bioma
+    let bodyColor = elite ? 0x8b0000 : (currentBiome === 3 ? 0x6688aa : (currentBiome === 4 ? 0xaa4433 : 0x6a3399));
     let bodyMat = new THREE.MeshStandardMaterial({color: bodyColor});
     let body = new THREE.Mesh(new THREE.BoxGeometry(size, size*0.6, size*0.7), bodyMat);
     body.position.y = size * 0.5;
@@ -334,22 +385,76 @@ function spawnMonster(elite=false){
     monsterGroup.add(arm2);
     
     monsterGroup.position.set(sX, 0, sZ);
-    let hp = elite ? 1200 : 50 + (lv * 10);
-    monsterGroup.userData={ name: elite?"BOSS Demon":"Wolf", level: lv, hp, maxHp: hp, xp: elite?500:20+(lv*5), atk: elite?25:5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(""), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
+    let hp = elite ? 1200 + (player.level * 100) : 50 + (lv * 10);
+    let name = elite ? "BOSS Demon" : (currentBiome === 3 ? "Ice Wolf" : (currentBiome === 4 ? "Fire Imp" : "Wolf"));
+    monsterGroup.userData={ name: name, level: lv, hp, maxHp: hp, xp: elite?500+(player.level*50):20+(lv*5), atk: elite?25+(player.level*3):5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(""), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
     scene.add(monsterGroup); monsters.push(monsterGroup);
+    
+    if(elite && shouldSpawnBoss) {
+        bossSpawned = true;
+        floatingText("⚠️ BOSS SPAWNED!", hero.position, "red");
+        log("<span style='color:red; font-weight:bold;'>👹 UM BOSS APARECEU!</span>");
+    }
 }
 
 function killMonster(m){
     player.xp += m.userData.xp;
     floatingText("+"+m.userData.xp+" XP", m.position, "lime");
     
+    // Drop de itens no chão (randomico)
+    let dropCount = m.userData.isBoss ? 5 : Math.floor(Math.random() * 3); // Boss dropa mais itens
+    for(let i = 0; i < dropCount; i++) {
+        if(Math.random() > 0.4) { // 60% chance de dropar cada item
+            let randomItem = lootTable[Math.floor(Math.random() * lootTable.length)];
+            let itemCopy = JSON.parse(JSON.stringify(randomItem));
+            
+            // Criar item visual no chão
+            let itemMesh = new THREE.Group();
+            
+            // Base do item (brilho)
+            let glowMat = new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.8});
+            let glow = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.4, 16), glowMat);
+            glow.rotation.x = -Math.PI / 2;
+            glow.position.y = 0.05;
+            itemMesh.add(glow);
+            
+            // Ícone do item (cubo colorido baseado no slot)
+            let itemColor = 0xffffff;
+            if(itemCopy.slot === "weapon") itemColor = 0xff4444;
+            else if(itemCopy.slot === "shield") itemColor = 0x4444ff;
+            else if(itemCopy.slot === "cape") itemColor = 0x44ff44;
+            else if(itemCopy.slot === "boots") itemColor = 0xffaa00;
+            else if(itemCopy.slot === "ring") itemColor = 0xffd700;
+            
+            let itemGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            let itemMat = new THREE.MeshStandardMaterial({color: itemColor, emissive: itemColor, emissiveIntensity: 0.5});
+            let itemCube = new THREE.Mesh(itemGeo, itemMat);
+            itemCube.position.y = 0.3;
+            itemMesh.add(itemCube);
+            
+            itemMesh.position.copy(m.position);
+            itemMesh.position.x += (Math.random() - 0.5) * 2;
+            itemMesh.position.z += (Math.random() - 0.5) * 2;
+            
+            scene.add(itemMesh);
+            droppedItems.push({
+                mesh: itemMesh,
+                item: itemCopy,
+                life: 600 // 10 segundos a 60fps
+            });
+        }
+    }
+    
+    // Se for boss, permitir spawn de novo boss no futuro
+    if(m.userData.isBoss) {
+        bossSpawned = false;
+        floatingText("👹 BOSS DEFEATED!", hero.position, "gold");
+        log("<span style='color:gold; font-weight:bold;'>🏆 BOSS DERROTADO!</span>");
+    }
+    
     // Efeito de partículas na morte
     createDeathParticles(m.position, m.userData.isBoss ? 0x8b0000 : 0x6a3399, m.userData.isBoss ? 30 : 15);
     
-    if(Math.random()>.4){
-        let it = JSON.parse(JSON.stringify(lootTable[Math.floor(Math.random()*lootTable.length)]));
-        inventory.push(it); log("<span style='color:cyan'>Recebeu: "+it.name+"</span>");
-    }
     scene.remove(m); m.userData.ui.bar.remove(); m.userData.label.remove();
     monsters.splice(monsters.indexOf(m),1);
     checkLevel();
@@ -554,7 +659,37 @@ function animate(time){
     }
 
     if(time - lastSpawnTime > 2500){ if(monsters.length < 15) spawnMonster(Math.random()>0.97); lastSpawnTime = time; }
+    
+    // Atualizar bioma baseado no nível
+    updateBiome();
+    
     player.sp = Math.min(player.maxSp + (equipped.cape?.sp||0), player.sp+0.1);
+
+    // Coletar itens do chão
+    for(let i = droppedItems.length - 1; i >= 0; i--) {
+        let drop = droppedItems[i];
+        
+        // Animação do item (girar e flutuar)
+        drop.mesh.rotation.y += 0.03;
+        drop.mesh.position.y = 0.3 + Math.sin(time * 0.005 + i) * 0.1;
+        
+        // Checar se jogador está perto para coletar
+        if(hero.position.distanceTo(drop.mesh.position) < 1.5) {
+            inventory.push(drop.item);
+            floatingText("📦 " + drop.item.name, hero.position, "cyan");
+            log("<span style='color:cyan'>Coletou: " + drop.item.icon + " " + drop.item.name + "</span>");
+            scene.remove(drop.mesh);
+            droppedItems.splice(i, 1);
+            continue;
+        }
+        
+        // Remover item após tempo limite
+        drop.life--;
+        if(drop.life <= 0) {
+            scene.remove(drop.mesh);
+            droppedItems.splice(i, 1);
+        }
+    }
 
     // Fireball
     for(let i=fireballs.length-1; i>=0; i--){
@@ -636,6 +771,20 @@ function animate(time){
     ctxM.clearRect(0, 0, 180, 180);
     ctxM.fillStyle = "rgba(0, 40, 20, 0.7)"; ctxM.fillRect(0,0,180,180);
     const centerX = 90, centerZ = 90, mapScale = 1.3;
+    
+    // Mostrar itens no minimapa
+    droppedItems.forEach(drop => {
+        const dist = drop.mesh.position.distanceTo(hero.position);
+        if (dist <= 1000) {
+            const mx = centerX + (drop.mesh.position.x - hero.position.x) * mapScale;
+            const mz = centerZ + (drop.mesh.position.z - hero.position.z) * mapScale;
+            if(Math.sqrt((mx-90)**2 + (mz-90)**2) < 70) {
+                ctxM.fillStyle = "#ffd700"; // Dourado para itens
+                ctxM.beginPath(); ctxM.arc(mx, mz, 2, 0, Math.PI*2); ctxM.fill();
+            }
+        }
+    });
+    
     monsters.forEach(m => {
         const dist = m.position.distanceTo(hero.position);
         if (dist <= 1000) {
@@ -665,8 +814,65 @@ window.addEventListener('resize', () => {
     renderer.setSize(innerWidth, innerHeight);
 });
 
+// Adicionar árvores/rochas para decorar biomas (decorações simples)
+function addBiomeDecorations() {
+    // Limpar decorações antigas
+    visuals.forEach(v => {
+        if(v.userData.isDecoration) {
+            scene.remove(v);
+            visuals.splice(visuals.indexOf(v), 1);
+        }
+    });
+    
+    // Adicionar novas decorações baseadas no bioma
+    let decorationCount = 30;
+    for(let i = 0; i < decorationCount; i++) {
+        let deco;
+        let x = (Math.random() - 0.5) * 400;
+        let z = (Math.random() - 0.5) * 400;
+        
+        if(currentBiome === 1) { // Forest - árvores
+            deco = new THREE.Group();
+            let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 2, 6), new THREE.MeshStandardMaterial({color: 0x4a3728}));
+            trunk.position.y = 1;
+            deco.add(trunk);
+            let leaves = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3, 8), new THREE.MeshStandardMaterial({color: 0x2d5a2d}));
+            leaves.position.y = 3;
+            deco.add(leaves);
+        } else if(currentBiome === 2) { // Desert - cactos
+            deco = new THREE.Group();
+            let cactus = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 2, 8), new THREE.MeshStandardMaterial({color: 0x3d8b3d}));
+            cactus.position.y = 1;
+            deco.add(cactus);
+        } else if(currentBiome === 3) { // Snow - rochas cobertas de neve
+            deco = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8), new THREE.MeshStandardMaterial({color: 0xe8f4f8}));
+            deco.position.y = 0.4;
+        } else if(currentBiome === 4) { // Volcanic - pedras vulcânicas
+            deco = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6), new THREE.MeshStandardMaterial({color: 0x333333, emissive: 0x331111}));
+            deco.position.y = 0.3;
+        } else { // Plains - flores/arbustos
+            deco = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshStandardMaterial({color: 0x44aa44}));
+            deco.position.y = 0.2;
+        }
+        
+        if(deco) {
+            deco.position.set(x, 0, z);
+            deco.userData = { isDecoration: true };
+            scene.add(deco);
+            visuals.push(deco);
+        }
+    }
+}
+
+// Chama decorações quando muda de bioma
+let lastBiomeForDeco = -1;
+
+// Adicionar decorações iniciais
+addBiomeDecorations();
+
 animate();
 log("Eldoria Mobile Restaurado!");
+log("<span style='color:gold'>🎮 Derrote inimigos, colete itens e explore os biomas!</span>");
 </script>
 </body>
 </html>
