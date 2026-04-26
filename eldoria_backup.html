@@ -6,32 +6,27 @@
 <title>Eldoria ARPG - V13 Mobile Restoration</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <style>
-html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black; font-family:'Segoe UI', Arial, sans-serif; touch-action: none; }
+html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black; font-family:Arial; touch-action: none; }
 
 #gameCanvas { position:fixed; inset:0; display:block; width:100vw!important; height:100vh!important; z-index: 1; }
 
 #hud{
     position:fixed; top:15px; left:15px; width:290px;
-    background:linear-gradient(135deg, rgba(5,15,35,.95), rgba(15,25,45,.9)); padding:18px; border-radius:18px;
-    z-index:1000; color:white; border: 2px solid rgba(90,185,255,0.3);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(90,185,255,0.1);
+    background:rgba(5,15,35,.88); padding:15px; border-radius:15px;
+    z-index:1000; color:white; border: 1px solid rgba(255,255,255,0.1);
 }
-.bar{ height:20px; background:#111; border-radius:30px; overflow:hidden; margin-bottom:12px; position: relative; border: 1px solid rgba(255,255,255,0.1); }
-.fill{ height:100%; transition: width 0.3s ease-out; }
-.hp{ background: linear-gradient(90deg, #ff3333, #cc0000); box-shadow: 0 0 10px rgba(255, 51, 51, 0.5); }
-.sp{ background: linear-gradient(90deg, #4488ff, #2255cc); box-shadow: 0 0 10px rgba(68, 136, 255, 0.5); }
-.xp{ background: linear-gradient(90deg, #44ff88, #22aa55); box-shadow: 0 0 10px rgba(68, 255, 136, 0.5); }
-
-/* Barra de vida com efeito de batimento */
-#hpBarContainer { position: relative; }
+.bar{ height:18px; background:#111; border-radius:30px; overflow:hidden; margin-bottom:10px; }
+.fill{ height:100%; transition: width 0.2s; }
+.hp{ background:#d33; }
+.sp{ background:#2d7fff; }
 
 #minimapContainer {
     position: fixed; bottom: 25px; right: 25px;
     width: 150px; height: 150px;
-    background: rgba(5, 15, 25, 0.9);
+    background: rgba(5, 15, 25, 0.85);
     border: 4px solid #5ab9ff; border-radius: 50%;
     overflow: hidden; z-index: 2000;
-    box-shadow: 0 0 25px rgba(0,0,0,0.7), inset 0 0 20px rgba(90,185,255,0.2);
+    box-shadow: 0 0 25px rgba(0,0,0,0.7);
 }
 #minimapCanvas { display: block; width: 100%; height: 100%; }
 
@@ -39,72 +34,47 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 #mobileControls { position: fixed; inset: 0; pointer-events: none; z-index: 4000; }
 .mobile-btn { 
     pointer-events: auto; position: absolute; 
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)); 
-    border: 2px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3);
     border-radius: 50%; color: white; font-weight: bold;
     display: flex; align-items: center; justify-content: center;
     user-select: none; -webkit-tap-highlight-color: transparent;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.1s, background 0.2s;
 }
-.mobile-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
 #joystickArea { 
     position: absolute; bottom: 40px; left: 40px; 
-    width: 140px; height: 140px; background: rgba(255,255,255,0.08); 
+    width: 140px; height: 140px; background: rgba(255,255,255,0.05); 
     border-radius: 50%; pointer-events: auto;
-    border: 2px solid rgba(255,255,255,0.2);
 }
 #joystickStick {
     position: absolute; top: 45px; left: 45px; width: 50px; height: 50px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3)); border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    background: rgba(255,255,255,0.4); border-radius: 50%;
 }
-#btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(211, 51, 51, 0.5), rgba(150, 30, 30, 0.5)); font-size: 18px; }
-#btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
-#btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
-#btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
+#btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: rgba(211, 51, 51, 0.4); font-size: 18px; }
+#btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: rgba(45, 127, 255, 0.4); }
+#btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; }
+#btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; }
 
 #controls{
-    position:fixed; top:18px; right:18px; background:linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
-    padding:16px; border-radius:14px; color:white; z-index:999; font-size:13px;
-    border: 1px solid rgba(255,255,255,0.15);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    position:fixed; top:18px; right:18px; background:rgba(0,0,0,.65);
+    padding:14px; border-radius:12px; color:white; z-index:999; font-size:13px;
 }
 #combatLog{
     position:fixed; left:50%; transform:translateX(-50%); bottom:18px;
-    width:400px; height:100px; overflow:auto; background:linear-gradient(180deg, rgba(0,0,0,.75), rgba(10,10,30,.75));
-    border:1px solid rgba(90,185,255,.3); border-radius:14px; padding:12px;
+    width:400px; height:100px; overflow:auto; background:rgba(0,0,0,.6);
+    border:1px solid rgba(255,255,255,.2); border-radius:14px; padding:12px;
     color:#d8e7ff; font-size:13px; z-index:1200; pointer-events: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 #statusWindow, #shopWindow{
     display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:90%; max-width: 680px; height:80vh; overflow:auto; 
-    background:linear-gradient(135deg, #0a1930, #152545);
-    border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5000; color:white;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
+    width:90%; max-width: 680px; height:80vh; overflow:auto; background:#0a1930;
+    border:3px solid #5ab9ff; padding:20px; border-radius:18px; z-index:5000; color:white;
 }
-.item{ 
-    background:linear-gradient(135deg, #17304e, #1f4060); 
-    padding:14px; margin:10px 0; border-radius:12px; cursor:pointer; 
-    display:flex; justify-content:space-between; align-items:center; 
-    border: 1px solid rgba(90,185,255,0.2);
-    transition: background 0.2s, transform 0.1s;
-}
-.item:hover{ background:linear-gradient(135deg, #24496f, #2f5a80); transform: translateX(5px); }
+.item{ background:#17304e; padding:12px; margin:8px 0; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+.item:hover{ background:#24496f; }
 .nameplate{ position:fixed; pointer-events:none; text-align:center; font-weight:bold; z-index:3000; text-shadow:0 0 6px black; }
-.guild{ display:block; color:#6fd7ff; font-size:12px; text-shadow: 0 0 5px rgba(111, 215, 255, 0.5); }
-.playerName{ display:block; color:#ffd66b; font-size:18px; text-shadow: 0 0 8px rgba(255, 214, 107, 0.5); }
+.guild{ display:block; color:#6fd7ff; font-size:12px; }
+.playerName{ display:block; color:#ffd66b; font-size:18px; }
 .title{ display:block; font-size:11px; color:#fff; }
-.sell-btn { 
-    background: linear-gradient(135deg, #e67e22, #c96b1a); 
-    border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; 
-    box-shadow: 0 2px 10px rgba(230, 126, 34, 0.4);
-    transition: transform 0.1s, background 0.2s;
-}
-.sell-btn:hover { background: linear-gradient(135deg, #f08e33, #d97b2a); transform: scale(1.05); }
-.sell-btn:active { transform: scale(0.95); }
+.sell-btn { background: #e67e22; border:none; color:white; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; }
 
 /* Esconde controles desktop no mobile e vice-versa */
 @media (max-width: 800px) { #controls { display: none; } }
@@ -114,11 +84,11 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <body>
 
 <div id="hud">
-    <h2 style="margin:0; text-shadow: 0 0 10px rgba(255, 214, 107, 0.5);">⚔️ Eldoria</h2>
-    <div id="goldDisplay" style="color:gold; font-weight:bold; margin-bottom:5px; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);">💰 Gold: 0</div>
-    <div id="hpBarContainer">HP <div class="bar"><div id="hp" class="fill hp"></div></div></div>
+    <h2 style="margin:0">Eldoria</h2>
+    <div id="goldDisplay" style="color:gold; font-weight:bold; margin-bottom:5px;">Gold: 0</div>
+    HP <div class="bar"><div id="hp" class="fill hp"></div></div>
     SP <div class="bar"><div id="sp" class="fill sp"></div></div>
-    XP <div class="bar"><div id="xp" class="fill xp"></div></div>
+    XP <div class="bar"><div id="xp" class="fill" style="background:#2ecc71"></div></div>
 </div>
 
 <div id="mobileControls">
@@ -176,12 +146,12 @@ const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
 
 const lootTable=[
-    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado.", icon:"🗡️" },
-    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️" },
-    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥" },
-    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢" },
-    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍" },
-    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎" }
+    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado." },
+    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria." },
+    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras." },
+    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade." },
+    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante." },
+    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul." }
 ];
 
 function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
@@ -286,66 +256,16 @@ function spawnMonster(elite=false){
     let sZ = hero.position.z + (Math.random()-0.5)*150;
     let lv = elite ? 10 : player.level + Math.floor(Math.random()*3);
     let size = elite ? 4 : 1.5;
-    
-    // Criar modelo de inimigo mais detalhado
-    let monsterGroup = new THREE.Group();
-    
-    // Corpo principal
-    let bodyColor = elite ? 0x8b0000 : 0x6a3399;
-    let bodyMat = new THREE.MeshStandardMaterial({color: bodyColor});
-    let body = new THREE.Mesh(new THREE.BoxGeometry(size, size*0.6, size*0.7), bodyMat);
-    body.position.y = size * 0.5;
-    monsterGroup.add(body);
-    
-    // Cabeça
-    let head = new THREE.Mesh(new THREE.BoxGeometry(size*0.7, size*0.5, size*0.6), bodyMat);
-    head.position.y = size * 1.05;
-    monsterGroup.add(head);
-    
-    // Olhos brilhantes
-    let eyeMat = new THREE.MeshStandardMaterial({color: elite ? 0xff0000 : 0xffff00, emissive: elite ? 0xff0000 : 0xffff00, emissiveIntensity: 0.8});
-    let eye1 = new THREE.Mesh(new THREE.SphereGeometry(size*0.12), eyeMat);
-    eye1.position.set(-size*0.15, size*1.1, size*0.35);
-    monsterGroup.add(eye1);
-    let eye2 = eye1.clone();
-    eye2.position.set(size*0.15, size*1.1, size*0.35);
-    monsterGroup.add(eye2);
-    
-    // Chifres/orelhas para elite
-    if(elite){
-        let hornMat = new THREE.MeshStandardMaterial({color: 0x333333});
-        let horn1 = new THREE.Mesh(new THREE.ConeGeometry(size*0.1, size*0.4, 8), hornMat);
-        horn1.position.set(-size*0.25, size*1.4, 0);
-        horn1.rotation.z = -0.3;
-        monsterGroup.add(horn1);
-        let horn2 = horn1.clone();
-        horn2.position.set(size*0.25, size*1.4, 0);
-        horn2.rotation.z = 0.3;
-        monsterGroup.add(horn2);
-    }
-    
-    // Braços
-    let armMat = new THREE.MeshStandardMaterial({color: bodyColor});
-    let arm1 = new THREE.Mesh(new THREE.BoxGeometry(size*0.25, size*0.5, size*0.25), armMat);
-    arm1.position.set(-size*0.6, size*0.7, 0);
-    monsterGroup.add(arm1);
-    let arm2 = arm1.clone();
-    arm2.position.set(size*0.6, size*0.7, 0);
-    monsterGroup.add(arm2);
-    
-    monsterGroup.position.set(sX, 0, sZ);
+    let m=new THREE.Mesh(new THREE.BoxGeometry(size,size,size), new THREE.MeshStandardMaterial({color:elite?0xff0000:0x9933ff}));
+    m.position.set(sX, size/2, sZ);
     let hp = elite ? 1200 : 50 + (lv * 10);
-    monsterGroup.userData={ name: elite?"BOSS Demon":"Wolf", level: lv, hp, maxHp: hp, xp: elite?500:20+(lv*5), atk: elite?25:5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(""), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
-    scene.add(monsterGroup); monsters.push(monsterGroup);
+    m.userData={ name: elite?"BOSS":"Wolf", level: lv, hp, maxHp: hp, xp: elite?500:20+(lv*5), atk: elite?25:5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel("") };
+    scene.add(m); monsters.push(m);
 }
 
 function killMonster(m){
     player.xp += m.userData.xp;
     floatingText("+"+m.userData.xp+" XP", m.position, "lime");
-    
-    // Efeito de partículas na morte
-    createDeathParticles(m.position, m.userData.isBoss ? 0x8b0000 : 0x6a3399, m.userData.isBoss ? 30 : 15);
-    
     if(Math.random()>.4){
         let it = JSON.parse(JSON.stringify(lootTable[Math.floor(Math.random()*lootTable.length)]));
         inventory.push(it); log("<span style='color:cyan'>Recebeu: "+it.name+"</span>");
@@ -353,29 +273,6 @@ function killMonster(m){
     scene.remove(m); m.userData.ui.bar.remove(); m.userData.label.remove();
     monsters.splice(monsters.indexOf(m),1);
     checkLevel();
-}
-
-function createDeathParticles(pos, color, count){
-    for(let i=0; i<count; i++){
-        let particle = new THREE.Mesh(
-            new THREE.BoxGeometry(0.2, 0.2, 0.2),
-            new THREE.MeshStandardMaterial({color: color, emissive: color, emissiveIntensity: 0.5})
-        );
-        particle.position.copy(pos);
-        particle.position.x += (Math.random()-0.5) * 2;
-        particle.position.y += Math.random() * 2;
-        particle.position.z += (Math.random()-0.5) * 2;
-        particle.userData = {
-            velocity: new THREE.Vector3(
-                (Math.random()-0.5) * 0.3,
-                Math.random() * 0.3 + 0.2,
-                (Math.random()-0.5) * 0.3
-            ),
-            life: 60
-        };
-        scene.add(particle);
-        visuals.push(particle);
-    }
 }
 
 function checkLevel(){
@@ -499,23 +396,13 @@ function recalcStats(){
 }
 
 function updatePanels(){
-    statsPanel.innerHTML=`<div style="font-size:18px; margin-bottom:10px;">🎯 Nível ${player.level}</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"><div style="background:rgba(255,100,100,0.3); padding:8px; border-radius:6px;">⚔️ ATK: ${player.atk}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">🛡️ DEF: ${player.def}</div><div style="background:rgba(100,255,150,0.3); padding:8px; border-radius:6px;">❤️ HP: ${player.hp}/${player.maxHp+(equipped.ring1?.hp||0)+(equipped.ring2?.hp||0)}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">💙 SP: ${Math.floor(player.sp)}/${player.maxSp+(equipped.cape?.sp||0)}</div></div><div style="margin-top:10px; color:gold;">💰 Gold: ${player.gold}</div>`;
+    statsPanel.innerHTML=`LVL ${player.level} | ATK ${player.atk} | DEF ${player.def} | Gold: ${player.gold}`;
     equippedPanel.innerHTML="";
-    for(let k in equipped) {
-        let item = equipped[k];
-        let icon = item?.icon || '❓';
-        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:40px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}</div>`;
-    }
+    for(let k in equipped) equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')">${k.toUpperCase()}: ${equipped[k]?equipped[k].name:'Vazio'}</div>`;
     inventoryPanel.innerHTML="";
-    inventory.forEach((it,i)=> {
-        let icon = it.icon || '📦';
-        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:45px;">${icon} <div><b>${it.name}</b><br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small></div></div>`;
-    });
+    inventory.forEach((it,i)=> inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})'><b>${it.name}</b> [${it.slot}]</div>`);
     shopInventoryPanel.innerHTML="";
-    inventory.forEach((it,i)=> {
-        let icon = it.icon || '📦';
-        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px;"><span>${icon} ${it.name}</span><button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button></div>`;
-    });
+    inventory.forEach((it,i)=> shopInventoryPanel.innerHTML+=`<div class='item'><span>${it.name}</span><button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button></div>`);
 }
 
 function sellItem(i){ player.gold += 25; inventory.splice(i,1); updatePanels(); }
@@ -568,18 +455,11 @@ function animate(time){
         if(f.life<=0){ scene.remove(f.mesh); fireballs.splice(i,1); }
     }
 
-    // Monstros - animação de respiração e atualização
+    // Monstros
     monsters.forEach((m)=>{
         let d = hero.position.distanceTo(m.position);
         if (d <= 1000) {
             m.visible = true;
-            
-            // Animação de respiração (pulsar)
-            if(m.userData.mesh){
-                let breathe = Math.sin(time * 0.003 + m.userData.breatheOffset) * 0.05 + 1;
-                m.userData.mesh.scale.set(breathe, breathe, breathe);
-            }
-            
             if(d < 40) m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.06));
             if(d < 2.6 && time - m.userData.lastAttack > 1500){
                 let dmg = Math.max(1, m.userData.atk-player.def);
@@ -597,22 +477,6 @@ function animate(time){
             } else { m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
         } else { m.visible = false; m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
     });
-    
-    // Atualizar partículas
-    for(let i=visuals.length-1; i>=0; i--){
-        let p = visuals[i];
-        if(p.userData.velocity){
-            p.position.add(p.userData.velocity);
-            p.userData.velocity.y -= 0.015; // gravidade
-            p.userData.life--;
-            p.rotation.x += 0.1;
-            p.rotation.z += 0.1;
-            if(p.userData.life <= 0){
-                scene.remove(p);
-                visuals.splice(i, 1);
-            }
-        }
-    }
 
     floatTexts.forEach((f,i)=>{
         f.pos.y+=.05; let v=f.pos.clone().project(camera);
