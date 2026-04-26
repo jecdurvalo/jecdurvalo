@@ -747,8 +747,20 @@ function recalcStats(){
     }
     player.atk = player.baseAtk + bAtk; player.def = player.baseDef + bDef;
     // Atualiza HP e SP máximos com base nos equipamentos
-    player.maxHp = 100 + bHp;
-    player.maxSp = 100 + bSp;
+    let newMaxHp = 100 + bHp;
+    let newMaxSp = 100 + bSp;
+    
+    // Ajusta HP e SP atuais proporcionalmente se os máximos mudarem
+    // Isso previne perda de HP/SP ao trocar equipamentos
+    if(newMaxHp !== player.maxHp && player.maxHp > 0) {
+        player.hp = Math.floor(player.hp * (newMaxHp / player.maxHp));
+    }
+    if(newMaxSp !== player.maxSp && player.maxSp > 0) {
+        player.sp = Math.floor(player.sp * (newMaxSp / player.maxSp));
+    }
+    
+    player.maxHp = newMaxHp;
+    player.maxSp = newMaxSp;
 }
 
 function updatePanels(){
@@ -920,6 +932,11 @@ function equip(i){
     // Se for anel, escolhe ring1 ou ring2
     if(s === "ring") s = !equipped.ring1 ? "ring1" : "ring2";
     
+    // Se já houver um item equipado neste slot, desequipa primeiro (devolve ao inventário)
+    if(equipped[s]) {
+        unequipInternal(s);
+    }
+    
     // Se o item é stackable com quantidade > 1, cria uma cópia única para equipar
     if(it.stackable && it.quantity > 1) {
         it.quantity--;
@@ -940,6 +957,14 @@ function equip(i){
     updatePanels();
 }
 function unequip(k){
+    unequipInternal(k);
+    recalcStats();
+    applyEquipVisual();
+    updatePanels();
+}
+
+// Função interna para desequipar sem atualizar stats/UI (usada ao trocar equipamentos)
+function unequipInternal(k){
     let item = equipped[k];
     if(item) {
         // Adiciona o item de volta ao inventário (como stackable se for equipamento comum)
@@ -963,9 +988,6 @@ function unequip(k){
         addItemToInventory(baseItem);
         equipped[k] = null;
     }
-    recalcStats();
-    applyEquipVisual();
-    updatePanels();
 }
 function toggleV(){ statusWindow.style.display = statusWindow.style.display==="block"?"none":"block"; updatePanels(); }
 function toggleShop(){ shopWindow.style.display = shopWindow.style.display==="block"?"none":"block"; updatePanels(); }
