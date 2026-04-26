@@ -473,11 +473,20 @@ class Game {
     updateCamera() {
         const targetX = this.player.x - this.canvas.width / 3;
         
-        // Câmera segue suavemente o jogador (apenas para direita)
+        // Na fase 12 (boss, index 11), a câmera pode ir e voltar livremente
+        if (this.currentLevelIdx === 11) {
+            this.cameraX += (targetX - this.cameraX) * 0.1;
+            // Limitar câmera ao tamanho da arena do boss (chão de 2400px começando em 50)
+            const maxCameraX = 2400 - this.canvas.width + 50;
+            if (this.cameraX > maxCameraX) this.cameraX = maxCameraX;
+        } else {
+            // Nas outras fases, a câmera só avança (não volta facilmente)
         if (targetX > this.cameraX) {
             this.cameraX += (targetX - this.cameraX) * 0.1;
         }
         
+        }
+
         // Limita câmera ao início do nível
         if (this.cameraX < 0) {
             this.cameraX = 0;

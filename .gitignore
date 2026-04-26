@@ -1,90 +1,78 @@
-```gitignore
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
+```
+# Build artifacts
 dist/
 build/
-target/
+*.js.map
+*.min.js
 
 # Dependencies
-.venv/
-venv/
 node_modules/
-.julia/
-zig*/
-.env
-.env.local
-*.env.*
 
 # Logs and temp files
 *.log
 *.tmp
-*.swp
-*.swo
-*.bak
-*.~*
-.DS_Store
-Thumbs.db
-coverage/
-htmlcov/
-.coverage
+
+# Environment
+.env
+.env.local
+*.env.*
 
 # Editors
 .vscode/
 .idea/
 *.swp
-*.swo
 
-# Python specific
-*.pyc
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+
+# Python artifacts (if any Python in project)
 __pycache__/
+*.pyc
 *.pyo
 *.pyd
 .Python
+
+# Java artifacts (if any Java in project)
+*.class
+*.jar
+*.war
+*.ear
+target/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# C/C++ artifacts (if any C/C++ in project)
+*.o
+*.obj
 *.so
-*.egg-info/
-.eggs/
-.mypy_cache/
-.pytest_cache/
-.tox/
-.hypothesis/
+*.dll
+*.a
+*.lib
+*.out
 
-# Node.js specific
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-node_modules/
-dist/
-build/
-
-# Build outputs
-dist/
-build/
-public/
-*.min.js
-*.min.css
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Icon?
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
-
-Wait, let me reconsider this. The only modified files are `index.html` and `src/js/Game.js` which are source files. No build artifacts or temporary files were mentioned in the changes. According to rule 6, if the change list contains ONLY source or config files and NO build artifacts, dependencies, or temp files, I should output an EMPTY .gitignore.
-
-Since only HTML and JS source files were modified, no .gitignore rules are needed.
-
-(empty - output nothing)
