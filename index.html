@@ -103,13 +103,16 @@
             background: linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
             border: 2px solid rgba(255,255,255,0.2);
             border-radius: 20px;
-            padding: 40px 30px;
+            padding: 30px;
             width: 280px;
             cursor: pointer;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .game-card::before {
@@ -164,7 +167,7 @@
 
         .play-btn {
             display: inline-block;
-            margin-top: 20px;
+            margin-top: auto;
             padding: 12px 40px;
             background: linear-gradient(45deg, #e94560, #ff6b6b);
             color: #fff;
