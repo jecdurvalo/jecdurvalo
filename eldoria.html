@@ -201,6 +201,16 @@ function addItemToInventory(baseItem) {
         }
     }
     
+    // Para equipamentos, procura item IGUAL (mesmo nome e slot) para empilhar
+    // Equipamentos só empilham se forem exatamente o mesmo item
+    if(!newItem.stackable && newItem.slot !== "consumable") {
+        let existingIndex = inventory.findIndex(it => it.name === newItem.name && it.slot === newItem.slot && !it.stackable);
+        if(existingIndex >= 0) {
+            inventory[existingIndex].quantity = (inventory[existingIndex].quantity || 1) + 1;
+            return true; // Item foi stackado
+        }
+    }
+    
     // Se não for stackable ou não encontrou igual, adiciona novo
     inventory.push(newItem);
     return false; // Item foi adicionado como novo
@@ -429,7 +439,7 @@ function spawnMonster(elite=false){
     monsterGroup.position.set(sX, 0, sZ);
     let hp = elite ? 1200 + (player.level * 100) : 50 + (lv * 10);
     let name = elite ? "BOSS Demon" : (currentBiome === 3 ? "Ice Wolf" : (currentBiome === 4 ? "Fire Imp" : "Wolf"));
-    monsterGroup.userData={ name: name, level: lv, hp, maxHp: hp, xp: elite?500+(player.level*50):20+(lv*5), atk: elite?25+(player.level*3):5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(""), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
+    monsterGroup.userData={ name: name, level: lv, hp, maxHp: hp, xp: elite?500+(player.level*50):20+(lv*5), atk: elite?25+(player.level*3):5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(name + " Lv." + lv), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
     scene.add(monsterGroup); monsters.push(monsterGroup);
     
     if(elite) {
@@ -683,9 +693,15 @@ function updatePanels(){
             }
         }
         let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
-        let durabInfo = (!it.stackable && it.slot !== 'consumable') ? `<small style="color:${it.durability < 30 ? 'red' : '#aaa'}"> (${Math.round(it.durability)}/${it.maxDurability})</small>` : '';
+        // Barra de durabilidade com cores dinamicas (verde -> amarelo -> vermelho)
+        let durabInfo = '';
+        if(!it.stackable && it.slot !== 'consumable') {
+            let durabPercent = Math.round((it.durability / it.maxDurability) * 100);
+            let durabColor = durabPercent > 60 ? '#4CAF50' : (durabPercent > 30 ? '#FFC107' : '#f44336');
+            durabInfo = `<div style="display:flex; align-items:center; gap:5px; margin-top:3px;"><div style="width:100%; height:6px; background:#333; border-radius:3px; overflow:hidden;"><div style="width:${durabPercent}%; height:100%; background:${durabColor}; transition:width 0.3s;"></div></div><small style="color:${durabColor}; min-width:35px;">${durabPercent}%</small></div>`;
+        }
         let qtyText = (it.stackable && it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
-        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:45px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;\">[${it.slot}] ${it.desc||''} ${durabInfo}</small></div></div>`;
+        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small>${durabInfo}</div></div>`;
     });
     shopInventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
@@ -890,12 +906,17 @@ function animate(time){
             }
             let v=m.position.clone().project(camera);
             if(v.z < 1){
-                m.userData.ui.bar.style.display = "block"; m.userData.label.style.display = "block";
-                let x=(v.x*.5+.5)*innerWidth, y=(-v.y*.5+.5)*innerHeight;
-                m.userData.ui.bar.style.left=(x-25)+"px"; m.userData.ui.bar.style.top=(y-28)+"px";
-                m.userData.ui.fill.style.width=(m.userData.hp/m.userData.maxHp*100)+"%";
-                m.userData.label.style.left=(x-45)+"px"; m.userData.label.style.top=(y-48)+"px";
-                m.userData.label.innerHTML=`${m.userData.name} Lv.${m.userData.level}`;
+                // Só mostra barra de vida se o monstro tiver HP > 0
+                if(m.userData.hp > 0 && m.userData.maxHp > 0) {
+                    m.userData.ui.bar.style.display = "block"; m.userData.label.style.display = "block";
+                    let x=(v.x*.5+.5)*innerWidth, y=(-v.y*.5+.5)*innerHeight;
+                    m.userData.ui.bar.style.left=(x-25)+"px"; m.userData.ui.bar.style.top=(y-28)+"px";
+                    m.userData.ui.fill.style.width=(m.userData.hp/m.userData.maxHp*100)+"%";
+                    m.userData.label.style.left=(x-45)+"px"; m.userData.label.style.top=(y-48)+"px";
+                    m.userData.label.innerHTML=`${m.userData.name} Lv.${m.userData.level}`;
+                } else {
+                    m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none";
+                }
             } else { m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
         } else { m.visible = false; m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
     });
@@ -1072,6 +1093,12 @@ document.body.appendChild(gameOverOverlay);
 function showGameOver() {
     gamePaused = true;
     savedLevel = player.level; // Salva o nível atual para usar se reviver
+    
+    // BUG FIX: Resetar HP do player para 0 antes de mostrar game over
+    // Isso evita que o player herde o % de vida do boss
+    let maxHpTotal = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
+    player.hp = 0;
+    
     let cost = Math.floor(player.gold * 0.5);
     let canRevive = player.gold >= 10; // Precisa de pelo menos 10 gold para reviver (metade seria 5)
     
@@ -1160,9 +1187,11 @@ function resetGame() {
     fireballs.forEach(f => scene.remove(f.mesh));
     fireballs = [];
     
-    // Atualizar UI
-    hp.style.width=(player.hp/(player.maxHp+(equipped.ring1?.hp||0)+(equipped.ring2?.hp||0))*100)+"%";
-    sp.style.width=(player.sp/(player.maxSp+(equipped.cape?.sp||0))*100)+"%";
+    // Atualizar UI com valores corretos do level 1
+    let maxHpReset = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
+    let maxSpReset = player.maxSp + (equipped.cape?.sp||0);
+    hp.style.width=(player.hp/maxHpReset*100)+"%";
+    sp.style.width=(player.sp/maxSpReset*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
     applyEquipVisual();
