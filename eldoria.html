@@ -1437,6 +1437,7 @@ function resetGame() {
     sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
+    heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level; // Atualiza label do nível
     applyEquipVisual();
     updateBiome(); // Atualiza bioma para o level 1
     updatePanels(); // Atualiza painéis com os valores corretos
