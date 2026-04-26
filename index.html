@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade - Menu de Jogos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Efeito de estrelas/pixels no fundo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 50px 160px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 90px 40px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 130px 80px, #fff, transparent);
+            background-size: 200px 200px;
+            animation: twinkle 5s ease-in-out infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        .title {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 
+                0 0 10px #e94560,
+                0 0 20px #e94560,
+                0 0 30px #e94560,
+                0 0 40px #ff6b6b;
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite alternate;
+            letter-spacing: 5px;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 
+                    0 0 10px #e94560,
+                    0 0 20px #e94560,
+                    0 0 30px #e94560,
+                    0 0 40px #ff6b6b;
+            }
+            to {
+                text-shadow: 
+                    0 0 20px #e94560,
+                    0 0 30px #e94560,
+                    0 0 40px #e94560,
+                    0 0 50px #ff6b6b,
+                    0 0 60px #ff6b6b;
+            }
+        }
+
+        .subtitle {
+            color: #a2a8d3;
+            font-size: 1.2rem;
+            margin-bottom: 50px;
+            letter-spacing: 3px;
+        }
+
+        .games-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .game-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 280px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255,255,255,0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+        }
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            border-color: #e94560;
+            box-shadow: 
+                0 20px 40px rgba(233, 69, 96, 0.4),
+                0 0 20px rgba(233, 69, 96, 0.2);
+        }
+
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .game-title {
+            color: #fff;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .game-description {
+            color: #a2a8d3;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .play-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 40px;
+            background: linear-gradient(45deg, #e94560, #ff6b6b);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.5);
+        }
+
+        /* Cores específicas para cada jogo */
+        .mario-card .game-icon {
+            filter: drop-shadow(0 0 10px #e94560);
+        }
+
+        .flappy-card .game-icon {
+            filter: drop-shadow(0 0 10px #4ecdc4);
+        }
+
+        .flappy-card:hover {
+            border-color: #4ecdc4;
+            box-shadow: 
+                0 20px 40px rgba(78, 205, 196, 0.4),
+                0 0 20px rgba(78, 205, 196, 0.2);
+        }
+
+        .flappy-card .play-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        .flappy-card .play-btn:hover {
+            box-shadow: 0 10px 30px rgba(78, 205, 196, 0.5);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+
+            .games-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .game-card {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        /* Animação de entrada */
+        .game-card {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .game-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">ARCADE</h1>
+        <p class="subtitle">ESCOLHA SEU JOGO</p>
+
+        <div class="games-container">
+            <!-- Card do Ozzy Mario -->
+            <div class="game-card mario-card" onclick="window.location.href='ozzy_mario.html'">
+                <span class="game-icon">🍄</span>
+                <h2 class="game-title">Ozzy Mario</h2>
+                <p class="game-description">Aventura clássica de plataforma com o Ozzy!</p>
+                <a href="ozzy_mario.html" class="play-btn">JOGAR</a>
+            </div>
+
+            <!-- Card do Flappy Bird -->
+            <div class="game-card flappy-card" onclick="window.location.href='flappy-bird.html'">
+                <span class="game-icon">🐦</span>
+                <h2 class="game-title">Flappy Bird</h2>
+                <p class="game-description">Desvie dos obstáculos e voe alto!</p>
+                <a href="flappy-bird.html" class="play-btn">JOGAR</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Adiciona efeito sonoro ao passar o mouse (opcional)
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'all 0.3s ease';
+            });
+        });
+
+        // Efeito de teclado para navegação
+        document.addEventListener('keydown', (e) => {
+            const cards = document.querySelectorAll('.game-card');
+            if (e.key === 'Enter' && document.activeElement.classList.contains('game-card')) {
+                document.activeElement.click();
+            }
+        });
+    </script>
+</body>
+</html>
