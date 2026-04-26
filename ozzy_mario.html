@@ -179,7 +179,6 @@
         <button onclick="startGame()">JOGAR</button>
         <br>
         <button class="info" onclick="showScreen('instructions-screen')">COMO JOGAR</button>
-        <button class="secondary" onclick="showScreen('credits-screen')">CRÉDITOS</button>
         <br>
         <button class="secondary" onclick="window.location.href='index.html'">VOLTAR PARA O MENU</button>
     </div>
@@ -197,17 +196,6 @@
         • Colete moedas para aumentar sua pontuação<br>
         • Pule sobre os inimigos para derrotá-los<br>
         • Evite cair no abismo!</p>
-        <button onclick="showScreen('start-screen')">VOLTAR</button>
-    </div>
-
-    <!-- Tela de Créditos -->
-    <div id="credits-screen" class="screen" style="display: none;">
-        <h1 style="color: #ffcc00;">CRÉDITOS</h1>
-        <p><strong>Desenvolvimento:</strong><br>Ozzy Game Studio</p>
-        <p><strong>Personagem:</strong><br>Ozzy - O Gatinho Rockstar</p>
-        <p><strong>Inimigos:</strong><br>Aranhas das Cavernas<br>Morcegos da Noite</p>
-        <p><strong>Música:</strong><br>Rock Classic vibes 🎸</p>
-        <p style="margin-top: 20px; font-size: 14px; color: #aaa;">Feito com ❤️ para os fãs de jogos plataforma</p>
         <button onclick="showScreen('start-screen')">VOLTAR</button>
     </div>
 
@@ -259,7 +247,6 @@
     const gameOverScreen = document.getElementById('game-over-screen');
     const winScreen = document.getElementById('win-screen');
     const instructionsScreen = document.getElementById('instructions-screen');
-    const creditsScreen = document.getElementById('credits-screen');
     const pauseScreen = document.getElementById('pause-screen');
     const finalScoreEl = document.getElementById('final-score');
     const pauseBtn = document.getElementById('pause-btn');
@@ -271,7 +258,6 @@
         gameOverScreen.style.display = 'none';
         winScreen.style.display = 'none';
         instructionsScreen.style.display = 'none';
-        creditsScreen.style.display = 'none';
         pauseScreen.style.display = 'none';
         
         // Mostra a tela desejada
