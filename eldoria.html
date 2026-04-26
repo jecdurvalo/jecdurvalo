@@ -346,6 +346,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <script>
 /* -------- ESTADO E MECÂNICAS ORIGINAIS RESTAURADAS -------- */
+let playerName = "Aventureiro"; // Nome do jogador (definido na tela inicial)
 let player={ level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
 let inventory=[];
 let monsters=[];
@@ -901,7 +902,7 @@ scene.add(hero);
 
 let heroLabel=document.createElement("div");
 heroLabel.className="nameplate";
-heroLabel.innerHTML=`<span class='guild'>[Legends of Eldoria]</span><span class='playerName'>John Legend Lv.1</span><span class='title'>Dragon Slayer</span>`;
+heroLabel.innerHTML=`<span class='guild'>[Legends of Eldoria]</span><span class='playerName'>${playerName} Lv.1</span><span class='title'>Dragon Slayer</span>`;
 document.body.appendChild(heroLabel);
 
 // Grupo para armas animadas
@@ -1357,7 +1358,7 @@ function checkLevel(){
         else if(r < 0.75) { player.maxHp += 40; bonus = "+40 HP"; }
         else { player.maxSp += 30; bonus = "+30 SP"; }
         player.hp = player.maxHp; player.sp = player.maxSp;
-        heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level;
+        heroLabel.querySelector(".playerName").innerHTML=playerName+" Lv."+player.level;
         floatingText("LEVEL UP! " + bonus, hero.position, "gold");
         
         // Boss aparece a cada 5 níveis (level 5, 10, 15, 20...)
@@ -1428,8 +1429,9 @@ function castAOE(){
     evolutionData.stats.aoeUses++;
 
     // Aplica dano imediato a todos os monstros na área (pelo menos 50% da vida do monstro)
-    monsters.forEach(monster => {
-        let dist = monster.mesh.position.distanceTo(hero.position);
+    // Copia o array para evitar problemas de mutação durante killMonster
+    [...monsters].forEach(monster => {
+        let dist = monster.position.distanceTo(hero.position);
         if(dist <= 4){
             let baseDmg = player.atk * 2.5;
             // Aplica bônus de dano da skill tree
@@ -1441,8 +1443,8 @@ function castAOE(){
             let calcDmg = Math.max(1, baseDmg - monster.userData.def);
             let dmg = Math.max(calcDmg, minDmg);
             monster.userData.hp -= dmg;
-            floatingText(Math.round(dmg), monster.mesh.position, "purple");
-            createHitVisual(monster.mesh.position, 0x9933ff);
+            floatingText(Math.round(dmg), monster.position, "purple");
+            createHitVisual(monster.position, 0x9933ff);
             if(monster.userData.hp <= 0) killMonster(monster);
         }
     });
@@ -1983,6 +1985,7 @@ function floatingText(txt,pos,color){
 function saveGame() {
     try {
         let saveData = {
+            playerName: playerName,
             player: player,
             inventory: inventory,
             equipped: equipped,
@@ -2007,6 +2010,7 @@ function loadGame() {
         let raw = localStorage.getItem('eldoria_save');
         if(!raw) return;
         let save = JSON.parse(raw);
+        if(save.playerName) playerName = save.playerName;
         if(save.player) Object.assign(player, save.player);
         if(save.inventory) inventory = save.inventory;
         if(save.equipped) Object.assign(equipped, save.equipped);
@@ -2029,7 +2033,14 @@ function loadGame() {
         }
         recalcStats();
         applyEquipVisual();
-        log("<span style='color:cyan'>💾 Progresso carregado!</span>");
+        // Atualiza HUD e nameplate com dados carregados
+        heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv." + player.level;
+        hp.style.width = (player.hp / player.maxHp * 100) + "%";
+        sp.style.width = (player.sp / player.maxSp * 100) + "%";
+        xp.style.width = (player.xp / player.next * 100) + "%";
+        goldDisplay.innerText = "Gold: " + player.gold;
+        updatePanels();
+        log("<span style='color:cyan'>💾 Progresso carregado! Bem-vindo de volta, " + playerName + "!</span>");
     } catch(e) {
         console.warn('Falha ao carregar save:', e);
     }
@@ -2548,7 +2559,7 @@ function resetGame() {
     sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
-    heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level;
+    heroLabel.querySelector(".playerName").innerHTML=playerName+" Lv."+player.level;
     applyEquipVisual();
     updateBiome();
     updatePanels();
@@ -2564,12 +2575,76 @@ function resetGame() {
     log("<span style='color:cyan'>🔄 Voltou para o Level 1!</span>");
 }
 
-// Carregar save antes de iniciar
-loadGame();
+// -------- TELA INICIAL --------
+let startOverlay = document.createElement('div');
+startOverlay.id = 'startOverlay';
+startOverlay.style.cssText = `
+    display:flex; position:fixed; inset:0; z-index:20000;
+    background:linear-gradient(160deg, #02071a 0%, #080d28 40%, #0a1530 100%);
+    align-items:center; justify-content:center; flex-direction:column;
+    font-family:'Segoe UI', Arial, sans-serif;
+`;
+startOverlay.innerHTML = `
+    <div style="text-align:center; max-width:420px; padding:30px;">
+        <div style="font-size:72px; margin-bottom:10px;">⚔️</div>
+        <h1 style="color:#5ab9ff; font-size:48px; margin:0 0 6px 0; text-shadow:0 0 30px rgba(90,185,255,0.6); letter-spacing:3px;">ELDORIA</h1>
+        <p style="color:#7ea8cc; font-size:14px; margin:0 0 40px 0; letter-spacing:2px;">LEGENDS OF ELDORIA</p>
+        <label style="color:#aac8e8; font-size:16px; display:block; margin-bottom:12px; text-align:left;">Seu nome de herói:</label>
+        <input id="startNameInput" type="text" maxlength="20" placeholder="Aventureiro"
+            style="width:100%; box-sizing:border-box; padding:14px 18px; font-size:22px; border-radius:12px;
+                   border:2px solid #5ab9ff; background:rgba(10,25,60,0.9); color:#ffd66b;
+                   outline:none; font-family:inherit; letter-spacing:1px; margin-bottom:24px;"
+        />
+        <button id="startBtn"
+            style="width:100%; padding:16px; font-size:22px; font-weight:bold; border-radius:12px;
+                   background:linear-gradient(135deg,#2d7fff,#1a50cc); color:white; border:none;
+                   cursor:pointer; letter-spacing:2px; box-shadow:0 4px 20px rgba(45,127,255,0.5);
+                   transition:transform 0.1s,box-shadow 0.2s;">
+            ▶ JOGAR
+        </button>
+        <p id="startSaveHint" style="color:#556688; font-size:13px; margin-top:18px; display:none;">
+            💾 Progresso salvo encontrado — continuando a aventura!
+        </p>
+    </div>
+`;
+document.body.appendChild(startOverlay);
 
-animate();
-log("Eldoria Mobile Restaurado!");
-log("<span style='color:gold'>🎮 Derrote inimigos, colete itens e explore os biomas!</span>");
+// Botão com efeito hover
+let startBtn = document.getElementById('startBtn');
+startBtn.addEventListener('mouseover', () => { startBtn.style.transform='scale(1.04)'; startBtn.style.boxShadow='0 6px 28px rgba(45,127,255,0.7)'; });
+startBtn.addEventListener('mouseout',  () => { startBtn.style.transform='scale(1)';    startBtn.style.boxShadow='0 4px 20px rgba(45,127,255,0.5)'; });
+startBtn.addEventListener('mousedown', () => { startBtn.style.transform='scale(0.97)'; });
+startBtn.addEventListener('mouseup',   () => { startBtn.style.transform='scale(1.04)'; });
+
+// Verifica se há save e pré-preenche o nome
+(function checkSaveForStartScreen() {
+    try {
+        let raw = localStorage.getItem('eldoria_save');
+        if(raw) {
+            let peek = JSON.parse(raw);
+            if(peek.playerName) document.getElementById('startNameInput').value = peek.playerName;
+            document.getElementById('startSaveHint').style.display = 'block';
+        }
+    } catch(e) {}
+})();
+
+function startGame() {
+    let inputName = document.getElementById('startNameInput').value.trim();
+    playerName = inputName || "Aventureiro";
+    // Atualiza o nameplate com o nome escolhido
+    heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv.1";
+    startOverlay.style.display = 'none';
+    // Carrega save e inicia loop
+    loadGame();
+    animate();
+    log("Eldoria Mobile Restaurado!");
+    log("<span style='color:gold'>🎮 Bem-vindo, " + playerName + "! Derrote inimigos, colete itens e explore os biomas!</span>");
+}
+
+startBtn.addEventListener('click', startGame);
+document.getElementById('startNameInput').addEventListener('keydown', e => {
+    if(e.key === 'Enter') startGame();
+});
 </script>
 </body>
 </html>
