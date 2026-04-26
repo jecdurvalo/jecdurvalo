@@ -163,7 +163,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="shopWindow">
     <div style="display:flex; justify-content:space-between"><h2>Ferreiro João</h2><button onclick="toggleShop()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">X</button></div>
-    <p>Venda seus itens por <span style="color:gold">25 Gold</span> cada.</p>
+    <p>Venda seus itens. O valor depende da qualidade do item.</p>
     <div id="shopInventoryPanel" class="inventory-grid"></div>
 </div>
 
@@ -222,13 +222,40 @@ const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
 
 const lootTable=[
-    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado.", icon:"🗡️", stackable:true },
-    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️", stackable:true },
-    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥", stackable:true },
-    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true },
-    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍", stackable:true },
-    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎", stackable:true },
-    { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true }
+    // Armas (weapon) - com diferentes níveis de dado
+    { name:"Rusty Dagger", slot:"weapon", atk:3, desc:"Adaga enferrujada.", icon:"🗡️", stackable:true, value:10 },
+    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado.", icon:"🗡️", stackable:true, value:25 },
+    { name:"Steel Longsword", slot:"weapon", atk:12, desc:"Espada longa de aço.", icon:"⚔️", stackable:true, value:50 },
+    { name:"Knight Blade", slot:"weapon", atk:18, desc:"Lâmina de cavaleiro.", icon:"⚔️", stackable:true, value:80 },
+    { name:"Dragon Slayer", slot:"weapon", atk:25, desc:"Espada lendária.", icon:"🐉", stackable:true, value:150 },
+    { name:"Shadow Dagger", slot:"weapon", atk:15, sp:10, desc:"Adaga das sombras.", icon:"🗡️", stackable:true, value:70 },
+    { name:"Fire Axe", slot:"weapon", atk:20, desc:"Machado de fogo.", icon:"🪓", stackable:true, value:100 },
+    
+    // Escudos (shield)
+    { name:"Wooden Shield", slot:"shield", def:3, desc:"Escudo de madeira.", icon:"🛡️", stackable:true, value:15 },
+    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️", stackable:true, value:40 },
+    { name:"Tower Shield", slot:"shield", def:15, desc:"Escudo de torre.", icon:"🛡️", stackable:true, value:90 },
+    { name:"Dragon Shield", slot:"shield", def:22, hp:20, desc:"Escudo dracônico.", icon:"🐉", stackable:true, value:140 },
+    
+    // Capas (cape)
+    { name:"Cloth Cape", slot:"cape", def:2, desc:"Capa de tecido.", icon:"🧥", stackable:true, value:12 },
+    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥", stackable:true, value:60 },
+    { name:"Royal Cape", slot:"cape", def:8, sp:35, desc:"Capa real.", icon:"👑", stackable:true, value:100 },
+    
+    // Botas (boots)
+    { name":"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true, value:30 },
+    { name:"Swift Boots", slot:"boots", def:4, speed:0.12, desc:"Botas rápidas.", icon:"👢", stackable:true, value:70 },
+    { name:"Dragon Boots", slot:"boots", def:7, speed:0.15, hp:15, desc:"Botas dracônicas.", icon:"🐉", stackable:true, value:120 },
+    
+    // Anéis (ring)
+    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍", stackable:true, value:35 },
+    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎", stackable:true, value:40 },
+    { name:"Ring of Defense", slot:"ring", def:6, desc:"Anel protetor.", icon:"💍", stackable:true, value:45 },
+    { name:"Dragon Ring", slot:"ring", atk:10, hp:20, desc:"Anel do dragão.", icon:"🐉", stackable:true, value:130 },
+    
+    // Consumíveis
+    { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true, value:20 },
+    { name:"Super Potion", slot:"consumable", heal:100, desc:"Recupera 100 HP.", icon:"🧪", stackable:true, value:40 }
 ];
 
 // Adicionar durabilidade aos itens e quantidade para stackables
@@ -675,19 +702,42 @@ function recalcStats(){
         bHp += (equipped[k].hp || 0); bSp += (equipped[k].sp || 0);
     }
     player.atk = player.baseAtk + bAtk; player.def = player.baseDef + bDef;
+    // Atualiza HP e SP máximos com base nos equipamentos
+    player.maxHp = 100 + bHp;
+    player.maxSp = 100 + bSp;
 }
 
 function updatePanels(){
-    statsPanel.innerHTML=`<div style="font-size:18px; margin-bottom:10px;">🎯 Nível ${player.level}</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"><div style="background:rgba(255,100,100,0.3); padding:8px; border-radius:6px;">⚔️ ATK: ${player.atk}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">🛡️ DEF: ${player.def}</div><div style="background:rgba(100,255,150,0.3); padding:8px; border-radius:6px;">❤️ HP: ${player.hp}/${player.maxHp+(equipped.ring1?.hp||0)+(equipped.ring2?.hp||0)}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">💙 SP: ${Math.floor(player.sp)}/${player.maxSp+(equipped.cape?.sp||0)}</div></div><div style="margin-top:10px; color:gold;">💰 Gold: ${player.gold}</div>`;
+    statsPanel.innerHTML=`<div style="font-size:18px; margin-bottom:10px;">🎯 Nível ${player.level}</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"><div style="background:rgba(255,100,100,0.3); padding:8px; border-radius:6px;">⚔️ ATK: ${player.atk}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">🛡️ DEF: ${player.def}</div><div style="background:rgba(100,255,150,0.3); padding:8px; border-radius:6px;">❤️ HP: ${player.hp}/${player.maxHp}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">💙 SP: ${Math.floor(player.sp)}/${player.maxSp}</div></div><div style="margin-top:10px; color:gold;">💰 Gold: ${player.gold}</div>`;
     equippedPanel.innerHTML="";
     for(let k in equipped) {
         let item = equipped[k];
         let icon = item?.icon || '❓';
+        
+        // Calcular porcentagem de dano/bônus do equipamento baseado no nível do jogador
+        let damageBonusInfo = '';
+        if(item && (item.atk || item.def || item.hp || item.sp)) {
+            let totalBonus = (item.atk || 0) + (item.def || 0) + Math.floor((item.hp || 0) / 5) + Math.floor((item.sp || 0) / 5);
+            let baseStat = player.baseAtk + player.baseDef + 20; // Base de referência
+            let bonusPercent = Math.round((totalBonus / baseStat) * 100);
+            let barColor = bonusPercent > 50 ? '#4CAF50' : (bonusPercent > 25 ? '#FFC107' : '#f44336');
+            damageBonusInfo = `
+                <div style="display:flex; align-items:center; gap:5px; margin-top:5px;">
+                    <small style="color:#aaa;">Poder:</small>
+                    <div style="flex:1; height:6px; background:#333; border-radius:3px; overflow:hidden;">
+                        <div style="width:${Math.min(100, bonusPercent)}%; height:100%; background:${barColor}; transition:width 0.3s;"></div>
+                    </div>
+                    <small style="color:#fff; min-width:35px; text-align:right;">${bonusPercent}%</small>
+                </div>
+            `;
+        }
+        
         let durabInfo = item && item.durability ? `<small style="color:${item.durability < 30 ? 'red' : '#aaa'}"> (${item.durability}%)</small>` : '';
         // Barra de durabilidade para itens equipados (apenas equipamentos com durabilidade)
         let durabBar = item && item.durability !== undefined ? 
             `<div style="display:flex; align-items:center; gap:5px; margin-top:5px;"><div style="width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;"><div style="width:${item.durability}%; height:100%; background:${item.durability > 60 ? '#4CAF50' : (item.durability > 30 ? '#FFC107' : '#f44336')}; transition:width 0.3s;"></div></div><small style="color:#fff; min-width:35px;">${item.durability}%</small></div>` : '';
-        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:50px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}${durabBar}</div>`;
+        
+        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:60px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}${damageBonusInfo}${durabBar}</div>`;
     }
     inventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
@@ -756,7 +806,7 @@ function openSellModal(i) {
     
     currentSellIndex = i;
     let maxQty = it.quantity || 1;
-    let basePrice = 25;
+    let basePrice = it.value || 25; // Usa o valor do item, ou 25 como default
     let totalValue = basePrice * maxQty;
     
     document.getElementById('sellModalContent').innerHTML = `
@@ -797,7 +847,7 @@ function confirmSell() {
     
     let it = inventory[currentSellIndex];
     let qtyToSell = parseInt(document.getElementById('sellQuantity').value) || 1;
-    let basePrice = 25;
+    let basePrice = it.value || 25; // Usa o valor do item, ou 25 como default
     let totalGold = qtyToSell * basePrice;
     
     if(it.stackable && it.quantity > 1) {
@@ -1004,7 +1054,8 @@ function animate(time){
             }
             
             if(d < 40) m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.06));
-            if(d < 2.6 && time - m.userData.lastAttack > 1500){
+            // Apenas ataca se estiver muito perto (colisão real) e dentro do cooldown
+            if(d < 1.8 && time - m.userData.lastAttack > 1500){
                 let dmg = Math.max(1, m.userData.atk-player.def);
                 player.hp -= dmg; m.userData.lastAttack=time; floatingText("-"+dmg, hero.position, "red");
                 
