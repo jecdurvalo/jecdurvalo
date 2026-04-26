@@ -17,6 +17,7 @@ class Boss {
         this.height = CONFIG.BOSS.HEIGHT;
         
         this.startX = x;
+        this.startY = y;
         this.hp = CONFIG.BOSS.HP;
         this.maxHp = CONFIG.BOSS.HP;
         this.speed = CONFIG.BOSS.SPEED;
@@ -24,7 +25,7 @@ class Boss {
         this.angle = 0;
         this.dead = false;
         this.damageCooldown = 0;
-        this.patrolRange = 200;
+        this.patrolRange = CONFIG.BOSS.PATROL_DISTANCE / 2;
     }
 
     /**
@@ -37,13 +38,13 @@ class Boss {
         this.x += this.speed * this.direction;
         
         if (this.x > this.startX + this.patrolRange || 
-            this.x < this.startX) {
+            this.x < this.startX - this.patrolRange) {
             this.direction *= -1;
         }
 
-        // Animação de voo
+        // Animação de voo ondulatória
         this.angle += 0.05;
-        this.y = this.startX + Math.sin(this.angle) * 30;
+        this.y = this.startY + Math.sin(this.angle) * 50;
 
         // Cooldown de dano
         if (this.damageCooldown > 0) {
@@ -61,122 +62,77 @@ class Boss {
         if (this.dead) return;
 
         const drawX = this.x - cameraX;
+        if (drawX < -150 || drawX > ctx.canvas.width + 150) return;
 
         ctx.save();
         ctx.translate(drawX + this.width / 2, this.y + this.height / 2);
-        ctx.scale(this.direction, 1);
 
-        // Corpo do boss (morcego gigante)
-        this.drawBody(ctx);
-        this.drawWings(ctx, frames);
-        this.drawFace(ctx);
-        this.drawHealthBar(ctx);
-
-        ctx.restore();
-    }
-
-    /**
-     * Desenha corpo do boss
-     */
-    drawBody(ctx) {
+        // Corpo do morcego gigante (roxo escuro)
         ctx.fillStyle = this.damageCooldown > 0 ? '#ff0000' : '#4a0080';
         ctx.beginPath();
-        ctx.arc(0, 0, 40, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 50, 40, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Detalhe interno
-        ctx.fillStyle = this.damageCooldown > 0 ? '#ff4444' : '#6a00a0';
-        ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, Math.PI * 2);
-        ctx.fill();
-    }
+        // Asas grandes
+        ctx.fillStyle = this.damageCooldown > 0 ? '#ff4444' : '#2d004d';
+        const wingFlap = Math.sin(this.angle * 2) * 20;
 
-    /**
-     * Desenha asas do boss
-     */
-    drawWings(ctx, frames) {
-        const wingFlap = Math.sin(frames * 0.1) * 20;
-
-        ctx.fillStyle = this.damageCooldown > 0 ? '#ff0000' : '#5a0090';
-        
         // Asa esquerda
         ctx.beginPath();
         ctx.moveTo(-30, -10);
-        ctx.lineTo(-80, -30 + wingFlap);
-        ctx.lineTo(-40, 20);
-        ctx.closePath();
+        ctx.quadraticCurveTo(-80, -60 + wingFlap, -100, -20 + wingFlap);
+        ctx.quadraticCurveTo(-70, 10, -40, 20);
         ctx.fill();
 
         // Asa direita
         ctx.beginPath();
         ctx.moveTo(30, -10);
-        ctx.lineTo(80, -30 + wingFlap);
-        ctx.lineTo(40, 20);
-        ctx.closePath();
+        ctx.quadraticCurveTo(80, -60 + wingFlap, 100, -20 + wingFlap);
+        ctx.quadraticCurveTo(70, 10, 40, 20);
         ctx.fill();
-    }
 
-    /**
-     * Desenha rosto do boss
-     */
-    drawFace(ctx) {
         // Olhos vermelhos brilhantes
         ctx.fillStyle = '#ff0000';
         ctx.beginPath();
-        ctx.arc(-15, -10, 10, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(15, -10, 10, 0, Math.PI * 2);
+        ctx.arc(-20, -10, 12, 0, Math.PI * 2);
+        ctx.arc(20, -10, 12, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pupilas
-        ctx.fillStyle = '#ffff00';
+        // Pupilas pretas
+        ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(-15, -10, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(15, -10, 4, 0, Math.PI * 2);
+        ctx.arc(-18, -10, 5, 0, Math.PI * 2);
+        ctx.arc(22, -10, 5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Presas
+        // Brilho nos olhos
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.moveTo(-10, 15);
-        ctx.lineTo(-5, 25);
-        ctx.lineTo(0, 15);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.moveTo(0, 15);
-        ctx.lineTo(5, 25);
-        ctx.lineTo(10, 15);
+        ctx.arc(-22, -14, 3, 0, Math.PI * 2);
+        ctx.arc(18, -14, 3, 0, Math.PI * 2);
         ctx.fill();
 
         // Orelhas pontudas
-        ctx.fillStyle = '#4a0080';
+        ctx.fillStyle = this.damageCooldown > 0 ? '#ff0000' : '#4a0080';
         ctx.beginPath();
-        ctx.moveTo(-25, -30);
-        ctx.lineTo(-35, -50);
-        ctx.lineTo(-15, -35);
+        ctx.moveTo(-30, -30);
+        ctx.lineTo(-45, -60);
+        ctx.lineTo(-15, -45);
         ctx.fill();
-        
-        ctx.beginPath();
-        ctx.moveTo(25, -30);
-        ctx.lineTo(35, -50);
-        ctx.lineTo(15, -35);
-        ctx.fill();
-    }
 
-    /**
-     * Desenha barra de vida do boss
-     */
-    drawHealthBar(ctx) {
+        ctx.beginPath();
+        ctx.moveTo(30, -30);
+        ctx.lineTo(45, -60);
+        ctx.lineTo(15, -45);
+        ctx.fill();
+
+        ctx.restore();
+
+        // Desenhar barra de vida acima do boss
         const barWidth = 80;
         const barHeight = 8;
-        const barX = -barWidth / 2;
-        const barY = -this.height / 2 - 20;
+        const barX = drawX + this.width / 2 - barWidth / 2;
+        const barY = this.y - this.height / 2 - 20;
 
         // Fundo da barra
         ctx.fillStyle = '#333';
@@ -184,12 +140,7 @@ class Boss {
 
         // Vida atual
         const hpPercent = this.hp / this.maxHp;
-        const gradient = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
-        gradient.addColorStop(0, '#00ff00');
-        gradient.addColorStop(0.5, '#ffff00');
-        gradient.addColorStop(1, '#ff0000');
-        
-        ctx.fillStyle = gradient;
+        ctx.fillStyle = hpPercent > 0.5 ? '#0f0' : hpPercent > 0.25 ? '#ff0' : '#f00';
         ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
 
         // Borda da barra

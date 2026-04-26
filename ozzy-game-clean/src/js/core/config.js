@@ -39,11 +39,12 @@ const CONFIG = {
 
     // Boss
     BOSS: {
-        WIDTH: 120,
-        HEIGHT: 120,
-        HP: 3,
-        SPEED: 1.5,
+        WIDTH: 100,
+        HEIGHT: 100,
+        HP: 5,
+        SPEED: 2.5,
         DAMAGE_COOLDOWN: 30,
+        PATROL_DISTANCE: 400,
     },
 
     // Moedas e Pontuação
