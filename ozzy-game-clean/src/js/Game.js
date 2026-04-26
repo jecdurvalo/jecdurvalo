@@ -205,7 +205,34 @@ class Game {
      * Avança para próximo nível
      */
     nextLevel() {
-        this.loadLevel(this.currentLevelIdx + 1);
+        this.currentLevelIdx++;
+        
+        // Verifica se chegou na fase 8 (index 7) com mais de 500 moedas
+        if (this.currentLevelIdx === 7 && this.score > 500) {
+            this.lives++;
+            this.updateUI();
+            
+            // Mostra mensagem temporária na tela
+            const bonusMsg = document.createElement('div');
+            bonusMsg.style.position = 'absolute';
+            bonusMsg.style.top = '50%';
+            bonusMsg.style.left = '50%';
+            bonusMsg.style.transform = 'translate(-50%, -50%)';
+            bonusMsg.style.color = '#00ff00';
+            bonusMsg.style.fontSize = '32px';
+            bonusMsg.style.fontWeight = 'bold';
+            bonusMsg.style.textShadow = '3px 3px 0 #000';
+            bonusMsg.style.zIndex = '100';
+            bonusMsg.innerText = '+1 VIDA EXTRA!';
+            this.canvas.parentElement.appendChild(bonusMsg);
+            setTimeout(() => bonusMsg.remove(), 2000);
+        }
+        
+        if (this.currentLevelIdx >= this.levels.length) {
+            this.win();
+        } else {
+            this.loadLevel(this.currentLevelIdx);
+        }
     }
 
     /**
@@ -277,10 +304,61 @@ class Game {
         if (this.lives <= 0) {
             this.gameOver();
         } else {
-            // Respawn no início da fase
-            this.player.setInvincible(CONFIG.PLAYER.INVINCIBLE_FRAMES);
-            this.loadLevel(this.currentLevelIdx);
+            // Sistema de checkpoint: se estiver na fase 6 ou superior (index >= 5), volta na fase anterior
+            if (this.currentLevelIdx >= 5) {
+                // Salva o checkpoint atual antes de morrer
+                this.savedCheckpoint = { 
+                    level: this.currentLevelIdx - 1, 
+                    x: 50, 
+                    y: 0 
+                };
+                
+                // Volta para a fase anterior com 1 vida
+                this.currentLevelIdx = Math.max(0, this.currentLevelIdx - 1);
+                this.lives = 1;
+                this.updateUI();
+                
+                // Respawn no início da fase anterior
+                const startPos = { x: 50, y: 0 };
+                this.player = new Player(startPos.x, startPos.y);
+                this.player.setInvincible(CONFIG.PLAYER.INVINCIBLE_FRAMES);
+                this.cameraX = 0;
+                
+                // Recarrega a fase anterior
+                this.loadLevel(this.currentLevelIdx);
+                
+                // Mostra mensagem de checkpoint
+                this.showCheckpointMessage();
+            } else {
+                // Respawn no início da fase atual para fases 1-5
+                const startPos = { x: 50, y: 0 };
+                this.player = new Player(startPos.x, startPos.y);
+                this.player.setInvincible(CONFIG.PLAYER.INVINCIBLE_FRAMES);
+                this.cameraX = 0;
+                
+                // Recarrega a fase do início
+                this.loadLevel(this.currentLevelIdx);
+            }
         }
+    }
+
+    /**
+     * Mostra mensagem de checkpoint
+     */
+    showCheckpointMessage() {
+        const checkpointMsg = document.createElement('div');
+        checkpointMsg.style.position = 'absolute';
+        checkpointMsg.style.top = '40%';
+        checkpointMsg.style.left = '50%';
+        checkpointMsg.style.transform = 'translate(-50%, -50%)';
+        checkpointMsg.style.color = '#ffff00';
+        checkpointMsg.style.fontSize = '28px';
+        checkpointMsg.style.fontWeight = 'bold';
+        checkpointMsg.style.textShadow = '3px 3px 0 #000';
+        checkpointMsg.style.zIndex = '100';
+        checkpointMsg.innerText = 'CHECKPOINT! FASE ' + (this.currentLevelIdx + 1);
+        this.canvas.parentElement.appendChild(checkpointMsg);
+        setTimeout(() => checkpointMsg.remove(), 2000);
     }
 
     /**
