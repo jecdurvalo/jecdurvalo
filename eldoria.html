@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Eldoria ARPG - V13 Mobile Restoration</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <style>
 html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black; font-family:Arial; touch-action: none; }
 
@@ -99,7 +100,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 </div>
 
 <div id="controls">
-    WASD mover | SPACE atacar<br>
+    WASD ou Setas mover | SPACE ou ↑ atacar<br>
     Z Fireball | E Loja (NPC)<br>
     V Personagem | F Fullscreen
 </div>
@@ -424,9 +425,11 @@ function animate(time){
     requestAnimationFrame(animate);
 
     let move = new THREE.Vector3(0,0,0);
-    // Teclado
-    if(keys.w) move.z -= 1; if(keys.s) move.z += 1;
-    if(keys.a) move.x -= 1; if(keys.d) move.x += 1;
+    // Teclado - WASD e Setas Direcionais
+    if(keys.w || keys.arrowup) move.z -= 1; 
+    if(keys.s || keys.arrowdown) move.z += 1;
+    if(keys.a || keys.arrowleft) move.x -= 1; 
+    if(keys.d || keys.arrowright) move.x += 1;
     // Joystick Mobile
     if(isJoyactive){ move.x = joyStickVector.x; move.z = joyStickVector.y; }
 
@@ -512,7 +515,7 @@ function animate(time){
 }
 
 window.onkeydown=e=>{ keys[e.key.toLowerCase()]=true; 
-    if(e.code==="Space") attack();
+    if(e.code==="Space" || e.key==="ArrowUp") attack();
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
