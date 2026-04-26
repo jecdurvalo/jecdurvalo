@@ -267,7 +267,7 @@ class LevelManager {
                 new Enemy(330, 370, 'spider', 8),
                 new Enemy(480, 320, 'spider', 8),
                 new Enemy(630, 270, 'bat', 8),
-                new Entity(780, 320, 'bat', 8),
+                new Enemy(780, 320, 'bat', 8),
                 new Enemy(930, 370, 'spider', 8),
             ],
             coins: [
