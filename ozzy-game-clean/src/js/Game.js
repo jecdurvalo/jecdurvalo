@@ -228,7 +228,8 @@ class Game {
             setTimeout(() => bonusMsg.remove(), 2000);
         }
         
-        if (this.currentLevelIdx >= this.levels.length) {
+        // Total de 15 fases (igual ao ozzy-mario.html)
+        if (this.currentLevelIdx >= 15) {
             this.win();
         } else {
             this.loadLevel(this.currentLevelIdx);
@@ -319,9 +320,10 @@ class Game {
                 this.updateUI();
                 
                 // Respawn no início da fase anterior
-                const startPos = { x: 50, y: 0 };
-                this.player = new Player(startPos.x, startPos.y);
-                this.player.setInvincible(CONFIG.PLAYER.INVINCIBLE_FRAMES);
+                this.player.x = 50;
+                this.player.y = 0;
+                this.player.vx = 0;
+                this.player.vy = 0;
                 this.cameraX = 0;
                 
                 // Recarrega a fase anterior
@@ -331,9 +333,10 @@ class Game {
                 this.showCheckpointMessage();
             } else {
                 // Respawn no início da fase atual para fases 1-5
-                const startPos = { x: 50, y: 0 };
-                this.player = new Player(startPos.x, startPos.y);
-                this.player.setInvincible(CONFIG.PLAYER.INVINCIBLE_FRAMES);
+                this.player.x = 50;
+                this.player.y = 0;
+                this.player.vx = 0;
+                this.player.vy = 0;
                 this.cameraX = 0;
                 
                 // Recarrega a fase do início
