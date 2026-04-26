@@ -179,11 +179,11 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="statusWindow">
     <button onclick="toggleV()" class="close-btn">×</button>
-    <h2>📖 Grimório do Herói</h2>
+    <h2>🎒 Inventário</h2>
     <div id="statsPanel" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin-bottom:10px;"></div>
     <h3>⚔️ Equipamento</h3>
     <div id="equippedPanel"></div>
-    <h3>🎒 Alforje</h3>
+    <h3>🎒 Mochila</h3>
     <div id="inventoryPanel" class="inventory-grid"></div>
 </div>
 
@@ -1010,6 +1010,13 @@ function killMonster(m){
     // Verifica conquistas
     checkAchievements();
     
+    // Drop de gold (sempre dropa um pouco de gold)
+    let goldDrop = Math.floor(m.userData.level * 2 + Math.random() * 5);
+    if(m.userData.isBoss) goldDrop *= 3; // Boss dropa 3x mais gold
+    player.gold += goldDrop;
+    floatingText("+"+goldDrop+" Gold", m.position, "gold");
+    checkAchievements(); // Verifica conquistas após ganhar gold do drop
+    
     // Drop de itens no chão (randomico)
     let dropCount = m.userData.isBoss ? 5 : Math.floor(Math.random() * 3); // Boss dropa mais itens
     for(let i = 0; i < dropCount; i++) {
@@ -1478,6 +1485,7 @@ function confirmSell() {
     
     player.gold += totalGold;
     log(`<span style='color:gold'>Vendeu ${qtyToSell}x ${it.name} por ${totalGold} Gold!</span>`);
+    checkAchievements(); // Verifica conquistas após ganhar gold
     updatePanels();
     closeSellModal();
 }
