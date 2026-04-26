@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eldoria ARPG - V13 Mobile Restoration</title>
+<style>
+html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black; font-family:Arial; touch-action: none; }
+
+#gameCanvas { position:fixed; inset:0; display:block; width:100vw!important; height:100vh!important; z-index: 1; }
+
+#hud{
+    position:fixed; top:15px; left:15px; width:290px;
+    background:rgba(5,15,35,.88); padding:15px; border-radius:15px;
+    z-index:1000; color:white; border: 1px solid rgba(255,255,255,0.1);
+}
+.bar{ height:18px; background:#111; border-radius:30px; overflow:hidden; margin-bottom:10px; }
+.fill{ height:100%; transition: width 0.2s; }
+.hp{ background:#d33; }
+.sp{ background:#2d7fff; }
+
+#minimapContainer {
+    position: fixed; bottom: 25px; right: 25px;
+    width: 150px; height: 150px;
+    background: rgba(5, 15, 25, 0.85);
+    border: 4px solid #5ab9ff; border-radius: 50%;
+    overflow: hidden; z-index: 2000;
+    box-shadow: 0 0 25px rgba(0,0,0,0.7);
+}
+#minimapCanvas { display: block; width: 100%; height: 100%; }
+
+/* --- CONTROLES MOBILE --- */
+#mobileControls { position: fixed; inset: 0; pointer-events: none; z-index: 4000; }
+.mobile-btn { 
+    pointer-events: auto; position: absolute; 
+    background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%; color: white; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+}
+#joystickArea { 
+    position: absolute; bottom: 40px; left: 40px; 
+    width: 140px; height: 140px; background: rgba(255,255,255,0.05); 
+    border-radius: 50%; pointer-events: auto;
+}
+#joystickStick {
+    position: absolute; top: 45px; left: 45px; width: 50px; height: 50px;
+    background: rgba(255,255,255,0.4); border-radius: 50%;
+}
+#btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: rgba(211, 51, 51, 0.4); font-size: 18px; }
+#btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: rgba(45, 127, 255, 0.4); }
+#btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; }
+#btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; }
+
+#controls{
+    position:fixed; top:18px; right:18px; background:rgba(0,0,0,.65);
+    padding:14px; border-radius:12px; color:white; z-index:999; font-size:13px;
+}
+#combatLog{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:18px;
+    width:400px; height:100px; overflow:auto; background:rgba(0,0,0,.6);
+    border:1px solid rgba(255,255,255,.2); border-radius:14px; padding:12px;
+    color:#d8e7ff; font-size:13px; z-index:1200; pointer-events: none;
+}
+#statusWindow, #shopWindow{
+    display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:90%; max-width: 680px; height:80vh; overflow:auto; background:#0a1930;
+    border:3px solid #5ab9ff; padding:20px; border-radius:18px; z-index:5000; color:white;
+}
+.item{ background:#17304e; padding:12px; margin:8px 0; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+.item:hover{ background:#24496f; }
+.nameplate{ position:fixed; pointer-events:none; text-align:center; font-weight:bold; z-index:3000; text-shadow:0 0 6px black; }
+.guild{ display:block; color:#6fd7ff; font-size:12px; }
+.playerName{ display:block; color:#ffd66b; font-size:18px; }
+.title{ display:block; font-size:11px; color:#fff; }
+.sell-btn { background: #e67e22; border:none; color:white; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; }
+
+/* Esconde controles desktop no mobile e vice-versa */
+@media (max-width: 800px) { #controls { display: none; } }
+@media (min-width: 801px) { #mobileControls { display: none; } }
+</style>
+</head>
+<body>
+
+<div id="hud">
+    <h2 style="margin:0">Eldoria</h2>
+    <div id="goldDisplay" style="color:gold; font-weight:bold; margin-bottom:5px;">Gold: 0</div>
+    HP <div class="bar"><div id="hp" class="fill hp"></div></div>
+    SP <div class="bar"><div id="sp" class="fill sp"></div></div>
+    XP <div class="bar"><div id="xp" class="fill" style="background:#2ecc71"></div></div>
+</div>
+
+<div id="mobileControls">
+    <div id="joystickArea"><div id="joystickStick"></div></div>
+    <div id="btnAtk" class="mobile-btn">ATK</div>
+    <div id="btnSkill" class="mobile-btn">Z</div>
+    <div id="btnInv" class="mobile-btn">V</div>
+    <div id="btnShop" class="mobile-btn">E</div>
+</div>
+
+<div id="controls">
+    WASD mover | SPACE atacar<br>
+    Z Fireball | E Loja (NPC)<br>
+    V Personagem | F Fullscreen
+</div>
+
+<div id="minimapContainer">
+    <canvas id="minimapCanvas" width="180" height="180"></canvas>
+</div>
+
+<div id="combatLog"></div>
+
+<div id="statusWindow">
+    <div style="display:flex; justify-content:space-between"><h2>Ficha do Herói</h2><button onclick="toggleV()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">X</button></div>
+    <div id="statsPanel" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin-bottom:10px;"></div>
+    <h3>Equipado</h3>
+    <div id="equippedPanel"></div>
+    <h3>Mochila</h3>
+    <div id="inventoryPanel"></div>
+</div>
+
+<div id="shopWindow">
+    <div style="display:flex; justify-content:space-between"><h2>Ferreiro João</h2><button onclick="toggleShop()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">X</button></div>
+    <p>Venda seus itens por <span style="color:gold">25 Gold</span> cada.</p>
+    <div id="shopInventoryPanel"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* -------- ESTADO E MECÂNICAS ORIGINAIS RESTAURADAS -------- */
+let player={ level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
+let inventory=[];
+let monsters=[];
+let keys={};
+let floatTexts=[];
+let fireballs=[];
+let visuals=[];
+let lastDir = new THREE.Vector3(0,0,1);
+let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
+let isAttacking = false;
+let lastSpawnTime = 0;
+
+const miniMapCanvas = document.getElementById('minimapCanvas');
+const ctxM = miniMapCanvas.getContext('2d');
+
+const lootTable=[
+    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado." },
+    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria." },
+    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras." },
+    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade." },
+    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante." },
+    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul." }
+];
+
+function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
+
+/* -------- ENGINE 3D -------- */
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x87ceeb);
+const camera=new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.domElement.id = "gameCanvas";
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, .7));
+let sun=new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(20,30,20);
+scene.add(sun);
+
+let ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000), new THREE.MeshStandardMaterial({color:0x3ea55e}));
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
+
+/* -------- PERSONAGEM E VISUAIS -------- */
+let hero=new THREE.Group();
+let heroBody=new THREE.Mesh(new THREE.BoxGeometry(1,1.8,.8), new THREE.MeshStandardMaterial({color:0x3f7cff}));
+heroBody.position.y=1; hero.add(heroBody);
+let hair=new THREE.Mesh(new THREE.BoxGeometry(.9,.2,.8), new THREE.MeshStandardMaterial({color:0x2d160d}));
+hair.position.y=1.95; hero.add(hair);
+let hand=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshStandardMaterial({color:0xffdbac}));
+hand.position.set(0.6,1,0.4); hand.visible=false;
+hero.add(hand);
+scene.add(hero);
+
+let heroLabel=document.createElement("div");
+heroLabel.className="nameplate";
+heroLabel.innerHTML=`<span class='guild'>[Legends of Eldoria]</span><span class='playerName'>John Legend Lv.1</span><span class='title'>Dragon Slayer</span>`;
+document.body.appendChild(heroLabel);
+
+function applyEquipVisual(){
+    visuals.forEach(v=>hero.remove(v));
+    visuals=[];
+    if(equipped.weapon){
+        let w = new THREE.Group();
+        let blade=new THREE.Mesh(new THREE.BoxGeometry(.15,1.6,.15), new THREE.MeshStandardMaterial({color:0xf0f0f0}));
+        blade.position.y = 0.8; w.add(blade);
+        w.position.set(0.8, 1, 0.3); hero.add(w); visuals.push(w);
+    }
+    if(equipped.shield){
+        let s=new THREE.Mesh(new THREE.BoxGeometry(.9,1,.2), new THREE.MeshStandardMaterial({color:0x777}));
+        s.position.set(-0.9,1,0.2); hero.add(s); visuals.push(s);
+    }
+    if(equipped.cape){
+        let c=new THREE.Mesh(new THREE.BoxGeometry(1,1.7,.08), new THREE.MeshStandardMaterial({color:0x331144}));
+        c.position.set(0,0.85,-.45); hero.add(c); visuals.push(c);
+    }
+    if(equipped.boots){
+        let b1=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.3,0.5), new THREE.MeshStandardMaterial({color:0x331100}));
+        let b2=b1.clone(); b1.position.set(-0.3, 0.15, 0.1); b2.position.set(0.3, 0.15, 0.1);
+        hero.add(b1); hero.add(b2); visuals.push(b1,b2);
+    }
+    if(equipped.ring1){
+        let r1=new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshStandardMaterial({color:0xffd700, emissive:0xffaa00}));
+        r1.position.set(0.6, 1.2, 0.4); hero.add(r1); visuals.push(r1);
+    }
+    if(equipped.ring2){
+        let r2=new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshStandardMaterial({color:0x00d7ff, emissive:0x0055ff}));
+        r2.position.set(-0.6, 1.2, 0.4); hero.add(r2); visuals.push(r2);
+    }
+}
+
+function hpBar(){
+    let el=document.createElement("div");
+    el.style.cssText="position:fixed; width:50px; height:6px; background:#440000; pointer-events:none; border:1px solid black; z-index:3000;";
+    let fill=document.createElement("div");
+    fill.style.cssText="height:100%; background:#ff0000; width:100%;";
+    el.appendChild(fill); document.body.appendChild(el);
+    return {bar:el, fill};
+}
+
+function makeLabel(t){
+    let d=document.createElement("div");
+    d.className="nameplate"; d.style.fontSize="12px"; d.style.color="white";
+    document.body.appendChild(d); d.innerHTML=t; return d;
+}
+
+function spawnMonster(elite=false){
+    let sX = hero.position.x + (Math.random()-0.5)*150;
+    let sZ = hero.position.z + (Math.random()-0.5)*150;
+    let lv = elite ? 10 : player.level + Math.floor(Math.random()*3);
+    let size = elite ? 4 : 1.5;
+    let m=new THREE.Mesh(new THREE.BoxGeometry(size,size,size), new THREE.MeshStandardMaterial({color:elite?0xff0000:0x9933ff}));
+    m.position.set(sX, size/2, sZ);
+    let hp = elite ? 1200 : 50 + (lv * 10);
+    m.userData={ name: elite?"BOSS":"Wolf", level: lv, hp, maxHp: hp, xp: elite?500:20+(lv*5), atk: elite?25:5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel("") };
+    scene.add(m); monsters.push(m);
+}
+
+function killMonster(m){
+    player.xp += m.userData.xp;
+    floatingText("+"+m.userData.xp+" XP", m.position, "lime");
+    if(Math.random()>.4){
+        let it = JSON.parse(JSON.stringify(lootTable[Math.floor(Math.random()*lootTable.length)]));
+        inventory.push(it); log("<span style='color:cyan'>Recebeu: "+it.name+"</span>");
+    }
+    scene.remove(m); m.userData.ui.bar.remove(); m.userData.label.remove();
+    monsters.splice(monsters.indexOf(m),1);
+    checkLevel();
+}
+
+function checkLevel(){
+    if(player.xp >= player.next){
+        player.level++; player.xp=0; player.next *= 1.5;
+        let bonus = "";
+        let r = Math.random();
+        if(r < 0.25) { player.baseAtk += 5; bonus = "+5 ATK"; }
+        else if(r < 0.5) { player.baseDef += 4; bonus = "+4 DEF"; }
+        else if(r < 0.75) { player.maxHp += 40; bonus = "+40 HP"; }
+        else { player.maxSp += 30; bonus = "+30 SP"; }
+        player.hp = player.maxHp; player.sp = player.maxSp;
+        heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level;
+        floatingText("LEVEL UP! " + bonus, hero.position, "gold");
+        recalcStats();
+    }
+}
+
+function castFireball(){
+    if(player.sp < 25){ log("SP insuficiente!"); return; }
+    player.sp -= 25;
+    let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
+    fb.position.copy(hero.position).y = 1.2;
+    scene.add(fb);
+    fireballs.push({ mesh: fb, dir: lastDir.clone().normalize(), life: 80 });
+}
+
+function attack(){
+    if(isAttacking) return;
+    isAttacking = true; hand.visible = true;
+    let t = 0;
+    let anim = setInterval(()=>{
+        t += 0.3; hand.position.z = 0.4 + Math.sin(t)*0.8;
+        if(t >= Math.PI){ clearInterval(anim); hand.visible=false; hand.position.z=0.4; isAttacking=false; }
+    }, 20);
+    monsters.forEach(m => {
+        if(hero.position.distanceTo(m.position) < 4.5){
+            let dmg = player.atk + Math.floor(Math.random()*5);
+            m.userData.hp -= dmg; floatingText("-"+dmg, m.position, "orange");
+            if(m.userData.hp <= 0) killMonster(m);
+        }
+    });
+}
+
+/* -------- JOYSTICK LOGIC -------- */
+let joyStickVector = { x: 0, y: 0 };
+let isJoyactive = false;
+const joyArea = document.getElementById('joystickArea');
+const joyStick = document.getElementById('joystickStick');
+
+function handleJoy(e) {
+    if (!isJoyactive) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const rect = joyArea.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = touch.clientX - cx;
+    const dy = touch.clientY - cy;
+    const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
+    const angle = Math.atan2(dy, dx);
+    
+    joyStickVector.x = Math.cos(angle) * (dist/45);
+    joyStickVector.y = Math.sin(angle) * (dist/45);
+    
+    joyStick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+}
+
+joyArea.addEventListener('touchstart', e => { isJoyactive = true; handleJoy(e); });
+window.addEventListener('touchmove', e => { if(isJoyactive) { handleJoy(e); e.preventDefault(); } }, {passive: false});
+window.addEventListener('touchend', () => { 
+    isJoyactive = false; 
+    joyStickVector = { x: 0, y: 0 }; 
+    joyStick.style.transform = `translate(0,0)`;
+});
+
+/* Mobile Buttons */
+document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
+document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
+document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
+document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
+
+/* -------- UI E LOJA -------- */
+function recalcStats(){
+    let bAtk=0, bDef=0, bHp=0, bSp=0;
+    for(let k in equipped) if(equipped[k]){
+        bAtk += (equipped[k].atk || 0); bDef += (equipped[k].def || 0);
+        bHp += (equipped[k].hp || 0); bSp += (equipped[k].sp || 0);
+    }
+    player.atk = player.baseAtk + bAtk; player.def = player.baseDef + bDef;
+}
+
+function updatePanels(){
+    statsPanel.innerHTML=`LVL ${player.level} | ATK ${player.atk} | DEF ${player.def} | Gold: ${player.gold}`;
+    equippedPanel.innerHTML="";
+    for(let k in equipped) equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')">${k.toUpperCase()}: ${equipped[k]?equipped[k].name:'Vazio'}</div>`;
+    inventoryPanel.innerHTML="";
+    inventory.forEach((it,i)=> inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})'><b>${it.name}</b> [${it.slot}]</div>`);
+    shopInventoryPanel.innerHTML="";
+    inventory.forEach((it,i)=> shopInventoryPanel.innerHTML+=`<div class='item'><span>${it.name}</span><button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button></div>`);
+}
+
+function sellItem(i){ player.gold += 25; inventory.splice(i,1); updatePanels(); }
+function equip(i){
+    let it=inventory[i]; let s = it.slot;
+    if(s === "ring") s = !equipped.ring1 ? "ring1" : "ring2";
+    equipped[s]=it; recalcStats(); applyEquipVisual(); updatePanels();
+}
+function unequip(k){ equipped[k]=null; recalcStats(); applyEquipVisual(); updatePanels(); }
+function toggleV(){ statusWindow.style.display = statusWindow.style.display==="block"?"none":"block"; updatePanels(); }
+function toggleShop(){ shopWindow.style.display = shopWindow.style.display==="block"?"none":"block"; updatePanels(); }
+
+function floatingText(txt,pos,color){
+    let d=document.createElement("div"); d.style.position="fixed"; d.style.color=color; d.style.fontWeight="bold"; d.style.zIndex="6000";
+    document.body.appendChild(d); floatTexts.push({div:d, pos:pos.clone(), life:60, txt});
+}
+
+/* -------- LOOP DE JOGO -------- */
+function animate(time){
+    requestAnimationFrame(animate);
+
+    let move = new THREE.Vector3(0,0,0);
+    // Teclado
+    if(keys.w) move.z -= 1; if(keys.s) move.z += 1;
+    if(keys.a) move.x -= 1; if(keys.d) move.x += 1;
+    // Joystick Mobile
+    if(isJoyactive){ move.x = joyStickVector.x; move.z = joyStickVector.y; }
+
+    if(move.length() > 0.05){
+        let speed = 0.35 + (equipped.boots ? equipped.boots.speed : 0);
+        move.normalize().multiplyScalar(speed);
+        hero.position.add(move); lastDir.copy(move);
+        hero.rotation.y = Math.atan2(move.x, move.z);
+    }
+
+    if(time - lastSpawnTime > 2500){ if(monsters.length < 15) spawnMonster(Math.random()>0.97); lastSpawnTime = time; }
+    player.sp = Math.min(player.maxSp + (equipped.cape?.sp||0), player.sp+0.1);
+
+    // Fireball
+    for(let i=fireballs.length-1; i>=0; i--){
+        let f = fireballs[i]; f.mesh.position.add(f.dir.clone().multiplyScalar(0.8)); f.life--;
+        monsters.forEach(m=>{
+            if(f.mesh.position.distanceTo(m.position)<3.5){
+                m.userData.hp -= 40; floatingText("-40", m.position, "red"); f.life=0;
+                if(m.userData.hp <= 0) killMonster(m);
+            }
+        });
+        if(f.life<=0){ scene.remove(f.mesh); fireballs.splice(i,1); }
+    }
+
+    // Monstros
+    monsters.forEach((m)=>{
+        let d = hero.position.distanceTo(m.position);
+        if (d <= 1000) {
+            m.visible = true;
+            if(d < 40) m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.06));
+            if(d < 2.6 && time - m.userData.lastAttack > 1500){
+                let dmg = Math.max(1, m.userData.atk-player.def);
+                player.hp -= dmg; m.userData.lastAttack=time; floatingText("-"+dmg, hero.position, "red");
+                if(player.hp<=0){ player.hp=player.maxHp; hero.position.set(0,0,0); log("Ressuscitado!"); }
+            }
+            let v=m.position.clone().project(camera);
+            if(v.z < 1){
+                m.userData.ui.bar.style.display = "block"; m.userData.label.style.display = "block";
+                let x=(v.x*.5+.5)*innerWidth, y=(-v.y*.5+.5)*innerHeight;
+                m.userData.ui.bar.style.left=(x-25)+"px"; m.userData.ui.bar.style.top=(y-28)+"px";
+                m.userData.ui.fill.style.width=(m.userData.hp/m.userData.maxHp*100)+"%";
+                m.userData.label.style.left=(x-45)+"px"; m.userData.label.style.top=(y-48)+"px";
+                m.userData.label.innerHTML=`${m.userData.name} Lv.${m.userData.level}`;
+            } else { m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
+        } else { m.visible = false; m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
+    });
+
+    floatTexts.forEach((f,i)=>{
+        f.pos.y+=.05; let v=f.pos.clone().project(camera);
+        f.div.style.left=(v.x*.5+.5)*innerWidth+"px"; f.div.style.top=(-v.y*.5+.5)*innerHeight+"px";
+        f.div.innerHTML=f.txt; if(--f.life<=0){ f.div.remove(); floatTexts.splice(i,1); }
+    });
+
+    let hv=hero.position.clone().project(camera);
+    heroLabel.style.left=((hv.x*.5+.5)*innerWidth-65)+"px"; heroLabel.style.top=((-hv.y*.5+.5)*innerHeight-85)+"px";
+
+    camera.position.set(hero.position.x, 14, hero.position.z+14);
+    camera.lookAt(hero.position);
+    renderer.render(scene, camera);
+
+    hp.style.width=(player.hp/(player.maxHp+(equipped.ring1?.hp||0)+(equipped.ring2?.hp||0))*100)+"%";
+    sp.style.width=(player.sp/(player.maxSp+(equipped.cape?.sp||0))*100)+"%";
+    xp.style.width=(player.xp/player.next*100)+"%";
+    goldDisplay.innerText = "Gold: " + player.gold;
+
+    // MINI-MAPA
+    ctxM.clearRect(0, 0, 180, 180);
+    ctxM.fillStyle = "rgba(0, 40, 20, 0.7)"; ctxM.fillRect(0,0,180,180);
+    const centerX = 90, centerZ = 90, mapScale = 1.3;
+    monsters.forEach(m => {
+        const dist = m.position.distanceTo(hero.position);
+        if (dist <= 1000) {
+            const mx = centerX + (m.position.x - hero.position.x) * mapScale;
+            const mz = centerZ + (m.position.z - hero.position.z) * mapScale;
+            if(Math.sqrt((mx-90)**2 + (mz-90)**2) < 70) {
+                ctxM.fillStyle = m.userData.isBoss ? "#ff0000" : "#ffaa00";
+                ctxM.beginPath(); ctxM.arc(mx, mz, 3, 0, Math.PI*2); ctxM.fill();
+            }
+        }
+    });
+    ctxM.fillStyle = "white"; ctxM.beginPath(); ctxM.arc(centerX, centerZ, 4, 0, Math.PI*2); ctxM.fill();
+}
+
+window.onkeydown=e=>{ keys[e.key.toLowerCase()]=true; 
+    if(e.code==="Space") attack();
+    if(e.key.toLowerCase()==="z") castFireball();
+    if(e.key.toLowerCase()==="v") toggleV();
+    if(e.key.toLowerCase()==="e") toggleShop();
+    if(e.key.toLowerCase()==="f") document.documentElement.requestFullscreen();
+};
+window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
+
+window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+});
+
+animate();
+log("Eldoria Mobile Restaurado!");
+</script>
+</body>
+</html>
