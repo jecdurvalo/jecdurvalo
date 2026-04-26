@@ -132,7 +132,8 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <div id="controls">
     WASD ou Setas mover | SPACE ou ↑ atacar<br>
     Z Fireball | E Loja (NPC)<br>
-    V Personagem | F Fullscreen
+    V Personagem | F Fullscreen<br>
+    <span style="color:yellow; font-weight:bold;">P Pausar Jogo</span>
 </div>
 
 <div id="minimapContainer">
@@ -174,6 +175,7 @@ let isAttacking = false;
 let lastSpawnTime = 0;
 let bossSpawned = false;
 let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
+let gamePaused = false; // Controle de pausa do jogo
 
 const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
@@ -184,8 +186,17 @@ const lootTable=[
     { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥" },
     { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢" },
     { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍" },
-    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎" }
+    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎" },
+    { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true }
 ];
+
+// Adicionar durabilidade aos itens
+function createItem(baseItem) {
+    let item = JSON.parse(JSON.stringify(baseItem));
+    item.durability = 100; // Durabilidade inicial
+    item.maxDurability = 100;
+    return item;
+}
 
 // Biomas com cores e características diferentes
 const biomes = [
@@ -331,9 +342,8 @@ function spawnMonster(elite=false){
     let sX = hero.position.x + (Math.random()-0.5)*150;
     let sZ = hero.position.z + (Math.random()-0.5)*150;
     
-    // Boss aparece a cada 5 níveis
-    let shouldSpawnBoss = player.level % 5 === 0 && !bossSpawned && Math.random() > 0.7;
-    elite = elite || shouldSpawnBoss;
+    // Boss só aparece via checkLevel, não aleatoriamente
+    elite = elite || false;
     
     let lv = elite ? player.level * 2 : player.level + Math.floor(Math.random()*3);
     let size = elite ? 4 : 1.5;
@@ -390,8 +400,7 @@ function spawnMonster(elite=false){
     monsterGroup.userData={ name: name, level: lv, hp, maxHp: hp, xp: elite?500+(player.level*50):20+(lv*5), atk: elite?25+(player.level*3):5+(lv*2), isBoss: elite, lastAttack: 0, ui: hpBar(), label: makeLabel(""), mesh: monsterGroup, breatheOffset: Math.random() * Math.PI * 2 };
     scene.add(monsterGroup); monsters.push(monsterGroup);
     
-    if(elite && shouldSpawnBoss) {
-        bossSpawned = true;
+    if(elite) {
         floatingText("⚠️ BOSS SPAWNED!", hero.position, "red");
         log("<span style='color:red; font-weight:bold;'>👹 UM BOSS APARECEU!</span>");
     }
@@ -406,7 +415,12 @@ function killMonster(m){
     for(let i = 0; i < dropCount; i++) {
         if(Math.random() > 0.4) { // 60% chance de dropar cada item
             let randomItem = lootTable[Math.floor(Math.random() * lootTable.length)];
-            let itemCopy = JSON.parse(JSON.stringify(randomItem));
+            let itemCopy = createItem(randomItem); // Usa funcao para criar item com durabilidade
+            
+            // Adicionar quantidade se for stackable (poção)
+            if(itemCopy.stackable) {
+                itemCopy.quantity = Math.floor(Math.random() * 3) + 1; // 1-3 poções
+            }
             
             // Criar item visual no chão
             let itemMesh = new THREE.Group();
@@ -425,6 +439,7 @@ function killMonster(m){
             else if(itemCopy.slot === "cape") itemColor = 0x44ff44;
             else if(itemCopy.slot === "boots") itemColor = 0xffaa00;
             else if(itemCopy.slot === "ring") itemColor = 0xffd700;
+            else if(itemCopy.slot === "consumable") itemColor = 0x00ff88; // Verde para poções
             
             let itemGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
             let itemMat = new THREE.MeshStandardMaterial({color: itemColor, emissive: itemColor, emissiveIntensity: 0.5});
@@ -443,13 +458,6 @@ function killMonster(m){
                 life: 600 // 10 segundos a 60fps
             });
         }
-    }
-    
-    // Se for boss, permitir spawn de novo boss no futuro
-    if(m.userData.isBoss) {
-        bossSpawned = false;
-        floatingText("👹 BOSS DEFEATED!", hero.position, "gold");
-        log("<span style='color:gold; font-weight:bold;'>🏆 BOSS DERROTADO!</span>");
     }
     
     // Efeito de partículas na morte
@@ -495,6 +503,12 @@ function checkLevel(){
         player.hp = player.maxHp; player.sp = player.maxSp;
         heroLabel.querySelector(".playerName").innerHTML="John Legend Lv."+player.level;
         floatingText("LEVEL UP! " + bonus, hero.position, "gold");
+        
+        // Boss aparece a cada 5 níveis (level 5, 10, 15, 20...)
+        if(player.level >= 5 && player.level % 5 === 0) {
+            spawnMonster(true); // Spawn boss
+        }
+        
         recalcStats();
     }
 }
@@ -509,7 +523,7 @@ function castFireball(){
 }
 
 function attack(){
-    if(isAttacking) return;
+    if(isAttacking || gamePaused) return;
     isAttacking = true;
     
     let t = 0;
@@ -535,6 +549,19 @@ function attack(){
                     let dmg = player.atk + Math.floor(Math.random()*5);
                     m.userData.hp -= dmg; 
                     floatingText("-"+dmg, m.position, "orange");
+                    
+                    // Reduz durabilidade do equipamento ao atacar
+                    if(equipped.weapon) {
+                        equipped.weapon.durability -= 1;
+                        if(equipped.weapon.durability <= 0) {
+                            floatingText("💔 Arma Quebrou!", hero.position, "red");
+                            log("<span style='color:red'>Sua arma quebrou!</span>");
+                            equipped.weapon = null;
+                            applyEquipVisual();
+                        }
+                        updatePanels();
+                    }
+                    
                     if(m.userData.hp <= 0) killMonster(m);
                 }
             });
@@ -609,21 +636,53 @@ function updatePanels(){
     for(let k in equipped) {
         let item = equipped[k];
         let icon = item?.icon || '❓';
-        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:40px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}</div>`;
+        let durabInfo = item ? `<small style="color:${item.durability < 30 ? 'red' : '#aaa'}"> (${item.durability}%)</small>` : '';
+        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:40px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}</div>`;
     }
     inventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
         let icon = it.icon || '📦';
-        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:45px;">${icon} <div><b>${it.name}</b><br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small></div></div>`;
+        let isEquipped = false;
+        // Verifica se o item está equipado
+        for(let k in equipped) {
+            if(equipped[k] === it) {
+                isEquipped = true;
+                break;
+            }
+        }
+        let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
+        let durabInfo = `<small style="color:${it.durability < 30 ? 'red' : '#aaa'}"> (${it.durability}/${it.maxDurability})</small>`;
+        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:45px; opacity:${isEquipped ? 0.7 : 1};">${icon} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;\">[${it.slot}] ${it.desc||''} ${durabInfo}</small></div></div>`;
     });
     shopInventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
         let icon = it.icon || '📦';
-        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px;"><span>${icon} ${it.name}</span><button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button></div>`;
+        // Verifica se o item está equipado
+        let isEquipped = false;
+        for(let k in equipped) {
+            if(equipped[k] === it) {
+                isEquipped = true;
+                break;
+            }
+        }
+        let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='sellItem(${i})'>Vender (25G)</button>`;
+        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped ? 0.5 : 1};"><span>${icon} ${it.name}</span>${sellBtn}</div>`;
     });
 }
 
-function sellItem(i){ player.gold += 25; inventory.splice(i,1); updatePanels(); }
+function sellItem(i){ 
+    // Não permite vender item equipado
+    let it = inventory[i];
+    for(let k in equipped) {
+        if(equipped[k] === it) {
+            log("<span style='color:red'>Não é possível vender equipamento em uso!</span>");
+            return;
+        }
+    }
+    player.gold += 25; 
+    inventory.splice(i,1); 
+    updatePanels(); 
+}
 function equip(i){
     let it=inventory[i]; let s = it.slot;
     if(s === "ring") s = !equipped.ring1 ? "ring1" : "ring2";
@@ -633,6 +692,30 @@ function unequip(k){ equipped[k]=null; recalcStats(); applyEquipVisual(); update
 function toggleV(){ statusWindow.style.display = statusWindow.style.display==="block"?"none":"block"; updatePanels(); }
 function toggleShop(){ shopWindow.style.display = shopWindow.style.display==="block"?"none":"block"; updatePanels(); }
 
+// Função para usar poção manualmente (tecla Q)
+function usePotion() {
+    if(gamePaused) return;
+    let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.quantity > 0);
+    if(potionIndex >= 0) {
+        let potion = inventory[potionIndex];
+        let maxHpTotal = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
+        if(player.hp >= maxHpTotal) {
+            log("<span style='color:orange'>HP já está cheio!</span>");
+            return;
+        }
+        player.hp = Math.min(maxHpTotal, player.hp + potion.heal);
+        potion.quantity--;
+        floatingText("🧪 +" + potion.heal + " HP", hero.position, "lime");
+        log("<span style='color:cyan'>Poção usada! +" + potion.heal + " HP</span>");
+        if(potion.quantity <= 0) {
+            inventory.splice(potionIndex, 1);
+        }
+        updatePanels();
+    } else {
+        log("<span style='color:red'>Sem poções no inventário!</span>");
+    }
+}
+
 function floatingText(txt,pos,color){
     let d=document.createElement("div"); d.style.position="fixed"; d.style.color=color; d.style.fontWeight="bold"; d.style.zIndex="6000";
     document.body.appendChild(d); floatTexts.push({div:d, pos:pos.clone(), life:60, txt});
@@ -641,6 +724,15 @@ function floatingText(txt,pos,color){
 /* -------- LOOP DE JOGO -------- */
 function animate(time){
     requestAnimationFrame(animate);
+
+    // Se jogo estiver pausado, não atualiza lógica do jogo
+    if(gamePaused) {
+        // Ainda renderiza a cena
+        camera.position.set(hero.position.x, 14, hero.position.z+14);
+        camera.lookAt(hero.position);
+        renderer.render(scene, camera);
+        return;
+    }
 
     let move = new THREE.Vector3(0,0,0);
     // Teclado - WASD e Setas Direcionais
@@ -719,7 +811,31 @@ function animate(time){
             if(d < 2.6 && time - m.userData.lastAttack > 1500){
                 let dmg = Math.max(1, m.userData.atk-player.def);
                 player.hp -= dmg; m.userData.lastAttack=time; floatingText("-"+dmg, hero.position, "red");
-                if(player.hp<=0){ player.hp=player.maxHp; hero.position.set(0,0,0); log("Ressuscitado!"); }
+                
+                // Verificar se tem poção no inventário e usar automaticamente se HP < 30%
+                let maxHpTotal = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
+                let hpPercent = player.hp / maxHpTotal;
+                if(player.hp <= 0 || hpPercent < 0.3) {
+                    // Procurar poção no inventário
+                    let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.quantity > 0);
+                    if(potionIndex >= 0) {
+                        let potion = inventory[potionIndex];
+                        player.hp = Math.min(maxHpTotal, player.hp + potion.heal);
+                        potion.quantity--;
+                        floatingText("🧪 +" + potion.heal + " HP", hero.position, "lime");
+                        log("<span style='color:cyan'>Poção usada automaticamente!</span>");
+                        if(potion.quantity <= 0) {
+                            inventory.splice(potionIndex, 1);
+                        }
+                        updatePanels();
+                    }
+                }
+                
+                if(player.hp<=0){ 
+                    // Game Over - não revive mais automaticamente
+                    showGameOver();
+                    return;
+                }
             }
             let v=m.position.clone().project(camera);
             if(v.z < 1){
@@ -799,12 +915,31 @@ function animate(time){
     ctxM.fillStyle = "white"; ctxM.beginPath(); ctxM.arc(centerX, centerZ, 4, 0, Math.PI*2); ctxM.fill();
 }
 
-window.onkeydown=e=>{ keys[e.key.toLowerCase()]=true; 
+// Overlay de pausa
+let pauseOverlay = document.createElement('div');
+pauseOverlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; color:white; font-size:48px; font-weight:bold; align-items:center; justify-content:center; flex-direction:column;';
+pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18px; margin-top:20px; color:#aaa;">Pressione P para continuar</div>';
+document.body.appendChild(pauseOverlay);
+
+function togglePause() {
+    gamePaused = !gamePaused;
+    pauseOverlay.style.display = gamePaused ? 'flex' : 'none';
+    if(gamePaused) {
+        log("<span style='color:yellow'>Jogo pausado</span>");
+    } else {
+        log("<span style='color:cyan'>Jogo continuado</span>");
+    }
+}
+
+window.onkeydown=e=>{ 
+    keys[e.key.toLowerCase()]=true; 
     if(e.code==="Space" || e.key==="ArrowUp") attack();
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
     if(e.key.toLowerCase()==="f") document.documentElement.requestFullscreen();
+    if(e.key.toLowerCase()==="p") togglePause(); // Tecla P para pausar
+    if(e.key.toLowerCase()==="q") usePotion(); // Tecla Q para usar poção
 };
 window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
 
@@ -869,6 +1004,49 @@ let lastBiomeForDeco = -1;
 
 // Adicionar decorações iniciais
 addBiomeDecorations();
+
+// Overlay e tela de Game Over
+let gameOverOverlay = document.createElement('div');
+gameOverOverlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; color:white; font-size:48px; font-weight:bold; align-items:center; justify-content:center; flex-direction:column; text-align:center;';
+gameOverOverlay.innerHTML = `
+    <div style="color:red; font-size:72px; margin-bottom:20px;">☠️ GAME OVER ☠️</div>
+    <div id="gameOverStats" style="font-size:24px; margin-bottom:30px; color:#aaa;"></div>
+    <div style="display:flex; gap:20px;">
+        <button id="btnRevive" onclick="revivePlayer()" style="background:linear-gradient(135deg, #4CAF50, #45a049); border:none; color:white; padding:15px 40px; font-size:20px; border-radius:10px; cursor:pointer; font-weight:bold;">✨ Reviver (50% Gold)</button>
+        <button onclick="restartGame()" style="background:linear-gradient(135deg, #f44336, #da1e1e); border:none; color:white; padding:15px 40px; font-size:20px; border-radius:10px; cursor:pointer; font-weight:bold;">🔄 Reiniciar</button>
+    </div>
+`;
+document.body.appendChild(gameOverOverlay);
+
+function showGameOver() {
+    gamePaused = true;
+    document.getElementById('gameOverStats').innerHTML = `
+        <div>Nível Alcançado: <span style="color:gold">${player.level}</span></div>
+        <div>Gold Acumulado: <span style="color:gold">${player.gold}</span></div>
+        <div style="margin-top:10px; font-size:18px;">Custa ${Math.floor(player.gold * 0.5)} gold para reviver</div>
+    `;
+    gameOverOverlay.style.display = 'flex';
+}
+
+function revivePlayer() {
+    let cost = Math.floor(player.gold * 0.5);
+    if(player.gold >= cost) {
+        player.gold -= cost;
+        player.hp = player.maxHp + (equipped.ring1?.hp||0) + (equipped.ring2?.hp||0);
+        player.sp = player.maxSp + (equipped.cape?.sp||0);
+        hero.position.set(0, 0, 0);
+        gameOverOverlay.style.display = 'none';
+        gamePaused = false;
+        log("<span style='color:cyan'>Você reviveu! -" + cost + " gold</span>");
+        updatePanels();
+    } else {
+        log("<span style='color:red'>Gold insuficiente para reviver!</span>");
+    }
+}
+
+function restartGame() {
+    location.reload();
+}
 
 animate();
 log("Eldoria Mobile Restaurado!");
