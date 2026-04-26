@@ -78,11 +78,20 @@
             border-radius: 25px;
             cursor: pointer;
             transition: transform 0.2s, background 0.2s;
+            margin: 5px;
         }
 
         .game-over button:hover {
             background: #45b7aa;
             transform: scale(1.05);
+        }
+
+        .back-btn {
+            background: #ff6b6b !important;
+        }
+
+        .back-btn:hover {
+            background: #ee5a5a !important;
         }
 
         .start-message {
@@ -123,6 +132,7 @@
             <h2>Game Over!</h2>
             <p>Pontuação: <span id="finalScore">0</span></p>
             <button onclick="resetGame()">Jogar Novamente</button>
+            <button class="back-btn" onclick="window.location.href='index.html'">Voltar ao Menu</button>
         </div>
     </div>
 
