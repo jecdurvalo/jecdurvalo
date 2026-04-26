@@ -9,15 +9,18 @@ class Enemy {
     /**
      * @param {number} x - Posição X inicial
      * @param {number} y - Posição Y inicial
-     * @param {string} type - Tipo: 'spider' ou 'bat'
+     * @param {string} type - Tipo: 'spider', 'bat' ou 'goomba'
      * @param {number} levelIndex - Índice do nível para dificuldade progressiva
      */
     constructor(x, y, type, levelIndex = 0) {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.width = CONFIG.ENEMY[type === 'spider' ? 'SPIDER' : 'BAT'].WIDTH;
-        this.height = CONFIG.ENEMY[type === 'spider' ? 'SPIDER' : 'BAT'].HEIGHT;
+        
+        // Suporte para goomba (usa config de spider como fallback)
+        const configKey = type === 'bat' ? 'BAT' : 'SPIDER';
+        this.width = CONFIG.ENEMY[configKey].WIDTH;
+        this.height = CONFIG.ENEMY[configKey].HEIGHT;
         
         this.startX = x;
         this.angle = 0;

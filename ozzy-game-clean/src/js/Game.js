@@ -16,7 +16,13 @@ class Game {
         
         // Componentes
         this.inputHandler = new InputHandler();
-        this.levelManager = new LevelManager();
+        
+        // Setup inicial (resize antes de criar LevelManager)
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        
+        // LevelManager precisa da altura do canvas
+        this.levelManager = new LevelManager(this.canvas.height);
         
         // Estado do jogo
         this.gameState = CONFIG.STATES.START;
@@ -51,8 +57,6 @@ class Game {
         // Setup inicial
         this.setupTouchControls();
         this.setupButtonListeners();
-        this.resize();
-        window.addEventListener('resize', () => this.resize());
     }
 
     /**
