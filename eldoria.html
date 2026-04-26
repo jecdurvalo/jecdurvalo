@@ -681,7 +681,9 @@ function buySkill(skillId) {
     // Compra a habilidade
     evolutionData.skillPoints -= skill.cost;
     skill.level++;
-    skill.effect();
+    
+    // Recalcula stats com novos bônus
+    recalcStats();
     
     floatingText(`+${skill.name}`, hero.position, "magenta");
     log(`<span style='color:magenta'>✨ Habilidade desbloqueada: ${skill.name}!</span>`);
@@ -1327,8 +1329,25 @@ function attack(){
             monsters.forEach(m => {
                 if(hero.position.distanceTo(m.position) < 4.5){
                     let dmg = player.atk + Math.floor(Math.random()*5);
+                    
+                    // Verifica crítico
+                    let isCrit = false;
+                    if(player.critChance && Math.random() * 100 < player.critChance) {
+                        dmg = Math.floor(dmg * 2);
+                        isCrit = true;
+                    }
+                    
                     m.userData.hp -= dmg; 
-                    floatingText("-"+dmg, m.position, "orange");
+                    floatingText("-"+dmg, m.position, isCrit ? "red" : "orange");
+                    
+                    // Aplica lifesteal
+                    if(player.lifesteal && player.lifesteal > 0) {
+                        let heal = Math.floor(dmg * player.lifesteal / 100);
+                        if(heal > 0) {
+                            player.hp = Math.min(player.maxHp, player.hp + heal);
+                            floatingText("+"+heal, hero.position, "green");
+                        }
+                    }
                     
                     // Reduz durabilidade do equipamento ao atacar
                     if(equipped.weapon) {
@@ -1411,16 +1430,117 @@ document.getElementById('btnShop').addEventListener('click', () => { toggleShop(
 document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
 
 /* -------- UI E LOJA -------- */
+function getSkillBonuses() {
+    // Calcula todos os bônus ativos da árvore de habilidades
+    let bonuses = {
+        atkPercent: 0,
+        defPercent: 0,
+        hpPercent: 0,
+        spPercent: 0,
+        critChance: 0,
+        lifesteal: 0,
+        aoeDamageBonus: 0,
+        fireballDamageBonus: 0
+    };
+    
+    evolutionData.skillTree.forEach(skill => {
+        if (skill.level > 0) {
+            // Aplica bônus baseado no nível da habilidade
+            switch(skill.id) {
+                case 'atk_boost_1':
+                    bonuses.atkPercent += 10 * skill.level;
+                    break;
+                case 'atk_boost_2':
+                    bonuses.atkPercent += 15 * skill.level;
+                    break;
+                case 'atk_boost_3':
+                    bonuses.atkPercent += 20 * skill.level;
+                    break;
+                case 'legendary_strength':
+                    bonuses.atkPercent += 30 * skill.level;
+                    break;
+                case 'def_boost_1':
+                    bonuses.defPercent += 10 * skill.level;
+                    break;
+                case 'def_boost_2':
+                    bonuses.defPercent += 15 * skill.level;
+                    break;
+                case 'def_boost_3':
+                    bonuses.defPercent += 20 * skill.level;
+                    break;
+                case 'legendary_defense':
+                    bonuses.defPercent += 30 * skill.level;
+                    break;
+                case 'hp_boost_1':
+                    bonuses.hpPercent += 15 * skill.level;
+                    break;
+                case 'hp_boost_2':
+                    bonuses.hpPercent += 20 * skill.level;
+                    break;
+                case 'sp_boost_1':
+                    bonuses.spPercent += 20 * skill.level;
+                    break;
+                case 'sp_boost_2':
+                    bonuses.spPercent += 25 * skill.level;
+                    break;
+                case 'crit_chance':
+                    bonuses.critChance += 5 * skill.level;
+                    break;
+                case 'lifesteal':
+                    bonuses.lifesteal += 3 * skill.level;
+                    break;
+                case 'aoi_mastery':
+                    bonuses.aoeDamageBonus += 50 * skill.level;
+                    break;
+                case 'fireball_mastery':
+                    bonuses.fireballDamageBonus += 50 * skill.level;
+                    break;
+            }
+        }
+    });
+    
+    return bonuses;
+}
+
 function recalcStats(){
     let bAtk=0, bDef=0, bHp=0, bSp=0;
     for(let k in equipped) if(equipped[k]){
         bAtk += (equipped[k].atk || 0); bDef += (equipped[k].def || 0);
         bHp += (equipped[k].hp || 0); bSp += (equipped[k].sp || 0);
     }
-    player.atk = player.baseAtk + bAtk; player.def = player.baseDef + bDef;
+    
+    // Calcula bônus das habilidades
+    let skillBonuses = getSkillBonuses();
+    
+    // Stats base do jogador (sem equipamentos e sem skills)
+    let baseAtk = 10 + Math.floor(player.level * 2);
+    let baseDef = 5 + Math.floor(player.level * 1.5);
+    
+    // Aplica porcentagens das habilidades
+    let finalAtk = Math.floor(baseAtk * (1 + skillBonuses.atkPercent / 100));
+    let finalDef = Math.floor(baseDef * (1 + skillBonuses.defPercent / 100));
+    
+    player.baseAtk = finalAtk;
+    player.baseDef = finalDef;
+    player.atk = finalAtk + bAtk;
+    player.def = finalDef + bDef;
+    
+    // HP e SP com bônus percentual das habilidades
+    let baseMaxHp = 100 + Math.floor(player.level * 10);
+    let baseMaxSp = 100 + Math.floor(player.level * 5);
+    
+    let finalMaxHp = Math.floor(baseMaxHp * (1 + skillBonuses.hpPercent / 100));
+    let finalMaxSp = Math.floor(baseMaxSp * (1 + skillBonuses.spPercent / 100));
+    
+    // Atribui bônus de habilidades de stat
+    player.critChance = skillBonuses.critChance;
+    player.lifesteal = skillBonuses.lifesteal;
+    player.aoiDamageBonus = skillBonuses.aoeDamageBonus;
+    player.fireballDamageBonus = skillBonuses.fireballDamageBonus;
+    
     // Atualiza HP e SP máximos com base nos equipamentos
-    let newMaxHp = 100 + bHp;
-    let newMaxSp = 100 + bSp;
+    let newMaxHp = finalMaxHp + bHp;
+    let newMaxSp = finalMaxSp + bSp;
     
     // Ajusta HP e SP atuais proporcionalmente se os máximos mudarem
     // Isso previne perda de HP/SP ao trocar equipamentos
