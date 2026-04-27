@@ -559,9 +559,15 @@ function buyItem(catalogItem) {
     updatePanels();
 }
 
-// Sistema de Spawn Dinâmico
-const MAX_MONSTERS = 30; // Limite global aumentado de 15 para 30
-const MOB_SPAWN_CHANCE = 0.35; // Chance de spawn em grupo aumentada de 15% para 35%
+// Sistema de Spawn Dinâmico — cresce suave nível a nível, sem degraus
+function getMaxMonsters() {
+    // Começa em 30, +1 por nível acima de 10, cap 60
+    return Math.min(60, 30 + Math.max(0, player.level - 10));
+}
+function getMobSpawnChance() {
+    // Começa em 35%, +1.5% por nível acima de 10, cap 70%
+    return Math.min(0.70, 0.35 + Math.max(0, player.level - 10) * 0.015);
+}
 
 // Sistema de Evolução - Conquistas e Missões
 let evolutionData = {
@@ -1338,10 +1344,14 @@ function spawnBossWithScaling() {
     
     monsterGroup.position.set(sX, 0, sZ);
     
-    // Stats do Boss com escalonamento baseado na progressão da árvore de habilidades
-    let baseHp = 1200 + (player.level * 100);
-    let baseAtk = 25 + (player.level * 3);
-    let baseXp = 500 + (player.level * 50);
+    // Stats do Boss: crescimento contínuo nível a nível (sem degraus)
+    // Fórmula: cada nível acima de 5 adiciona um % fixo — lv16 > lv15 > lv14 etc.
+    let lvAboveBase = Math.max(0, player.level - 5);
+    let bossHpMult  = 1 + lvAboveBase * 0.13; // +13% HP por nível (lv5=1x, lv15=2.3x, lv25=3.6x)
+    let bossAtkMult = 1 + lvAboveBase * 0.09; // +9%  ATK por nível (lv5=1x, lv15=1.9x, lv25=2.8x)
+    let baseHp  = Math.floor((1200 + player.level * 120) * bossHpMult);
+    let baseAtk = Math.floor((25   + player.level * 4)   * bossAtkMult);
+    let baseXp  = 500 + (player.level * 60);
     
     // Aplicar multiplicador nos stats
     let hp = Math.floor(baseHp * bossMultiplier);
@@ -1375,11 +1385,13 @@ function spawnBossWithScaling() {
 }
 
 function killMonster(m){
-    // Recompensa Massiva por Matar o Boss: +100% de XP BONUS
+    // Recompensa por matar Boss: 2x XP base, garantido mínimo de 40% do XP do nível atual
     let xpGain = m.userData.xp;
     if(m.userData.isBoss) {
-        xpGain = m.userData.xp * 2; // +100% de XP (totaliza 2x o valor base, que já é maior que monstro comum)
-        floatingText("👹 BOSS KILL! +100% XP BONUS!", m.position, "gold");
+        xpGain = m.userData.xp * 2;
+        let minXp = Math.floor(player.next * 0.4); // Mínimo 40% do XP necessário pro próximo nível
+        if(xpGain < minXp) xpGain = minXp;
+        floatingText("👹 BOSS KILL! +" + xpGain + " XP!", m.position, "gold");
     }
     
     player.xp += xpGain;
@@ -1568,8 +1580,8 @@ function checkLevel(){
         screenShake(0.3);
         floatingText("LEVEL UP! " + bonus, hero.position, "gold");
 
-        // Boss aparece a cada 5 níveis (level 5, 10, 15, 20...)
-        if(player.level >= 5 && player.level % 5 === 0) {
+        // Boss aparece a cada 3 níveis (level 3, 6, 9, 12...)
+        if(player.level >= 3 && player.level % 3 === 0) {
             spawnBossWithScaling();
         }
         
@@ -2406,41 +2418,38 @@ function animate(time){
     // Contar inimigos próximos (raio de 50 unidades)
     let nearbyEnemies = monsters.filter(m => m.position.distanceTo(hero.position) < 50).length;
     
-    // Calcular intervalo de spawn baseado na quantidade de inimigos próximos
-    let spawnInterval = 2500;
-    if(nearbyEnemies < 3) {
-        spawnInterval = 800; // Spawn urgente quando há poucos inimigos
-    } else if(nearbyEnemies >= 3 && nearbyEnemies <= 5) {
-        spawnInterval = 1200;
-    } else if(nearbyEnemies > 5 && nearbyEnemies <= 8) {
-        spawnInterval = 1800;
-    } else if(nearbyEnemies > 8) {
-        spawnInterval = 2500; // Pausa quando há muitos inimigos
-    }
-    
-    // Verificar se é hora de spawnar
-    if(time - lastSpawnTime > spawnInterval) { 
-        if(monsters.length < MAX_MONSTERS) {
+    // Spawn dinâmico — intervalos e grupos crescem nível a nível, sem degraus
+    let maxMons = getMaxMonsters();
+    let mobChance = getMobSpawnChance();
+    // Fator de escala: reduz 2% por nível acima de 10, mínimo 45%
+    let lvScale = Math.max(0.45, 1.0 - Math.max(0, player.level - 10) * 0.02);
+    let spawnInterval = 2500 * lvScale;
+    if(nearbyEnemies < 3)                             spawnInterval = 600  * lvScale;
+    else if(nearbyEnemies >= 3 && nearbyEnemies <= 5) spawnInterval = 1000 * lvScale;
+    else if(nearbyEnemies > 5 && nearbyEnemies <= 8)  spawnInterval = 1500 * lvScale;
+    else if(nearbyEnemies > 8)                        spawnInterval = 2000 * lvScale;
+
+    if(time - lastSpawnTime > spawnInterval) {
+        if(monsters.length < maxMons) {
             let isElite = Math.random() > 0.97;
-            
-            // Spawn de emergência: se houver < 2 inimigos perto, forçar spawn próximo
             let emergencySpawn = nearbyEnemies < 2;
-            
-            // Chance de spawnar mob (grupo de monstros) aumentada para 35%
-            let isMobMode = !isElite && (Math.random() < MOB_SPAWN_CHANCE) && currentBiome >= 1;
-            
+            let isMobMode = !isElite && (Math.random() < mobChance) && currentBiome >= 1;
+
             if(isMobMode) {
-                // Spawn de 3-6 monstros em grupo (aumentado de 3-5 para 3-6)
-                let mobCount = Math.floor(Math.random() * 4) + 3;
+                // Tamanho do grupo cresce 1 a cada 5 níveis acima de 10 (lv10=3~6, lv15=4~7, lv20=5~8...)
+                let groupBonus = Math.floor(Math.max(0, player.level - 10) / 5);
+                let mobMin = 3 + groupBonus;
+                let mobMax = 6 + groupBonus;
+                let mobCount = Math.floor(Math.random() * (mobMax - mobMin + 1)) + mobMin;
                 for(let i = 0; i < mobCount; i++) {
-                    setTimeout(() => spawnMonster(false, true, emergencySpawn), i * 150);
+                    setTimeout(() => spawnMonster(false, true, emergencySpawn), i * 120);
                 }
                 log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
             } else {
                 spawnMonster(isElite, false, emergencySpawn);
             }
         }
-        lastSpawnTime = time; 
+        lastSpawnTime = time;
     }
     
     // Atualizar bioma baseado no nível
@@ -2587,9 +2596,11 @@ function animate(time){
                     m.position.addScaledVector(toHero, chaseSpeed);
                     m.position.addScaledVector(perp, orbitSpeed);
                 }
-                // Boss dispara fireball no player a cada 2.5s
+                // Boss dispara fireball — intervalo diminui suavemente nível a nível
+                // lv5=2500ms, lv10=2000ms, lv15=1500ms, lv20=1000ms, cap 700ms
+                let bossFireInterval = Math.max(700, 2500 - Math.max(0, player.level - 5) * 90);
                 if(!m.userData.lastBossFireball) m.userData.lastBossFireball = 0;
-                if(d < 40 && time - m.userData.lastBossFireball > 2500) {
+                if(d < 40 && time - m.userData.lastBossFireball > bossFireInterval) {
                     m.userData.lastBossFireball = time;
                     let bDir = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
                     let bMesh = new THREE.Mesh(
