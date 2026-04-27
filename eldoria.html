@@ -243,6 +243,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="hpBarContainer">HP <div class="bar"><div id="hp" class="fill hp"></div></div></div>
     SP <div class="bar"><div id="sp" class="fill sp"></div></div>
     XP <div class="bar"><div id="xp" class="fill xp"></div></div>
+    <div id="skillCooldowns" style="margin-top:8px; font-size:11px; color:#aaa; display:flex; gap:8px; flex-wrap:wrap;"></div>
 </div>
 
 <div id="mobileControls">
@@ -263,6 +264,8 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <li><span class="key">SPACE</span><span class="desc">Atacar</span></li>
         <li><span class="key">Z</span><span class="desc">Fireball</span></li>
         <li><span class="key">X</span><span class="desc">AOE (Área)</span></li>
+        <li><span class="key">Q</span><span class="desc">Dash (requer skill)</span></li>
+        <li><span class="key">R</span><span class="desc">Escudo (requer skill)</span></li>
         <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
         <li><span class="key">V</span><span class="desc">Inventário</span></li>
         <li><span class="key">B</span><span class="desc">Evolução</span></li>
@@ -290,8 +293,12 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <div id="shopWindow">
     <button onclick="toggleShop()" class="close-btn">×</button>
     <h2>💰 Mercado de Eldoria</h2>
-    <p>Negocie seus tesouros. O valor depende da raridade e qualidade do item.</p>
-    <div id="shopInventoryPanel" class="inventory-grid"></div>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button onclick="setShopTab('buy')" id="shopTabBuy" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.5); background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,215,0,0.1)); color:white; cursor:pointer; font-weight:bold; font-size:15px;">🛒 Comprar</button>
+        <button onclick="setShopTab('sell')" id="shopTabSell" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-weight:bold; font-size:15px;">💰 Vender</button>
+    </div>
+    <div id="shopBuyPanel"></div>
+    <div id="shopInventoryPanel" class="inventory-grid" style="display:none;"></div>
 </div>
 
 <div id="evolutionWindow">
@@ -369,6 +376,189 @@ let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 let lastAutoSaveTime = 0;
 const AUTO_SAVE_INTERVAL = 30000; // 30 segundos em milissegundos
 
+// -------- ÁUDIO CHIPTUNE (estilo 8-bit) --------
+let _audioCtx = null;
+function getAudioCtx() {
+    if(!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return _audioCtx;
+}
+function playSound(type) {
+    try {
+        let ctx = getAudioCtx();
+        let t = ctx.currentTime;
+        // Nota com square wave (chipy)
+        function chip(freq, dur, vol, delay) {
+            let o = ctx.createOscillator(), g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.type = 'square';
+            o.frequency.setValueAtTime(freq, t+delay);
+            g.gain.setValueAtTime(vol, t+delay);
+            g.gain.setValueAtTime(vol, t+delay+dur*0.7);
+            g.gain.linearRampToValueAtTime(0, t+delay+dur);
+            o.start(t+delay); o.stop(t+delay+dur+0.01);
+        }
+        // Sweep chipy
+        function chipSweep(f1, f2, dur, vol, delay) {
+            let o = ctx.createOscillator(), g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.type = 'square';
+            o.frequency.setValueAtTime(f1, t+delay);
+            o.frequency.linearRampToValueAtTime(f2, t+delay+dur);
+            g.gain.setValueAtTime(vol, t+delay);
+            g.gain.linearRampToValueAtTime(0, t+delay+dur);
+            o.start(t+delay); o.stop(t+delay+dur+0.01);
+        }
+        switch(type) {
+            // Golpe seco, percussivo
+            case 'attack':
+                chipSweep(900, 200, 0.07, 0.22, 0);
+                break;
+            // Tomar dano: buzz descendente (tipo Mega Man)
+            case 'hit':
+                chipSweep(600, 80, 0.1, 0.3, 0);
+                chip(120, 0.08, 0.2, 0.05);
+                break;
+            // Level up: arpegio ascendente estilo Mario (DO-MI-SOL-DO)
+            case 'levelup':
+                [523, 659, 784, 1047, 1319].forEach((f,i) => chip(f, 0.12, 0.25, i*0.1));
+                break;
+            // Boss aparece: acorde grave + estridente
+            case 'bossSpawn':
+                chip(110, 0.5, 0.4, 0);
+                chip(220, 0.5, 0.3, 0);
+                chipSweep(880, 440, 0.4, 0.25, 0.1);
+                break;
+            // Boss morreu: fanfarra vitória
+            case 'bossKill':
+                [523,659,784,659,784,1047].forEach((f,i) => chip(f, 0.1, 0.3, i*0.09));
+                chip(1319, 0.25, 0.35, 0.56);
+                break;
+            // Fireball: pitchup rápido, chispinha
+            case 'fireball':
+                chipSweep(400, 900, 0.06, 0.2, 0);
+                chipSweep(900, 300, 0.1, 0.15, 0.06);
+                break;
+            // AOE: acorde poderoso + buzz
+            case 'aoe':
+                [220, 330, 440].forEach(f => chip(f, 0.4, 0.35, 0));
+                chipSweep(880, 220, 0.35, 0.25, 0.05);
+                break;
+            // Coletar item: moeda Mario (ding-ding)
+            case 'collect':
+                chip(1320, 0.08, 0.22, 0);
+                chip(1760, 0.1, 0.22, 0.08);
+                break;
+            // Morte: melody descendente clássica
+            case 'die':
+                [494, 440, 415, 392, 370, 330, 294, 262].forEach((f,i) => chip(f, 0.12, 0.28, i*0.1));
+                break;
+            // Dash: sweep ascendente veloz
+            case 'dash':
+                chipSweep(300, 1400, 0.12, 0.25, 0);
+                break;
+            // Compra: moeda dupla
+            case 'buy':
+                chip(880, 0.07, 0.2, 0);
+                chip(1320, 0.1, 0.22, 0.07);
+                break;
+            // Drop raro/épico: arpegio mágico
+            case 'rareDrop':
+                [784, 988, 1175, 1568].forEach((f,i) => chip(f, 0.1, 0.22, i*0.08));
+                break;
+            // Fireball do boss: diferente da do player, mais grave/ameaçadora
+            case 'bossFireball':
+                chip(440, 0.05, 0.2, 0);
+                chipSweep(440, 150, 0.12, 0.2, 0.05);
+                break;
+            // Escudo: acorde protetor ascendente
+            case 'shield':
+                [523, 784, 1047].forEach((f,i) => chip(f, 0.15, 0.22, i*0.06));
+                break;
+        }
+    } catch(e) {}
+}
+
+// -------- SCREEN SHAKE --------
+let shakeMag = 0;
+function screenShake(mag) { shakeMag = Math.max(shakeMag, mag); }
+
+// -------- AOE COOLDOWN --------
+let lastAoeTime = -999999;
+const AOE_COOLDOWN = 8000; // 8 segundos
+
+// -------- DASH --------
+let isDashing = false;
+let lastDashTime = -999999;
+const DASH_COOLDOWN = 3000;
+const DASH_DURATION = 150; // ms
+let dashStartTime = -9999;
+
+// -------- BOSS FIREBALLS --------
+let bossFireballs = [];
+
+// -------- SISTEMA DE RARIDADE --------
+const RARITIES = {
+    common:    { name:'Comum',    color:'#aaaaaa', hex:0xaaaaaa, glowHex:0xffffff, mult:1.0  },
+    rare:      { name:'Raro',     color:'#4499ff', hex:0x4499ff, glowHex:0x2266ee, mult:1.3  },
+    epic:      { name:'Épico',    color:'#cc44ff', hex:0xcc44ff, glowHex:0x9900cc, mult:1.65 },
+    legendary: { name:'Lendário', color:'#ff9900', hex:0xff9900, glowHex:0xff6600, mult:2.2  }
+};
+function rollRarity(biome) {
+    // Biomas mais avançados têm mais chance de raros
+    let w = {common: Math.max(38,60-biome*5), rare: Math.min(36,25+biome*3), epic: Math.min(18,12+biome*2), legendary: Math.min(8,3+biome)};
+    let total = Object.values(w).reduce((a,b)=>a+b,0), roll = Math.random()*total, cum = 0;
+    for(let [k,v] of Object.entries(w)){ cum+=v; if(roll<cum) return k; }
+    return 'common';
+}
+function applyRarity(item, biome) {
+    let rk = rollRarity(biome);
+    let r = RARITIES[rk];
+    item.rarity = rk; item.rarityData = r;
+    if(rk !== 'common') {
+        ['atk','def','hp','sp'].forEach(s=>{ if(item[s]) item[s] = Math.round(item[s]*r.mult); });
+        // Valor de venda também escala
+        if(item.value) item.value = Math.round(item.value * r.mult);
+        if(rk === 'epic' || rk === 'legendary') setTimeout(()=>playSound('rareDrop'), 100);
+    }
+    return item;
+}
+
+// -------- CATÁLOGO DA LOJA --------
+const shopCatalog = [
+    { name:"Health Potion",  slot:"consumable", heal:50,  desc:"Recupera 50 HP.",  icon:"🧪", stackable:true, value:20,  buyPrice:35  },
+    { name:"Super Potion",   slot:"consumable", heal:100, desc:"Recupera 100 HP.", icon:"🧪", stackable:true, value:40,  buyPrice:65  },
+    { name:"Ultra Potion",   slot:"consumable", heal:200, desc:"Recupera 200 HP.", icon:"🧪", stackable:true, value:75,  buyPrice:110 },
+    { name:"Elixir",         slot:"consumable", heal:500, desc:"Recupera 500 HP.", icon:"💧", stackable:true, value:150, buyPrice:220 },
+    { name:"Iron Sword",     slot:"weapon",  atk:7,  desc:"Lâmina de aço.",       icon:"🗡️", stackable:true, value:25,  buyPrice:60,  reqLevel:1  },
+    { name:"Knight Blade",   slot:"weapon",  atk:18, desc:"Lâmina de cavaleiro.", icon:"⚔️", stackable:true, value:80,  buyPrice:180, reqLevel:8  },
+    { name:"Dragon Slayer",  slot:"weapon",  atk:25, desc:"Espada lendária.",     icon:"🐉", stackable:true, value:150, buyPrice:350, reqLevel:15 },
+    { name:"Wooden Shield",  slot:"shield",  def:3,  desc:"Escudo de madeira.",   icon:"🛡️", stackable:true, value:15,  buyPrice:35,  reqLevel:1  },
+    { name:"Tower Shield",   slot:"shield",  def:15, desc:"Escudo de torre.",     icon:"🛡️", stackable:true, value:90,  buyPrice:210, reqLevel:10 },
+    { name:"Travel Boots",   slot:"boots",   def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true, value:30, buyPrice:70, reqLevel:1 },
+    { name:"Swift Boots",    slot:"boots",   def:4, speed:0.12, desc:"Botas rápidas.",      icon:"👢", stackable:true, value:70, buyPrice:160, reqLevel:7 },
+    { name:"Ring of Power",  slot:"ring",    atk:5,  desc:"Anel de ataque.",      icon:"💍", stackable:true, value:35,  buyPrice:80,  reqLevel:1  },
+    { name:"Ring of Life",   slot:"ring",    hp:30,  desc:"Anel com gema azul.",  icon:"💎", stackable:true, value:40,  buyPrice:90,  reqLevel:1  },
+    { name:"Cloth Cape",     slot:"cape",    def:2,  desc:"Capa de tecido.",      icon:"🧥", stackable:true, value:12,  buyPrice:28,  reqLevel:1  },
+    { name:"Royal Cape",     slot:"cape",    def:8, sp:35, desc:"Capa real.",     icon:"👑", stackable:true, value:100, buyPrice:230, reqLevel:10 },
+];
+function buyItem(catalogItem) {
+    if(player.gold < catalogItem.buyPrice) {
+        log("<span style='color:red'>💰 Gold insuficiente!</span>");
+        floatingText("Sem gold!", hero.position, "red");
+        return;
+    }
+    if(catalogItem.reqLevel && player.level < catalogItem.reqLevel) {
+        log("<span style='color:red'>🔒 Nível " + catalogItem.reqLevel + " necessário!</span>");
+        return;
+    }
+    player.gold -= catalogItem.buyPrice;
+    addItemToInventory(catalogItem);
+    playSound('buy');
+    log("<span style='color:gold'>🛒 Comprou: " + catalogItem.icon + " " + catalogItem.name + " por " + catalogItem.buyPrice + " gold!</span>");
+    floatingText("🛒 " + catalogItem.name, hero.position, "gold");
+    updatePanels();
+}
+
 // Sistema de Spawn Dinâmico
 const MAX_MONSTERS = 30; // Limite global aumentado de 15 para 30
 const MOB_SPAWN_CHANCE = 0.35; // Chance de spawn em grupo aumentada de 15% para 35%
@@ -425,7 +615,9 @@ let evolutionData = {
         { id: 'aoe_mastery', name: 'Mestre do AOE', desc: 'AOE causa +50% de dano', icon: '💥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.aoeDamageBonus) player.aoeDamageBonus = 0; player.aoeDamageBonus += 50; }, reqLevel: 20 },
         { id: 'fireball_mastery', name: 'Mestre da Fireball', desc: 'Fireball causa +50% de dano', icon: '🔥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.fireballDamageBonus) player.fireballDamageBonus = 0; player.fireballDamageBonus += 50; }, reqLevel: 20 },
         { id: 'legendary_strength', name: 'Força Lendária', desc: '+30% de dano físico', icon: '👑', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.3); }, reqLevel: 25, requires: ['atk_boost_3'] },
-        { id: 'legendary_defense', name: 'Defesa Lendária', desc: '+30% de defesa', icon: '🏆', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.3); }, reqLevel: 25, requires: ['def_boost_3'] }
+        { id: 'legendary_defense', name: 'Defesa Lendária', desc: '+30% de defesa', icon: '🏆', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.3); }, reqLevel: 25, requires: ['def_boost_3'] },
+        { id: 'dash_unlock', name: 'Passo Sombrio', desc: 'Desbloqueia Dash (Q). Esquiva rápida com cooldown de 3s.', icon: '💨', cost: 3, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 10 },
+        { id: 'shield_unlock', name: 'Escudo Místico', desc: 'Desbloqueia Escudo (R): 2s de invencibilidade, cooldown 15s.', icon: '🔮', cost: 4, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 15 }
     ],
     stats: {
         kills: 0,
@@ -1176,6 +1368,8 @@ function spawnBossWithScaling() {
     };
     scene.add(monsterGroup); monsters.push(monsterGroup);
     
+    playSound('bossSpawn');
+    screenShake(0.6);
     floatingText("⚠️ BOSS SPAWNED! (x" + bossMultiplier.toFixed(2) + ")", hero.position, "red");
     log("<span style='color:red; font-weight:bold;'>👹 UM BOSS APARECEU! Poder: x" + bossMultiplier.toFixed(2) + "</span>");
 }
@@ -1257,34 +1451,44 @@ function killMonster(m){
     for(let i = 0; i < dropCount; i++) {
         if(Math.random() > 0.4) { // 60% chance de dropar cada item
             let randomItem = lootTable[Math.floor(Math.random() * lootTable.length)];
-            let itemCopy = createItem(randomItem); // Usa funcao para criar item com durabilidade
-            
+            let itemCopy = createItem(randomItem);
+            // Aplicar raridade baseada no bioma (boss sempre tem melhor chance)
+            if(m.userData.isBoss) {
+                // Boss força bioma +2 para raridade (mínimo raro)
+                itemCopy = applyRarity(itemCopy, Math.min(4, currentBiome + 2));
+            } else {
+                itemCopy = applyRarity(itemCopy, currentBiome);
+            }
+
             // Adicionar quantidade se for stackable
             if(itemCopy.stackable) {
                 itemCopy.quantity = Math.floor(Math.random() * 3) + 1; // 1-3 itens
             }
-            
-            // Criar item visual no chão
+
+            // Criar item visual no chão com cor de raridade
             let itemMesh = new THREE.Group();
-            
-            // Base do item (brilho)
-            let glowMat = new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.8});
+            let rarHex = itemCopy.rarityData ? itemCopy.rarityData.glowHex : 0xffd700;
+            let rarGlowHex = itemCopy.rarityData ? itemCopy.rarityData.hex : 0xffaa00;
+
+            // Base do item (brilho da raridade)
+            let glowMat = new THREE.MeshStandardMaterial({color: rarHex, emissive: rarGlowHex, emissiveIntensity: 1.2});
             let glow = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.4, 16), glowMat);
             glow.rotation.x = -Math.PI / 2;
             glow.position.y = 0.05;
             itemMesh.add(glow);
-            
-            // Ícone do item (cubo colorido baseado no slot)
+
+            // Cubo colorido por slot + raridade
             let itemColor = 0xffffff;
             if(itemCopy.slot === "weapon") itemColor = 0xff4444;
             else if(itemCopy.slot === "shield") itemColor = 0x4444ff;
             else if(itemCopy.slot === "cape") itemColor = 0x44ff44;
             else if(itemCopy.slot === "boots") itemColor = 0xffaa00;
             else if(itemCopy.slot === "ring") itemColor = 0xffd700;
-            else if(itemCopy.slot === "consumable") itemColor = 0x00ff88; // Verde para poções
-            
+            else if(itemCopy.slot === "consumable") itemColor = 0x00ff88;
+            if(itemCopy.rarity && itemCopy.rarity !== 'common') itemColor = rarHex;
+
             let itemGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-            let itemMat = new THREE.MeshStandardMaterial({color: itemColor, emissive: itemColor, emissiveIntensity: 0.5});
+            let itemMat = new THREE.MeshStandardMaterial({color: itemColor, emissive: itemColor, emissiveIntensity: 0.7});
             let itemCube = new THREE.Mesh(itemGeo, itemMat);
             itemCube.position.y = 0.3;
             itemMesh.add(itemCube);
@@ -1304,7 +1508,8 @@ function killMonster(m){
     
     // Efeito de partículas na morte
     createDeathParticles(m.position, m.userData.isBoss ? 0x8b0000 : 0x6a3399, m.userData.isBoss ? 30 : 15);
-    
+    if(m.userData.isBoss) { playSound('bossKill'); screenShake(0.7); } else { playSound('hit'); }
+
     scene.remove(m); m.userData.ui.bar.remove(); m.userData.label.remove();
     monsters.splice(monsters.indexOf(m),1);
     checkLevel();
@@ -1359,11 +1564,13 @@ function checkLevel(){
         else { player.maxSp += 30; bonus = "+30 SP"; }
         player.hp = player.maxHp; player.sp = player.maxSp;
         heroLabel.querySelector(".playerName").innerHTML=playerName+" Lv."+player.level;
+        playSound('levelup');
+        screenShake(0.3);
         floatingText("LEVEL UP! " + bonus, hero.position, "gold");
-        
+
         // Boss aparece a cada 5 níveis (level 5, 10, 15, 20...)
         if(player.level >= 5 && player.level % 5 === 0) {
-            spawnBossWithScaling(); // Spawn boss com escalonamento baseado na árvore de habilidades
+            spawnBossWithScaling();
         }
         
         // Verifica conquistas relacionadas a nível
@@ -1379,6 +1586,7 @@ function checkLevel(){
 
 function castFireball(){
     if(player.sp < 25){ log("SP insuficiente!"); return; }
+    playSound('fireball');
     player.sp -= 25;
     let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
     fb.position.copy(hero.position).y = 1.2;
@@ -1393,7 +1601,14 @@ function castAOE(){
         floatingText("🔒 Nível 12 necessário!", hero.position, "purple");
         return;
     }
+    let now = performance.now();
+    if(now - lastAoeTime < AOE_COOLDOWN){
+        let remaining = ((AOE_COOLDOWN - (now - lastAoeTime)) / 1000).toFixed(1);
+        floatingText("⏳ " + remaining + "s", hero.position, "purple");
+        return;
+    }
     if(player.sp < 50){ log("SP insuficiente!"); return; }
+    lastAoeTime = now;
     player.sp -= 50;
 
     // Cria efeito visual de explosão em área
@@ -1422,26 +1637,32 @@ function castAOE(){
         life: 20
     });
 
+    playSound('aoe');
+    screenShake(0.4);
     floatingText("💥 AOE!", hero.position, "purple");
     log("✨ Habilidades das Trevas liberadas! Dano em área ativado!");
 
     // Incrementa contador de uso de AOE para conquistas
     evolutionData.stats.aoeUses++;
 
-    // Aplica dano imediato a todos os monstros na área (pelo menos 50% da vida do monstro)
-    // Copia o array para evitar problemas de mutação durante killMonster
+    // Aplica dano imediato a todos os monstros na área
+    // Boss recebe apenas 15% do dano (mais difícil de matar)
+    // Monstros comuns recebem pelo menos 50% do HP máximo
     [...monsters].forEach(monster => {
         let dist = monster.position.distanceTo(hero.position);
         if(dist <= 4){
             let baseDmg = player.atk * 2.5;
-            // Aplica bônus de dano da skill tree
-            if(player.aoeDamageBonus) {
-                baseDmg *= (1 + player.aoeDamageBonus / 100);
-            }
-            // Garante que o dano seja pelo menos 50% da vida máxima do monstro
-            let minDmg = Math.floor(monster.userData.maxHp * 0.5);
+            if(player.aoeDamageBonus) baseDmg *= (1 + player.aoeDamageBonus / 100);
             let calcDmg = Math.max(1, baseDmg - monster.userData.def);
-            let dmg = Math.max(calcDmg, minDmg);
+            let dmg;
+            if(monster.userData.isBoss) {
+                // Boss: AOE faz só 15% do HP máximo
+                dmg = Math.floor(monster.userData.maxHp * 0.15);
+            } else {
+                // Monstros comuns: mínimo 50% do HP máximo
+                let minDmg = Math.floor(monster.userData.maxHp * 0.5);
+                dmg = Math.max(calcDmg, minDmg);
+            }
             monster.userData.hp -= dmg;
             floatingText(Math.round(dmg), monster.position, "purple");
             createHitVisual(monster.position, 0x9933ff);
@@ -1450,9 +1671,57 @@ function castAOE(){
     });
 }
 
+// Dash: impulso rápido na direção do movimento (requer skill 'dash_unlock')
+let shieldActive = false, lastShieldTime = -999999;
+const SHIELD_COOLDOWN = 15000, SHIELD_DURATION = 2000;
+
+function castDash() {
+    let dashSkill = evolutionData.skillTree.find(s => s.id === 'dash_unlock');
+    if(!dashSkill || dashSkill.level === 0) { floatingText("🔒 Aprenda Passo Sombrio!", hero.position, "gray"); return; }
+    let now = performance.now();
+    if(now - lastDashTime < DASH_COOLDOWN) {
+        let rem = ((DASH_COOLDOWN-(now-lastDashTime))/1000).toFixed(1);
+        floatingText("⏳ "+rem+"s", hero.position, "cyan"); return;
+    }
+    lastDashTime = now;
+    playSound('dash');
+    // Empurrão na direção atual
+    let dashVec = lastDir.clone().normalize().multiplyScalar(6);
+    hero.position.add(dashVec);
+    // Partículas de dash
+    for(let i=0;i<8;i++) {
+        let p = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.15,0.15), new THREE.MeshStandardMaterial({color:0x00ccff,emissive:0x0088ff,emissiveIntensity:1}));
+        p.position.copy(hero.position);
+        p.position.x+=(Math.random()-0.5)*2; p.position.z+=(Math.random()-0.5)*2; p.position.y+=Math.random()*1.5;
+        p.userData={velocity:new THREE.Vector3((Math.random()-0.5)*0.2,Math.random()*0.15,(Math.random()-0.5)*0.2),life:20};
+        scene.add(p); visuals.push(p);
+    }
+    floatingText("💨 Dash!", hero.position, "cyan");
+}
+
+function castShield() {
+    let shieldSkill = evolutionData.skillTree.find(s => s.id === 'shield_unlock');
+    if(!shieldSkill || shieldSkill.level === 0) { floatingText("🔒 Aprenda Escudo Místico!", hero.position, "gray"); return; }
+    if(shieldActive) { floatingText("🔮 Já ativo!", hero.position, "purple"); return; }
+    let now = performance.now();
+    if(now - lastShieldTime < SHIELD_COOLDOWN) {
+        let rem = ((SHIELD_COOLDOWN-(now-lastShieldTime))/1000).toFixed(1);
+        floatingText("⏳ "+rem+"s", hero.position, "purple"); return;
+    }
+    lastShieldTime = now; shieldActive = true;
+    playSound('shield');
+    floatingText("🔮 Escudo!", hero.position, "purple");
+    // Visual de escudo
+    let shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(1.8,16,16), new THREE.MeshBasicMaterial({color:0x9933ff,transparent:true,opacity:0.3,wireframe:false}));
+    shieldMesh.position.copy(hero.position); shieldMesh.position.y=1;
+    scene.add(shieldMesh);
+    setTimeout(()=>{ shieldActive=false; scene.remove(shieldMesh); floatingText("Escudo acabou", hero.position, "gray"); }, SHIELD_DURATION);
+}
+
 function attack(){
     if(isAttacking || gamePaused) return;
     isAttacking = true;
+    playSound('attack');
     
     let t = 0;
     let animSpeed = 0.25;
@@ -1737,31 +2006,58 @@ function updatePanels(){
     inventory.forEach((it,i)=> {
         let icon = it.icon || '📦';
         let isEquipped = false;
-        // Verifica se o item está equipado
-        for(let k in equipped) {
-            if(equipped[k] === it) {
-                isEquipped = true;
-                break;
-            }
-        }
+        for(let k in equipped) { if(equipped[k] === it){ isEquipped = true; break; } }
         let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
         let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
-        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped ? 0.7 : 1};">${icon}${qtyText} <div><b>${it.name}</b>${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small></div></div>`;
+        // Raridade
+        let rarColor = it.rarityData ? it.rarityData.color : '#aaaaaa';
+        let rarTag = it.rarity && it.rarity !== 'common' ? `<span style="color:${rarColor}; font-size:10px; font-weight:bold; margin-left:4px;">[${it.rarityData.name.toUpperCase()}]</span>` : '';
+        // Comparação de stats com equipado
+        let comparison = '';
+        if(it.slot && it.slot !== 'consumable' && !isEquipped) {
+            let slotKey = it.slot === 'ring' ? (equipped.ring1 ? 'ring2' : 'ring1') : it.slot;
+            let cur = equipped[slotKey];
+            if(cur) {
+                let diff = [];
+                ['atk','def','hp','sp'].forEach(s => {
+                    let dv = (it[s]||0) - (cur[s]||0);
+                    if(dv !== 0) diff.push(`<span style="color:${dv>0?'#44ff88':'#ff4444'}">${dv>0?'+':''}${dv} ${s.toUpperCase()}</span>`);
+                });
+                if(diff.length) comparison = `<div style="font-size:11px; margin-top:2px;">${diff.join(' ')}</div>`;
+            }
+        }
+        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped?0.7:1}; border-left:3px solid ${rarColor};">${icon}${qtyText} <div><b style="color:${rarColor}">${it.name}</b>${rarTag}${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small>${comparison}</div></div>`;
     });
+
+    // Shop buy panel
+    let buyPanel = document.getElementById('shopBuyPanel');
+    if(buyPanel) {
+        let html = `<p style="color:#aaa; font-size:13px; margin:0 0 12px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p><div class="inventory-grid">`;
+        shopCatalog.forEach((item, i) => {
+            let canBuy = player.gold >= item.buyPrice;
+            let canLevel = !item.reqLevel || player.level >= item.reqLevel;
+            let disabled = !canBuy || !canLevel;
+            let lockInfo = !canLevel ? `<span style="color:#888; font-size:11px;"> 🔒 Lv.${item.reqLevel}</span>` : '';
+            html += `<div class='item' style="min-height:55px; opacity:${disabled?0.45:1}; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div>${item.icon} <b>${item.name}</b>${lockInfo}<br><small style="color:#aaa;">${item.desc}</small></div>
+                <button onclick="buyItem(shopCatalog[${i}])" style="padding:8px 14px; border-radius:8px; border:none; background:${canBuy&&canLevel?'linear-gradient(135deg,#f0a500,#c07800)':'#444'}; color:${canBuy&&canLevel?'#fff':'#888'}; cursor:${disabled?'not-allowed':'pointer'}; font-weight:bold; white-space:nowrap; flex-shrink:0;">
+                    ${item.buyPrice}💰
+                </button>
+            </div>`;
+        });
+        html += '</div>';
+        buyPanel.innerHTML = html;
+    }
+
     shopInventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
         let icon = it.icon || '📦';
-        // Verifica se o item está equipado
         let isEquipped = false;
-        for(let k in equipped) {
-            if(equipped[k] === it) {
-                isEquipped = true;
-                break;
-            }
-        }
+        for(let k in equipped) { if(equipped[k] === it){ isEquipped = true; break; } }
+        let rarColor = it.rarityData ? it.rarityData.color : '#aaaaaa';
         let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
         let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='openSellModal(${i})'>Vender</button>`;
-        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped ? 0.5 : 1};"><span>${icon}${qtyText} ${it.name}</span>${sellBtn}</div>`;
+        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped?0.5:1}; border-left:3px solid ${rarColor};"><span>${icon}${qtyText} <b style="color:${rarColor}">${it.name}</b></span>${sellBtn}</div>`;
     });
 }
 
@@ -1940,14 +2236,23 @@ function toggleV(){
     }
 }
 
-function toggleShop(){ 
+let currentShopTab = 'buy';
+function setShopTab(tab) {
+    currentShopTab = tab;
+    document.getElementById('shopBuyPanel').style.display = tab === 'buy' ? 'block' : 'none';
+    document.getElementById('shopInventoryPanel').style.display = tab === 'sell' ? 'grid' : 'none';
+    document.getElementById('shopTabBuy').style.background = tab === 'buy' ? 'linear-gradient(135deg,rgba(255,215,0,0.4),rgba(255,215,0,0.2))' : 'rgba(255,255,255,0.05)';
+    document.getElementById('shopTabSell').style.background = tab === 'sell' ? 'linear-gradient(135deg,rgba(255,215,0,0.4),rgba(255,215,0,0.2))' : 'rgba(255,255,255,0.05)';
+    updatePanels();
+}
+function toggleShop(){
     let win = document.getElementById('shopWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
         gamePaused = false;
     } else {
         win.style.display = 'block';
-        updatePanels();
+        setShopTab('buy');
         gamePaused = true;
     }
 }
@@ -2154,6 +2459,7 @@ function animate(time){
         
         // Checar se jogador está perto para coletar
         if(hero.position.distanceTo(drop.mesh.position) < 1.5) {
+            playSound('collect');
             // Usar função de adicionar item com stacking
             let wasStacked = addItemToInventory(drop.item);
             
@@ -2206,6 +2512,36 @@ function animate(time){
         if(f.life<=0){ scene.remove(f.mesh); fireballs.splice(i,1); }
     }
     
+    // Boss/Monster Fireballs - projecteis inimigos
+    for(let i=bossFireballs.length-1; i>=0; i--) {
+        let bf = bossFireballs[i];
+        bf.mesh.position.addScaledVector(bf.dir, 0.55);
+        bf.mesh.rotation.y += 0.15;
+        bf.life--;
+        if(hero.position.distanceTo(bf.mesh.position) < 1.5) {
+            if(shieldActive) {
+                floatingText("🔮 BLOQUEADO!", hero.position, "purple");
+            } else {
+                let dmg = Math.max(1, bf.dmg - player.def);
+                player.hp -= dmg;
+                floatingText("-"+dmg, hero.position, "orange");
+                playSound('hit'); screenShake(0.3);
+                if(player.hp <= 0) { playSound('die'); showGameOver(); }
+            }
+            scene.remove(bf.mesh);
+            bossFireballs.splice(i,1);
+            continue;
+        }
+        if(bf.life <= 0) { scene.remove(bf.mesh); bossFireballs.splice(i,1); }
+    }
+
+    // Screen shake decay
+    if(shakeMag > 0.01) {
+        camera.position.x += (Math.random()-0.5)*shakeMag;
+        camera.position.y += (Math.random()-0.5)*shakeMag*0.5;
+        shakeMag *= 0.75;
+    } else { shakeMag = 0; }
+
     // AOE - Atualização dos efeitos visuais
     for(let i=aoes.length-1; i>=0; i--){
         let aoe = aoes[i];
@@ -2240,11 +2576,84 @@ function animate(time){
                 m.userData.mesh.scale.set(breathe, breathe, breathe);
             }
             
-            if(d < 40) m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.06));
-            // Apenas ataca se estiver muito perto (colisão real) e dentro do cooldown
+            // ---- BOSS AI ----
+            if(m.userData.isBoss) {
+                // Boss circula em torno do jogador enquanto ataca
+                if(d > 3) {
+                    let toHero = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
+                    let perp = new THREE.Vector3(-toHero.z, 0, toHero.x); // perpendicular
+                    let orbitSpeed = 0.04;
+                    let chaseSpeed = d > 12 ? 0.08 : 0.03; // corre se longe, circula se perto
+                    m.position.addScaledVector(toHero, chaseSpeed);
+                    m.position.addScaledVector(perp, orbitSpeed);
+                }
+                // Boss dispara fireball no player a cada 2.5s
+                if(!m.userData.lastBossFireball) m.userData.lastBossFireball = 0;
+                if(d < 40 && time - m.userData.lastBossFireball > 2500) {
+                    m.userData.lastBossFireball = time;
+                    let bDir = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
+                    let bMesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.5, 8, 8),
+                        new THREE.MeshStandardMaterial({color:0xff2200, emissive:0xff2200, emissiveIntensity:1.5})
+                    );
+                    bMesh.position.copy(m.position);
+                    bMesh.position.y = 1.5;
+                    scene.add(bMesh);
+                    bossFireballs.push({ mesh: bMesh, dir: bDir, dmg: Math.floor(m.userData.atk * 0.7), life: 80 });
+                    playSound('bossFireball');
+                }
+                // Depois do nível 12 o boss convoca mobs a cada 15s
+                if(player.level >= 12) {
+                    if(!m.userData.lastMobSpawn) m.userData.lastMobSpawn = 0;
+                    if(time - m.userData.lastMobSpawn > 15000 && monsters.length < MAX_MONSTERS) {
+                        m.userData.lastMobSpawn = time;
+                        let mobCount = 2 + Math.floor(player.level / 5);
+                        for(let mi = 0; mi < mobCount; mi++) setTimeout(()=>spawnMonster(false, true, true), mi * 200);
+                        floatingText("👿 BOSS CONVOCA REFORÇOS!", m.position, "red");
+                        log("<span style='color:red'>👿 O Boss convocou " + mobCount + " reforços!</span>");
+                    }
+                }
+            } else {
+                // ---- MONSTROS COMUNS: ALGUNS ATIRADORES ----
+                let isRanged = m.userData.monsterType && ['Frost Spirit','Fire Imp','Scorpion','Mummy','Sand Worm','Orc Scout'].includes(m.userData.monsterType.name);
+                if(isRanged) {
+                    // Monstros atiradores ficam a distância (8-15u) e atiram
+                    if(d > 8 && d < 40) {
+                        m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.05));
+                    } else if(d < 8) {
+                        // Foge se muito perto
+                        m.position.add(new THREE.Vector3().subVectors(m.position, hero.position).normalize().multiplyScalar(0.06));
+                    }
+                    // Disparo a cada 2s
+                    if(!m.userData.lastRangedShot) m.userData.lastRangedShot = 0;
+                    if(d < 15 && time - m.userData.lastRangedShot > 2000) {
+                        m.userData.lastRangedShot = time;
+                        let rDir = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
+                        let rMesh = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.25, 6, 6),
+                            new THREE.MeshStandardMaterial({color:0xff6600, emissive:0xff4400, emissiveIntensity:1.2})
+                        );
+                        rMesh.position.copy(m.position);
+                        rMesh.position.y = 1.2;
+                        scene.add(rMesh);
+                        bossFireballs.push({ mesh: rMesh, dir: rDir, dmg: Math.floor(m.userData.atk * 0.6), life: 60, isMonster: true });
+                    }
+                } else if(d < 40) {
+                    m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.06));
+                }
+                // Foge quando com menos de 15% de HP (monstros que `canBeMob`)
+                if(m.userData.monsterType && m.userData.monsterType.canBeMob && m.userData.hp < m.userData.maxHp * 0.15) {
+                    m.position.add(new THREE.Vector3().subVectors(m.position, hero.position).normalize().multiplyScalar(0.09));
+                }
+            }
+            // Apenas ataca de perto e dentro do cooldown
             if(d < 1.8 && time - m.userData.lastAttack > 1500){
+                m.userData.lastAttack = time;
+                if(shieldActive) { floatingText("🔮 BLOQUEADO!", hero.position, "purple"); }
+                else {
                 let dmg = Math.max(1, m.userData.atk-player.def);
-                player.hp -= dmg; m.userData.lastAttack=time; floatingText("-"+dmg, hero.position, "red");
+                player.hp -= dmg; floatingText("-"+dmg, hero.position, "red");
+                playSound('hit'); screenShake(0.25);
                 
                 // Verificar se tem poção no inventário e usar automaticamente se HP < 30%
                 // Usa player.maxHp diretamente (já inclui bônus de equipamentos via recalcStats)
@@ -2265,11 +2674,13 @@ function animate(time){
                     }
                 }
                 
-                if(player.hp<=0){ 
+                if(player.hp<=0){
                     // Game Over - não revive mais automaticamente
+                    playSound('die');
                     showGameOver();
                     return;
                 }
+                } // end else (shield not active)
             }
             let v=m.position.clone().project(camera);
             if(v.z < 1){
@@ -2323,7 +2734,30 @@ function animate(time){
     sp.style.width=(player.sp/player.maxSp*100)+"%";
     xp.style.width=(player.xp/player.next*100)+"%";
     goldDisplay.innerText = "Gold: " + player.gold;
-    
+
+    // Cooldown display
+    let cdEl = document.getElementById('skillCooldowns');
+    if(cdEl) {
+        let now2 = performance.now();
+        let parts = [];
+        if(player.level >= 12) {
+            let aoeRem = Math.max(0, (AOE_COOLDOWN-(now2-lastAoeTime))/1000);
+            let aoeReady = aoeRem <= 0;
+            parts.push(`<span style="color:${aoeReady?'#cc44ff':'#888'}">AOE ${aoeReady?'✅':'⏳'+aoeRem.toFixed(1)+'s'}</span>`);
+        }
+        let dashSkill = evolutionData.skillTree.find(s=>s.id==='dash_unlock' && s.level>0);
+        if(dashSkill) {
+            let dRem = Math.max(0, (DASH_COOLDOWN-(now2-lastDashTime))/1000);
+            parts.push(`<span style="color:${dRem<=0?'#00ccff':'#888'}">Dash ${dRem<=0?'✅':'⏳'+dRem.toFixed(1)+'s'}</span>`);
+        }
+        let shieldSkill = evolutionData.skillTree.find(s=>s.id==='shield_unlock' && s.level>0);
+        if(shieldSkill) {
+            let sRem = Math.max(0, (SHIELD_COOLDOWN-(now2-lastShieldTime))/1000);
+            parts.push(`<span style="color:${shieldActive?'#9933ff':(sRem<=0?'#aa77ff':'#888')}">Escudo ${shieldActive?'🔮 ATIVO':(sRem<=0?'✅':'⏳'+sRem.toFixed(1)+'s')}</span>`);
+        }
+        cdEl.innerHTML = parts.join(' · ');
+    }
+
     // Sistema de Auto-Save: verificar se passou o intervalo
     if(time - lastAutoSaveTime > AUTO_SAVE_INTERVAL) {
         lastAutoSaveTime = time; // Atualiza ANTES de salvar para não repetir em caso de erro
@@ -2383,6 +2817,8 @@ window.onkeydown=e=>{
     if(e.code==="Space" || e.key==="ArrowUp") attack();
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="x") castAOE(); // Tecla X para habilidade AOE (nível 12+)
+    if(e.key.toLowerCase()==="q") castDash(); // Q = Dash (requer skill)
+    if(e.key.toLowerCase()==="r") castShield(); // R = Escudo (requer skill)
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
     if(e.key.toLowerCase()==="b") toggleEvolution(); // Tecla B para Evolução
