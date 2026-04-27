@@ -529,8 +529,9 @@
                 this.x += this.speed * this.dir;
                 if (this.x > this.startX + this.patrolDist || this.x < this.startX) this.dir *= -1;
             } else {
-                // Morcego
-                this.x -= this.speed;
+                // Morcego - agora usa patrulha baseada no startX
+                this.x += this.speed * this.dir;
+                if (this.x > this.startX + this.patrolDist || this.x < this.startX) this.dir *= -1;
                 this.angle += 0.1;
                 this.y += Math.sin(this.angle) * 1.5;
             }
@@ -931,12 +932,13 @@
             enemies.push(new Enemy(1900, canvas.height - 90, 'spider'));
             enemies.push(new Enemy(2050, canvas.height - 90, 'spider'));
             enemies.push(new Enemy(2200, canvas.height - 90, 'spider'));
-            enemies.push(new Enemy(350, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(550, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(750, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(950, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(1150, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(1350, canvas.height - 430, 'bat'));
+            // Morcegos agora usam patrulha (startX definido) para não voar direto no jogador
+            enemies.push(new Enemy(600, canvas.height - 410, 'bat'));
+            enemies.push(new Enemy(800, canvas.height - 430, 'bat'));
+            enemies.push(new Enemy(1000, canvas.height - 410, 'bat'));
+            enemies.push(new Enemy(1200, canvas.height - 430, 'bat'));
+            enemies.push(new Enemy(1400, canvas.height - 410, 'bat'));
+            enemies.push(new Enemy(1600, canvas.height - 430, 'bat'));
 
             coins.push(new Coin(280, canvas.height - 210));
             coins.push(new Coin(480, canvas.height - 320));
