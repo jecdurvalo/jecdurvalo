@@ -791,8 +791,9 @@
         player.vx = 0;
         player.vy = 0;
         cameraX = Math.max(0, player.x - canvas.width / 3);
-        // checkpointX só é resetado se não estiver vindo de um respawn
-        if (checkpointX < 50) checkpointX = 50;
+        // Sempre reseta checkpoint para o início ao carregar uma nova fase
+        // O checkpoint só é atualizado quando o jogador avança na fase atual
+        checkpointX = 50;
         checkpointY = 0;
         
         levelEl.innerText = `FASE: ${levelIndex + 1}`;
@@ -1555,8 +1556,8 @@
                 // Salva o checkpoint atual antes de morrer (usa a posição atual do jogador como referência)
                 savedCheckpoint = { 
                     level: currentLevelIdx - 1, 
-                    x: Math.max(50, checkpointX), // Usa o checkpoint atingido, com mínimo de 50
-                    y: 0 
+                    x: player.x, // Usa a posição atual do jogador
+                    y: player.y 
                 };
                 
                 // Volta para a fase anterior com 1 vida
@@ -1571,7 +1572,7 @@
                 player.vy = 0;
                 cameraX = Math.max(0, player.x - canvas.width / 3);
                 
-                // Recarrega a fase anterior
+                // Recarrega a fase anterior (loadLevel vai resetar checkpointX para 50)
                 loadLevel(currentLevelIdx);
                 
                 // Mostra mensagem de checkpoint
@@ -1665,8 +1666,10 @@
     function resumeGame() {
         pauseScreen.style.display = 'none';
         gameState = 'PLAYING';
-        // Não chama gameLoop() diretamente - o loop já está rodando ou será chamado apropriadamente
-        // Apenas retoma o estado de jogo
+        // Reinicia o loop de animação se não estiver rodando
+        if (!gameLoopId) {
+            gameLoop();
+        }
     }
 
     function updateCamera() {
