@@ -35,6 +35,58 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 }
 #minimapCanvas { display: block; width: 100%; height: 100%; }
 
+/* Mapa Expandido (Tecla M) */
+#fullMapModal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: rgba(5, 15, 25, 0.95);
+    border: 4px solid #5ab9ff;
+    border-radius: 20px;
+    z-index: 3000;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(90,185,255,0.15);
+    overflow: hidden;
+}
+#fullMapCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+#fullMapModal .map-title {
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(90, 185, 255, 0.8);
+    pointer-events: none;
+}
+#fullMapModal .map-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 28px;
+    cursor: pointer;
+    padding: 5px 10px;
+    line-height: 1;
+    transition: color 0.2s ease, transform 0.1s ease;
+    z-index: 10;
+}
+#fullMapModal .map-close:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+#fullMapModal .map-close:active {
+    transform: scale(0.9);
+}
+
 /* --- CONTROLES MOBILE --- */
 #mobileControls { position: fixed; inset: 0; pointer-events: none; z-index: 4000; }
 .mobile-btn { 
@@ -66,6 +118,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 #btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
 #btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
 #btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
+#btnMap { bottom: 60px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.5), rgba(0, 180, 80, 0.5)); font-size: 20px; font-weight: bold; }
 
 #controls{
     position:fixed; top:18px; right:18px; background:linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
@@ -254,6 +307,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="btnInv" class="mobile-btn">V</div>
     <div id="btnShop" class="mobile-btn">E</div>
     <div id="btnEvo" class="mobile-btn">🏆</div>
+    <div id="btnMap" class="mobile-btn">M</div>
 </div>
 
 <div id="controls-btn">🎮</div>
@@ -271,11 +325,19 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <li><span class="key">B</span><span class="desc">Evolução</span></li>
         <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
         <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
+        <li><span class="key highlight">M</span><span class="desc highlight">Mapa Expandido</span></li>
     </ul>
 </div>
 
 <div id="minimapContainer">
     <canvas id="minimapCanvas" width="180" height="180"></canvas>
+</div>
+
+<!-- Mapa Expandido (Tecla M) -->
+<div id="fullMapModal">
+    <span class="map-title">🗺️ Mapa de Eldoria</span>
+    <button onclick="toggleFullMap()" class="map-close">×</button>
+    <canvas id="fullMapCanvas" width="600" height="600"></canvas>
 </div>
 
 <div id="combatLog"></div>
@@ -715,6 +777,12 @@ function addItemToInventory(baseItem) {
 
 const miniMapCanvas = document.getElementById('minimapCanvas');
 const ctxM = miniMapCanvas.getContext('2d');
+
+// Mapa Expandido (Tecla M)
+const fullMapModal = document.getElementById('fullMapModal');
+const fullMapCanvas = document.getElementById('fullMapCanvas');
+const ctxFullMap = fullMapCanvas.getContext('2d');
+let isFullMapOpen = false;
 
 const lootTable=[
     // Armas (weapon) - com diferentes níveis de dado
@@ -2248,6 +2316,95 @@ function toggleV(){
     }
 }
 
+// Mapa Expandido (Tecla M)
+function toggleFullMap() {
+    if(isFullMapOpen) {
+        fullMapModal.style.display = 'none';
+        isFullMapOpen = false;
+        gamePaused = false;
+    } else {
+        fullMapModal.style.display = 'block';
+        isFullMapOpen = true;
+        gamePaused = false; // Não pausa o jogo, apenas mostra o mapa
+        drawFullMap(); // Desenha o mapa quando abre
+    }
+}
+
+function drawFullMap() {
+    if(!isFullMapOpen) return;
+    
+    ctxFullMap.clearRect(0, 0, 600, 600);
+    ctxFullMap.fillStyle = "rgba(0, 40, 20, 0.8)";
+    ctxFullMap.fillRect(0, 0, 600, 600);
+    
+    const centerX = 300, centerZ = 300;
+    const mapScale = 2.5; // Escala maior para o mapa expandido
+    
+    // Grid de fundo
+    ctxFullMap.strokeStyle = "rgba(90, 185, 255, 0.15)";
+    ctxFullMap.lineWidth = 1;
+    for(let i = 0; i <= 600; i += 50) {
+        ctxFullMap.beginPath();
+        ctxFullMap.moveTo(i, 0);
+        ctxFullMap.lineTo(i, 600);
+        ctxFullMap.stroke();
+        ctxFullMap.beginPath();
+        ctxFullMap.moveTo(0, i);
+        ctxFullMap.lineTo(600, i);
+        ctxFullMap.stroke();
+    }
+    
+    // Mostrar itens no mapa
+    droppedItems.forEach(drop => {
+        const dist = drop.mesh.position.distanceTo(hero.position);
+        if (dist <= 1000) {
+            const mx = centerX + (drop.mesh.position.x - hero.position.x) * mapScale;
+            const mz = centerZ + (drop.mesh.position.z - hero.position.z) * mapScale;
+            if(mx >= 0 && mx <= 600 && mz >= 0 && mz <= 600) {
+                ctxFullMap.fillStyle = "#ffd700";
+                ctxFullMap.beginPath();
+                ctxFullMap.arc(mx, mz, 4, 0, Math.PI * 2);
+                ctxFullMap.fill();
+            }
+        }
+    });
+    
+    // Mostrar monstros no mapa
+    monsters.forEach(m => {
+        const dist = m.position.distanceTo(hero.position);
+        if (dist <= 1000) {
+            const mx = centerX + (m.position.x - hero.position.x) * mapScale;
+            const mz = centerZ + (m.position.z - hero.position.z) * mapScale;
+            if(mx >= 0 && mx <= 600 && mz >= 0 && mz <= 600) {
+                ctxFullMap.fillStyle = m.userData.isBoss ? "#ff0000" : "#ffaa00";
+                ctxFullMap.beginPath();
+                ctxFullMap.arc(mx, mz, 5, 0, Math.PI * 2);
+                ctxFullMap.fill();
+            }
+        }
+    });
+    
+    // Mostrar jogador no centro
+    ctxFullMap.fillStyle = "#00ffff";
+    ctxFullMap.shadowColor = "#00ffff";
+    ctxFullMap.shadowBlur = 10;
+    ctxFullMap.beginPath();
+    ctxFullMap.arc(centerX, centerZ, 6, 0, Math.PI * 2);
+    ctxFullMap.fill();
+    ctxFullMap.shadowBlur = 0;
+    
+    // Legenda
+    ctxFullMap.fillStyle = "white";
+    ctxFullMap.font = "12px Arial";
+    ctxFullMap.fillText("🟦 Você", 10, 20);
+    ctxFullMap.fillStyle = "#ffaa00";
+    ctxFullMap.fillText("🟠 Inimigos", 10, 40);
+    ctxFullMap.fillStyle = "#ff0000";
+    ctxFullMap.fillText("🔴 Boss", 10, 60);
+    ctxFullMap.fillStyle = "#ffd700";
+    ctxFullMap.fillText("🟡 Itens", 10, 80);
+}
+
 let currentShopTab = 'buy';
 function setShopTab(tab) {
     currentShopTab = tab;
@@ -2805,6 +2962,9 @@ function animate(time){
         }
     });
     ctxM.fillStyle = "white"; ctxM.beginPath(); ctxM.arc(centerX, centerZ, 4, 0, Math.PI*2); ctxM.fill();
+    
+    // Atualizar mapa expandido se estiver aberto
+    if(isFullMapOpen) drawFullMap();
 }
 
 // Overlay de pausa
@@ -2836,6 +2996,7 @@ window.onkeydown=e=>{
     if(e.key.toLowerCase()==="f") document.documentElement.requestFullscreen();
     if(e.key.toLowerCase()==="p") togglePause(); // Tecla P para pausar
     if(e.key.toLowerCase()==="q") usePotion(); // Tecla Q para usar poção
+    if(e.key.toLowerCase()==="m") toggleFullMap(); // Tecla M para abrir mapa expandido
 };
 window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
 
