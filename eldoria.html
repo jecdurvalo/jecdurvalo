@@ -2773,7 +2773,8 @@ function animate(time){
                 // Depois do nível 12 o boss convoca mobs a cada 15s
                 if(player.level >= 12) {
                     if(!m.userData.lastMobSpawn) m.userData.lastMobSpawn = 0;
-                    if(time - m.userData.lastMobSpawn > 15000 && monsters.length < MAX_MONSTERS) {
+                    let maxMons = getMaxMonsters();
+                    if(time - m.userData.lastMobSpawn > 15000 && monsters.length < maxMons) {
                         m.userData.lastMobSpawn = time;
                         let mobCount = 2 + Math.floor(player.level / 5);
                         for(let mi = 0; mi < mobCount; mi++) setTimeout(()=>spawnMonster(false, true, true), mi * 200);
