@@ -2334,14 +2334,31 @@ function drawFullMap() {
     if(!isFullMapOpen) return;
     
     ctxFullMap.clearRect(0, 0, 600, 600);
-    ctxFullMap.fillStyle = "rgba(0, 40, 20, 0.8)";
+    
+    // Obter informações do bioma atual
+    const currentBiomeData = biomes[currentBiome] || biomes[0];
+    
+    // Converter cor hexadecimal para RGB
+    const hexToRgb = (hex) => {
+        return {
+            r: (hex >> 16) & 255,
+            g: (hex >> 8) & 255,
+            b: hex & 255
+        };
+    };
+    
+    const bgColor = hexToRgb(currentBiomeData.groundColor);
+    const bgString = `rgba(${bgColor.r}, ${bgColor.g}, ${bgColor.b}, 0.9)`;
+    
+    // Fundo com a cor do bioma atual
+    ctxFullMap.fillStyle = bgString;
     ctxFullMap.fillRect(0, 0, 600, 600);
     
     const centerX = 300, centerZ = 300;
     const mapScale = 2.5; // Escala maior para o mapa expandido
     
-    // Grid de fundo
-    ctxFullMap.strokeStyle = "rgba(90, 185, 255, 0.15)";
+    // Grid de fundo (mais sutil)
+    ctxFullMap.strokeStyle = "rgba(255, 255, 255, 0.2)";
     ctxFullMap.lineWidth = 1;
     for(let i = 0; i <= 600; i += 50) {
         ctxFullMap.beginPath();
@@ -2353,6 +2370,19 @@ function drawFullMap() {
         ctxFullMap.lineTo(600, i);
         ctxFullMap.stroke();
     }
+    
+    // Desenhar borda do bioma (área visível)
+    ctxFullMap.strokeStyle = "rgba(255, 255, 255, 0.4)";
+    ctxFullMap.lineWidth = 3;
+    ctxFullMap.strokeRect(20, 20, 560, 560);
+    
+    // Nome do bioma no topo
+    ctxFullMap.fillStyle = "white";
+    ctxFullMap.font = "bold 16px Arial";
+    ctxFullMap.shadowColor = "black";
+    ctxFullMap.shadowBlur = 5;
+    ctxFullMap.fillText(currentBiomeData.name, 25, 45);
+    ctxFullMap.shadowBlur = 0;
     
     // Mostrar itens no mapa
     droppedItems.forEach(drop => {
@@ -2396,13 +2426,13 @@ function drawFullMap() {
     // Legenda
     ctxFullMap.fillStyle = "white";
     ctxFullMap.font = "12px Arial";
-    ctxFullMap.fillText("🟦 Você", 10, 20);
+    ctxFullMap.fillText("🟦 Você", 10, 580);
     ctxFullMap.fillStyle = "#ffaa00";
-    ctxFullMap.fillText("🟠 Inimigos", 10, 40);
+    ctxFullMap.fillText("🟠 Inimigos", 100, 580);
     ctxFullMap.fillStyle = "#ff0000";
-    ctxFullMap.fillText("🔴 Boss", 10, 60);
+    ctxFullMap.fillText("🔴 Boss", 200, 580);
     ctxFullMap.fillStyle = "#ffd700";
-    ctxFullMap.fillText("🟡 Itens", 10, 80);
+    ctxFullMap.fillText("🟡 Itens", 300, 580);
 }
 
 let currentShopTab = 'buy';
