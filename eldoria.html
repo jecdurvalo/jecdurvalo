@@ -2075,7 +2075,7 @@ function updatePanels(){
             `;
         }
         
-        let durabInfo = item && item.durability ? `<small style="color:${item.durability < 30 ? 'red' : '#aaa'}"> (${item.durability}%)</small>` : '';
+        let durabInfo = item && item.durability && item.durability < 30 ? `<small style="color:red"> ⚠️</small>` : '';
         // Barra de durabilidade para itens equipados (apenas equipamentos com durabilidade)
         let durabBar = item && item.durability !== undefined ? 
             `<div style="display:flex; align-items:center; gap:5px; margin-top:5px;"><div style="width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;"><div style="width:${item.durability}%; height:100%; background:${item.durability > 60 ? '#4CAF50' : (item.durability > 30 ? '#FFC107' : '#f44336')}; transition:width 0.3s;"></div></div><small style="color:#fff; min-width:35px;">${item.durability}%</small></div>` : '';
@@ -2118,8 +2118,31 @@ function updatePanels(){
             let canLevel = !item.reqLevel || player.level >= item.reqLevel;
             let disabled = !canBuy || !canLevel;
             let lockInfo = !canLevel ? `<span style="color:#888; font-size:11px;"> 🔒 Lv.${item.reqLevel}</span>` : '';
-            html += `<div class='item' style="min-height:55px; opacity:${disabled?0.45:1}; display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <div>${item.icon} <b>${item.name}</b>${lockInfo}<br><small style="color:#aaa;">${item.desc}</small></div>
+            // Stats display similar to inventory
+            let statsInfo = [];
+            if(item.atk)   statsInfo.push(`<span style="color:#ff8844">⚔ +${item.atk} ATK</span>`);
+            if(item.def)   statsInfo.push(`<span style="color:#4488ff">🛡 +${item.def} DEF</span>`);
+            if(item.hp)    statsInfo.push(`<span style="color:#ff5555">❤ +${item.hp} HP</span>`);
+            if(item.sp)    statsInfo.push(`<span style="color:#5599ff">💧 +${item.sp} SP</span>`);
+            if(item.heal)  statsInfo.push(`<span style="color:#44ff88">💊 +${item.heal} HP</span>`);
+            if(item.speed) statsInfo.push(`<span style="color:#ffff44">⚡ +VEL</span>`);
+            let statsLine = statsInfo.length ? `<div style="font-size:11px; margin-top:3px; display:flex; gap:5px; flex-wrap:wrap;">${statsInfo.join('')}</div>` : '';
+            // Comparison with currently equipped
+            let compLine = '';
+            if(item.slot && item.slot !== 'consumable') {
+                let slotKey = item.slot === 'ring' ? (equipped.ring1 ? 'ring2' : 'ring1') : item.slot;
+                let cur = equipped[slotKey];
+                if(cur) {
+                    let diff = [];
+                    ['atk','def','hp','sp'].forEach(s => {
+                        let dv = (item[s]||0) - (cur[s]||0);
+                        if(dv !== 0) diff.push(`<span style="color:${dv>0?'#44ff88':'#ff4444'}">${dv>0?'+':''}${dv} ${s.toUpperCase()}</span>`);
+                    });
+                    if(diff.length) compLine = `<div style="font-size:10px; margin-top:2px; color:#aaa;">vs equipado: ${diff.join(' ')}</div>`;
+                }
+            }
+            html += `<div class='item' style="min-height:65px; opacity:${disabled?0.45:1}; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="flex:1; min-width:0;">${item.icon} <b>${item.name}</b>${lockInfo}<br><small style="color:#aaa;">${item.desc}</small>${statsLine}${compLine}</div>
                 <button onclick="buyItem(shopCatalog[${i}])" style="padding:8px 14px; border-radius:8px; border:none; background:${canBuy&&canLevel?'linear-gradient(135deg,#f0a500,#c07800)':'#444'}; color:${canBuy&&canLevel?'#fff':'#888'}; cursor:${disabled?'not-allowed':'pointer'}; font-weight:bold; white-space:nowrap; flex-shrink:0;">
                     ${item.buyPrice}💰
                 </button>
@@ -2399,21 +2422,24 @@ function drawFullMap() {
         }
     });
     
-    // Mostrar monstros no mapa
+    // Mostrar monstros no mapa — outline escuro para visibilidade em qualquer bioma
     monsters.forEach(m => {
         const dist = m.position.distanceTo(hero.position);
         if (dist <= 1000) {
             const mx = centerX + (m.position.x - hero.position.x) * mapScale;
             const mz = centerZ + (m.position.z - hero.position.z) * mapScale;
             if(mx >= 0 && mx <= 600 && mz >= 0 && mz <= 600) {
-                ctxFullMap.fillStyle = m.userData.isBoss ? "#ff0000" : "#ffaa00";
                 ctxFullMap.beginPath();
-                ctxFullMap.arc(mx, mz, 5, 0, Math.PI * 2);
+                ctxFullMap.arc(mx, mz, 5.5, 0, Math.PI * 2);
+                ctxFullMap.fillStyle = m.userData.isBoss ? "#ff2222" : "#ff8800";
                 ctxFullMap.fill();
+                ctxFullMap.strokeStyle = 'rgba(0,0,0,0.85)';
+                ctxFullMap.lineWidth = 1.5;
+                ctxFullMap.stroke();
             }
         }
     });
-    
+
     // Mostrar jogador no centro
     ctxFullMap.fillStyle = "#00ffff";
     ctxFullMap.shadowColor = "#00ffff";
@@ -2421,18 +2447,37 @@ function drawFullMap() {
     ctxFullMap.beginPath();
     ctxFullMap.arc(centerX, centerZ, 6, 0, Math.PI * 2);
     ctxFullMap.fill();
+    ctxFullMap.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctxFullMap.lineWidth = 1.5;
+    ctxFullMap.stroke();
     ctxFullMap.shadowBlur = 0;
-    
-    // Legenda
-    ctxFullMap.fillStyle = "white";
-    ctxFullMap.font = "12px Arial";
-    ctxFullMap.fillText("🟦 Você", 10, 580);
-    ctxFullMap.fillStyle = "#ffaa00";
-    ctxFullMap.fillText("🟠 Inimigos", 100, 580);
-    ctxFullMap.fillStyle = "#ff0000";
-    ctxFullMap.fillText("🔴 Boss", 200, 580);
-    ctxFullMap.fillStyle = "#ffd700";
-    ctxFullMap.fillText("🟡 Itens", 300, 580);
+
+    // Legenda — fundo semi-transparente + ícones desenhados em canvas (alinhados)
+    const legendData = [
+        { color: '#00ffff',  border: '#0088aa', label: 'Você'     },
+        { color: '#ff2222',  border: '#880000', label: 'Boss'     },
+        { color: '#ff8800',  border: '#884400', label: 'Inimigos' },
+        { color: '#ffd700',  border: '#997700', label: 'Itens'    },
+    ];
+    ctxFullMap.fillStyle = 'rgba(0,0,0,0.6)';
+    ctxFullMap.fillRect(0, 548, 600, 52);
+    ctxFullMap.font = 'bold 13px Arial';
+    ctxFullMap.textBaseline = 'middle';
+    const colW = 148;
+    legendData.forEach((leg, i) => {
+        let lx = 18 + i * colW;
+        let ly = 574;
+        ctxFullMap.beginPath();
+        ctxFullMap.arc(lx + 7, ly, 7, 0, Math.PI * 2);
+        ctxFullMap.fillStyle = leg.color;
+        ctxFullMap.fill();
+        ctxFullMap.strokeStyle = leg.border;
+        ctxFullMap.lineWidth = 1.5;
+        ctxFullMap.stroke();
+        ctxFullMap.fillStyle = '#ffffff';
+        ctxFullMap.fillText(leg.label, lx + 19, ly);
+    });
+    ctxFullMap.textBaseline = 'alphabetic';
 }
 
 let currentShopTab = 'buy';
@@ -2774,14 +2819,23 @@ function animate(time){
             
             // ---- BOSS AI ----
             if(m.userData.isBoss) {
-                // Boss circula em torno do jogador enquanto ataca
-                if(d > 3) {
+                // Inicializa ângulo de órbita baseado na posição atual (garante 360° sem pontos cegos)
+                if(m.userData.orbitAngle === undefined) {
+                    m.userData.orbitAngle = Math.atan2(m.position.z - hero.position.z, m.position.x - hero.position.x);
+                }
+                m.userData.orbitAngle += 0.018; // rotação suave do ângulo de órbita
+                if(d > 12) {
+                    // Perseguição direta quando longe
                     let toHero = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
-                    let perp = new THREE.Vector3(-toHero.z, 0, toHero.x); // perpendicular
-                    let orbitSpeed = 0.04;
-                    let chaseSpeed = d > 12 ? 0.08 : 0.03; // corre se longe, circula se perto
-                    m.position.addScaledVector(toHero, chaseSpeed);
-                    m.position.addScaledVector(perp, orbitSpeed);
+                    m.position.addScaledVector(toHero, 0.09);
+                } else if(d > 2) {
+                    // Órbita a raio fixo ~4u usando ângulo rastreado — cobre 360° sem pontos cegos
+                    let orbitRadius = 4;
+                    let tx = hero.position.x + Math.cos(m.userData.orbitAngle) * orbitRadius;
+                    let tz = hero.position.z + Math.sin(m.userData.orbitAngle) * orbitRadius;
+                    let toTarget = new THREE.Vector3(tx - m.position.x, 0, tz - m.position.z);
+                    let tLen = toTarget.length();
+                    if(tLen > 0.01) m.position.addScaledVector(toTarget.normalize(), Math.min(0.07, tLen));
                 }
                 // Boss dispara fireball — intervalo diminui suavemente nível a nível
                 // lv5=2500ms, lv10=2000ms, lv15=1500ms, lv20=1000ms, cap 700ms
@@ -2987,12 +3041,16 @@ function animate(time){
             const mx = centerX + (m.position.x - hero.position.x) * mapScale;
             const mz = centerZ + (m.position.z - hero.position.z) * mapScale;
             if(Math.sqrt((mx-90)**2 + (mz-90)**2) < 70) {
-                ctxM.fillStyle = m.userData.isBoss ? "#ff0000" : "#ffaa00";
-                ctxM.beginPath(); ctxM.arc(mx, mz, 3, 0, Math.PI*2); ctxM.fill();
+                ctxM.beginPath(); ctxM.arc(mx, mz, 3.5, 0, Math.PI*2);
+                ctxM.fillStyle = m.userData.isBoss ? "#ff2222" : "#ff8800";
+                ctxM.fill();
+                ctxM.strokeStyle = 'rgba(0,0,0,0.8)'; ctxM.lineWidth = 1; ctxM.stroke();
             }
         }
     });
-    ctxM.fillStyle = "white"; ctxM.beginPath(); ctxM.arc(centerX, centerZ, 4, 0, Math.PI*2); ctxM.fill();
+    ctxM.beginPath(); ctxM.arc(centerX, centerZ, 4, 0, Math.PI*2);
+    ctxM.fillStyle = "white"; ctxM.fill();
+    ctxM.strokeStyle = 'rgba(0,0,0,0.6)'; ctxM.lineWidth = 1; ctxM.stroke();
     
     // Atualizar mapa expandido se estiver aberto
     if(isFullMapOpen) drawFullMap();
@@ -3016,7 +3074,7 @@ function togglePause() {
 
 window.onkeydown=e=>{ 
     keys[e.key.toLowerCase()]=true; 
-    if(e.code==="Space" || e.key==="ArrowUp") attack();
+    if(e.code==="Space") attack();
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="x") castAOE(); // Tecla X para habilidade AOE (nível 12+)
     if(e.key.toLowerCase()==="q") castDash(); // Q = Dash (requer skill)
