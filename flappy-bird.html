@@ -242,8 +242,8 @@
                 this.velocity += this.gravity;
                 this.y += this.velocity;
 
-                // Colisão com o chão e teto
-                if (this.y + this.height > canvas.height - 50 || this.y < 0) {
+                // Colisão com o chão (usando ground.height) e teto (com tolerância)
+                if (this.y + this.height >= canvas.height - ground.height || this.y < -this.height / 2) {
                     endGame();
                 }
             },
@@ -334,6 +334,11 @@
 
             reset() {
                 this.items = [];
+            },
+
+            resetAll() {
+                this.items = [];
+                clouds.resetAll();
             }
         };
 
@@ -405,6 +410,13 @@
                         cloud.y = Math.random() * 200 + 50;
                     }
                 });
+            },
+
+            resetAll() {
+                this.items.forEach(cloud => {
+                    cloud.x = Math.random() * canvas.width;
+                    cloud.y = Math.random() * 200 + 50;
+                });
             }
         };
 
@@ -437,7 +449,9 @@
         }
 
         function loop() {
-            update();
+            if (gameRunning && !gameOver) {
+                update();
+            }
             draw();
             requestAnimationFrame(loop);
         }
@@ -461,7 +475,7 @@
             bird.y = 300;
             bird.velocity = 0;
             bird.rotation = 0;
-            pipes.reset();
+            pipes.resetAll();
             score = 0;
             frames = 0;
             scoreDisplay.textContent = '0';
@@ -472,11 +486,18 @@
         }
 
         // Controles
+        let inputProcessed = false;
+
         function handleInput() {
+            if (inputProcessed) return;
+            inputProcessed = true;
+
             if (!gameRunning && !gameOver) {
                 startGame();
             } else if (gameRunning && !gameOver) {
                 bird.jump();
+            } else if (gameOver) {
+                resetGame();
             }
         }
 
@@ -484,14 +505,35 @@
             if (e.code === 'Space') {
                 e.preventDefault();
                 handleInput();
+                setTimeout(() => { inputProcessed = false; }, 100);
             }
         });
 
-        canvas.addEventListener('click', handleInput);
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            handleInput();
+            setTimeout(() => { inputProcessed = false; }, 100);
+        });
+
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             handleInput();
+            setTimeout(() => { inputProcessed = false; }, 100);
         });
+
+        // Adicionar suporte de teclado ao botão Jogar Novamente
+        const restartButton = document.querySelector('.game-over button:first-child');
+        if (restartButton) {
+            restartButton.setAttribute('tabindex', '0');
+            restartButton.setAttribute('role', 'button');
+            restartButton.setAttribute('aria-label', 'Jogar Novamente');
+            restartButton.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    resetGame();
+                }
+            });
+        }
 
         // Inicialização
         clouds.init();
