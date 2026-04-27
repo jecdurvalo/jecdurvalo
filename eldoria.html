@@ -2053,34 +2053,63 @@ function recalcStats(){
 function updatePanels(){
     statsPanel.innerHTML=`<div style="font-size:18px; margin-bottom:10px;">🎯 Nível ${player.level}</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"><div style="background:rgba(255,100,100,0.3); padding:8px; border-radius:6px;">⚔️ ATK: ${player.atk}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">🛡️ DEF: ${player.def}</div><div style="background:rgba(100,255,150,0.3); padding:8px; border-radius:6px;">❤️ HP: ${player.hp}/${player.maxHp}</div><div style="background:rgba(100,150,255,0.3); padding:8px; border-radius:6px;">💙 SP: ${Math.floor(player.sp)}/${player.maxSp}</div></div><div style="margin-top:10px; color:gold;">💰 Gold: ${player.gold}</div>`;
     equippedPanel.innerHTML="";
-    for(let k in equipped) {
+    const validEquipSlots = ['weapon','shield','cape','boots','ring1','ring2'];
+    for(let k of validEquipSlots) {
+        if(!(k in equipped)) continue; // slot não existe no objeto
         let item = equipped[k];
-        let icon = item?.icon || '❓';
-        
-        // Calcular porcentagem de dano/bônus do equipamento baseado no nível do jogador
+        let icon = item?.icon || '—';
+
+        // Indicador circular de durabilidade (SVG donut) — substitui a barra linear
+        let durabDonut = '';
+        if(item && item.durability !== undefined) {
+            let dur = Math.max(0, Math.min(100, item.durability));
+            let ringColor = dur > 60 ? '#00d4ff' : (dur > 30 ? '#ffcc00' : '#ff4444');
+            let warnTag = dur < 30 ? ' <span style="color:#ff4444; font-size:10px;">⚠️</span>' : '';
+            // SVG donut: r=14 → circunferência ≈ 87.96
+            let circ = 87.96;
+            let dash = (dur / 100) * circ;
+            let gap  = circ - dash;
+            durabDonut = `
+                <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                    <div style="position:relative; width:36px; height:36px; flex-shrink:0;">
+                        <svg width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(-90deg);">
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="${ringColor}" stroke-width="5"
+                                stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+                                stroke-linecap="round"
+                                style="filter:drop-shadow(0 0 3px ${ringColor});"/>
+                        </svg>
+                        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+                            <span style="font-size:8px; font-weight:bold; color:${ringColor}; line-height:1;">${dur}%</span>
+                        </div>
+                    </div>
+                    <small style="color:#aaa; font-size:10px;">Durabilidade${warnTag}</small>
+                </div>`;
+        }
+
+        // Stats/poder do item
         let damageBonusInfo = '';
         if(item && (item.atk || item.def || item.hp || item.sp)) {
-            let totalBonus = (item.atk || 0) + (item.def || 0) + Math.floor((item.hp || 0) / 5) + Math.floor((item.sp || 0) / 5);
-            let baseStat = player.baseAtk + player.baseDef + 20; // Base de referência
-            let bonusPercent = Math.round((totalBonus / baseStat) * 100);
-            let barColor = bonusPercent > 50 ? '#4CAF50' : (bonusPercent > 25 ? '#FFC107' : '#f44336');
-            damageBonusInfo = `
-                <div style="display:flex; align-items:center; gap:5px; margin-top:5px;">
-                    <small style="color:#aaa;">Poder:</small>
-                    <div style="flex:1; height:6px; background:#333; border-radius:3px; overflow:hidden;">
-                        <div style="width:${Math.min(100, bonusPercent)}%; height:100%; background:${barColor}; transition:width 0.3s;"></div>
-                    </div>
-                    <small style="color:#fff; min-width:35px; text-align:right;">${bonusPercent}%</small>
-                </div>
-            `;
+            let parts = [];
+            if(item.atk) parts.push(`<span style="color:#ff8844">⚔ ${item.atk}</span>`);
+            if(item.def) parts.push(`<span style="color:#4488ff">🛡 ${item.def}</span>`);
+            if(item.hp)  parts.push(`<span style="color:#ff5555">❤ ${item.hp}</span>`);
+            if(item.sp)  parts.push(`<span style="color:#5599ff">💧 ${item.sp}</span>`);
+            damageBonusInfo = `<div style="font-size:11px; margin-top:3px; display:flex; gap:6px;">${parts.join('')}</div>`;
         }
-        
-        let durabInfo = item && item.durability && item.durability < 30 ? `<small style="color:red"> ⚠️</small>` : '';
-        // Barra de durabilidade para itens equipados (apenas equipamentos com durabilidade)
-        let durabBar = item && item.durability !== undefined ? 
-            `<div style="display:flex; align-items:center; gap:5px; margin-top:5px;"><div style="width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;"><div style="width:${item.durability}%; height:100%; background:${item.durability > 60 ? '#4CAF50' : (item.durability > 30 ? '#FFC107' : '#f44336')}; transition:width 0.3s;"></div></div><small style="color:#fff; min-width:35px;">${item.durability}%</small></div>` : '';
-        
-        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:60px;">${icon} ${k.toUpperCase()}: ${item?item.name:'Vazio'}${durabInfo}${damageBonusInfo}${durabBar}</div>`;
+
+        let slotLabel = {weapon:'Arma',shield:'Escudo',cape:'Capa',boots:'Botas',ring1:'Anel 1',ring2:'Anel 2'}[k] || k;
+        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:60px;">
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+                <span style="font-size:22px; line-height:1;">${icon}</span>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:11px; color:#888; text-transform:uppercase; letter-spacing:1px;">${slotLabel}</div>
+                    <div style="font-weight:bold; color:#fff; font-size:13px;">${item ? item.name : '<span style="color:#555">Vazio</span>'}</div>
+                    ${damageBonusInfo}
+                    ${durabDonut}
+                </div>
+            </div>
+        </div>`;
     }
     inventoryPanel.innerHTML="";
     inventory.forEach((it,i)=> {
@@ -2266,7 +2295,20 @@ function sellItem(i){
 function equip(i){
     let it = inventory[i];
     let s = it.slot;
-    
+
+    // Consumíveis não são equipados — são usados diretamente ao clicar
+    if(s === 'consumable') {
+        if(gamePaused) return;
+        if(player.hp >= player.maxHp) { log("<span style='color:orange'>HP já está cheio!</span>"); return; }
+        player.hp = Math.min(player.maxHp, player.hp + (it.heal || 0));
+        floatingText("🧪 +" + it.heal + " HP", hero.position, "lime");
+        log("<span style='color:cyan'>Poção usada! +" + it.heal + " HP</span>");
+        it.quantity = (it.quantity || 1) - 1;
+        if(it.quantity <= 0) inventory.splice(i, 1);
+        updatePanels();
+        return;
+    }
+
     // Se for anel, escolhe ring1 ou ring2
     if(s === "ring") s = !equipped.ring1 ? "ring1" : "ring2";
     
@@ -2584,7 +2626,10 @@ function loadGame() {
         let save = JSON.parse(raw);
         if(save.player) Object.assign(player, save.player);
         if(save.inventory) inventory = save.inventory;
-        if(save.equipped) Object.assign(equipped, save.equipped);
+        if(save.equipped) {
+            Object.assign(equipped, save.equipped);
+            delete equipped['consumable']; // consumíveis nunca devem ficar no slot equipado
+        }
         if(save.evolutionData) {
             evolutionData.totalXP = save.evolutionData.totalXP || 0;
             evolutionData.skillPoints = save.evolutionData.skillPoints || 0;
@@ -3077,14 +3122,14 @@ window.onkeydown=e=>{
     if(e.code==="Space") attack();
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="x") castAOE(); // Tecla X para habilidade AOE (nível 12+)
-    if(e.key.toLowerCase()==="q") castDash(); // Q = Dash (requer skill)
+    if(e.key.toLowerCase()==="d") castDash(); // D = Dash (requer skill, também move direita)
     if(e.key.toLowerCase()==="r") castShield(); // R = Escudo (requer skill)
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
     if(e.key.toLowerCase()==="b") toggleEvolution(); // Tecla B para Evolução
     if(e.key.toLowerCase()==="f") document.documentElement.requestFullscreen();
     if(e.key.toLowerCase()==="p") togglePause(); // Tecla P para pausar
-    if(e.key.toLowerCase()==="q") usePotion(); // Tecla Q para usar poção
+    if(e.key.toLowerCase()==="q") usePotion(); // Q = Usar poção
     if(e.key.toLowerCase()==="m") toggleFullMap(); // Tecla M para abrir mapa expandido
 };
 window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
