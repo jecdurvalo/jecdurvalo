@@ -2055,60 +2055,55 @@ function updatePanels(){
     equippedPanel.innerHTML="";
     const validEquipSlots = ['weapon','shield','cape','boots','ring1','ring2'];
     for(let k of validEquipSlots) {
-        if(!(k in equipped)) continue; // slot não existe no objeto
+        if(!(k in equipped)) continue;
         let item = equipped[k];
         let icon = item?.icon || '—';
+        let slotLabel = {weapon:'Arma',shield:'Escudo',cape:'Capa',boots:'Botas',ring1:'Anel 1',ring2:'Anel 2'}[k] || k;
 
-        // Indicador circular de durabilidade (SVG donut) — substitui a barra linear
+        // Stats — texto limpo sem ícones emoji
+        let statsText = '';
+        if(item) {
+            let parts = [];
+            if(item.atk) parts.push(`<span style="color:#ff9966">+${item.atk} ATK</span>`);
+            if(item.def) parts.push(`<span style="color:#66aaff">+${item.def} DEF</span>`);
+            if(item.hp)  parts.push(`<span style="color:#ff6666">+${item.hp} HP</span>`);
+            if(item.sp)  parts.push(`<span style="color:#6699ff">+${item.sp} SP</span>`);
+            if(parts.length) statsText = `<div style="font-size:11px; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap;">${parts.join('')}</div>`;
+        }
+
+        // Donut de durabilidade — no lado direito, centralizado verticalmente
         let durabDonut = '';
         if(item && item.durability !== undefined) {
             let dur = Math.max(0, Math.min(100, item.durability));
             let ringColor = dur > 60 ? '#00d4ff' : (dur > 30 ? '#ffcc00' : '#ff4444');
-            let warnTag = dur < 30 ? ' <span style="color:#ff4444; font-size:10px;">⚠️</span>' : '';
-            // SVG donut: r=14 → circunferência ≈ 87.96
-            let circ = 87.96;
+            let circ = 100.53; // 2 * π * 16
             let dash = (dur / 100) * circ;
             let gap  = circ - dash;
             durabDonut = `
-                <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                    <div style="position:relative; width:36px; height:36px; flex-shrink:0;">
-                        <svg width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(-90deg);">
-                            <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
-                            <circle cx="18" cy="18" r="14" fill="none" stroke="${ringColor}" stroke-width="5"
-                                stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
-                                stroke-linecap="round"
-                                style="filter:drop-shadow(0 0 3px ${ringColor});"/>
-                        </svg>
-                        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
-                            <span style="font-size:8px; font-weight:bold; color:${ringColor}; line-height:1;">${dur}%</span>
-                        </div>
+                <div style="position:relative; width:42px; height:42px; flex-shrink:0;">
+                    <svg width="42" height="42" viewBox="0 0 42 42" style="transform:rotate(-90deg); display:block;">
+                        <circle cx="21" cy="21" r="16" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+                        <circle cx="21" cy="21" r="16" fill="none" stroke="${ringColor}" stroke-width="5"
+                            stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+                            stroke-linecap="round"
+                            style="filter:drop-shadow(0 0 4px ${ringColor});"/>
+                    </svg>
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+                        <span style="font-size:9px; font-weight:bold; color:${ringColor}; line-height:1;">${dur}%</span>
                     </div>
-                    <small style="color:#aaa; font-size:10px;">Durabilidade${warnTag}</small>
                 </div>`;
         }
 
-        // Stats/poder do item
-        let damageBonusInfo = '';
-        if(item && (item.atk || item.def || item.hp || item.sp)) {
-            let parts = [];
-            if(item.atk) parts.push(`<span style="color:#ff8844">⚔ ${item.atk}</span>`);
-            if(item.def) parts.push(`<span style="color:#4488ff">🛡 ${item.def}</span>`);
-            if(item.hp)  parts.push(`<span style="color:#ff5555">❤ ${item.hp}</span>`);
-            if(item.sp)  parts.push(`<span style="color:#5599ff">💧 ${item.sp}</span>`);
-            damageBonusInfo = `<div style="font-size:11px; margin-top:3px; display:flex; gap:6px;">${parts.join('')}</div>`;
-        }
-
-        let slotLabel = {weapon:'Arma',shield:'Escudo',cape:'Capa',boots:'Botas',ring1:'Anel 1',ring2:'Anel 2'}[k] || k;
-        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:60px;">
-            <div style="display:flex; align-items:flex-start; gap:8px;">
-                <span style="font-size:22px; line-height:1;">${icon}</span>
-                <div style="flex:1; min-width:0;">
-                    <div style="font-size:11px; color:#888; text-transform:uppercase; letter-spacing:1px;">${slotLabel}</div>
-                    <div style="font-weight:bold; color:#fff; font-size:13px;">${item ? item.name : '<span style="color:#555">Vazio</span>'}</div>
-                    ${damageBonusInfo}
-                    ${durabDonut}
+        equippedPanel.innerHTML+=`<div class='item' onclick="unequip('${k}')" style="min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px;">
+            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                <span style="font-size:22px; line-height:1; flex-shrink:0;">${icon}</span>
+                <div style="min-width:0;">
+                    <div style="font-size:10px; color:#666; text-transform:uppercase; letter-spacing:1px; line-height:1.2;">${slotLabel}</div>
+                    <div style="font-weight:bold; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item ? item.name : '<span style="color:#444">Vazio</span>'}</div>
+                    ${statsText}
                 </div>
             </div>
+            ${durabDonut}
         </div>`;
     }
     inventoryPanel.innerHTML="";
