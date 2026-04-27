@@ -304,7 +304,7 @@
     resize();
 
     // Estado do Jogo
-    let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN, PAUSED
+    let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
     let currentLevelIdx = 0;
     let score = 0;
     let lives = 3;
@@ -312,19 +312,16 @@
     let frames = 0;
     let checkpointX = 50; // Ponto de respawn na fase atual
     let checkpointY = 0;
-    let gameLoopId = null; // ID do loop de animação para controle adequado
 
     // Inputs
     const keys = { right: false, left: false, up: false };
 
     // Listeners Teclado
-    let jumpPressed = false; // Flag para evitar pulo duplo acidental
     window.addEventListener('keydown', e => {
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-        if ((e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') && !jumpPressed) {
+        if ((e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') && !keys.up) {
             player.jump();
-            jumpPressed = true;
             keys.up = true;
         }
         // Pausa com ESC ou P
@@ -335,18 +332,11 @@
     window.addEventListener('keyup', e => {
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-            keys.up = false;
-            jumpPressed = false; // Reseta flag ao soltar a tecla
-        }
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
     });
 
     function pauseGame() {
         gameState = 'PAUSED';
-        if (gameLoopId) {
-            cancelAnimationFrame(gameLoopId);
-            gameLoopId = null;
-        }
         showScreen('pause-screen');
     }
 
@@ -529,27 +519,21 @@
             this.type = type; // 'spider' ou 'bat'
             this.w = 40; this.h = 40;
             this.startX = x;
-            this.startY = y; // Salva posição Y original para patrulha
             this.patrolDist = 150 + (currentLevelIdx * 30); // Área de patrulha aumenta com nível
             this.speed = 2 + (currentLevelIdx * 0.8); // Velocidade aumenta com o nível para maior dificuldade
             this.dir = 1;
-            this.angle = Math.random() * Math.PI * 2; // Ângulo inicial aleatório para movimento ondulatório
-            this.dead = false;
+            this.angle = 0;
         }
         update() {
             if (this.type === 'spider') {
                 this.x += this.speed * this.dir;
                 if (this.x > this.startX + this.patrolDist || this.x < this.startX) this.dir *= -1;
             } else {
-                // Morcego - usa patrulha baseada no startX mas com área mais ampla e segura
-                // Para morcegos, a área de patrulha é centralizada no startX
-                const batPatrolDist = this.patrolDist * 0.8; // Morcegos patrulham área menor
+                // Morcego - agora usa patrulha baseada no startX
                 this.x += this.speed * this.dir;
-                // Patrulha entre startX - patrolDist/2 e startX + patrolDist/2
-                if (this.x > this.startX + batPatrolDist || this.x < this.startX - batPatrolDist) this.dir *= -1;
+                if (this.x > this.startX + this.patrolDist || this.x < this.startX) this.dir *= -1;
                 this.angle += 0.1;
-                // Movimento ondulatório limitado para não subir demais
-                this.y = this.startY + Math.sin(this.angle) * 30;
+                this.y += Math.sin(this.angle) * 1.5;
             }
         }
         draw() {
@@ -749,21 +733,6 @@
                 scoreEl.innerText = `MOEDAS: ${score}`;
                 // Faz a bandeira aparecer após derrotar o boss
                 if (flag) flag.visible = true;
-                
-                // Efeito visual de morte do boss - pisca e desaparece
-                const bossDeathMsg = document.createElement('div');
-                bossDeathMsg.style.position = 'absolute';
-                bossDeathMsg.style.top = '30%';
-                bossDeathMsg.style.left = '50%';
-                bossDeathMsg.style.transform = 'translate(-50%, -50%)';
-                bossDeathMsg.style.color = '#ff0000';
-                bossDeathMsg.style.fontSize = '36px';
-                bossDeathMsg.style.fontWeight = 'bold';
-                bossDeathMsg.style.textShadow = '3px 3px 0 #000';
-                bossDeathMsg.style.zIndex = '100';
-                bossDeathMsg.innerText = 'BOSS DERROTADO!';
-                document.getElementById('game-container').appendChild(bossDeathMsg);
-                setTimeout(() => bossDeathMsg.remove(), 2000);
             }
         }
     }
@@ -783,16 +752,11 @@
         boss = null;
         
         // Reseta posição e checkpoint para o início da fase
-        // Nota: player.x/y são definidos externamente em takeDamage() para suportar checkpoints
-        if (player.x === undefined || player.x === 50) {
-            player.x = 50;
-            player.y = 0;
-        }
+        player.x = 50;
+        player.y = 0;
         player.vx = 0;
         player.vy = 0;
-        cameraX = Math.max(0, player.x - canvas.width / 3);
-        // Sempre reseta checkpoint para o início ao carregar uma nova fase
-        // O checkpoint só é atualizado quando o jogador avança na fase atual
+        cameraX = 0;
         checkpointX = 50;
         checkpointY = 0;
         
@@ -968,13 +932,13 @@
             enemies.push(new Enemy(1900, canvas.height - 90, 'spider'));
             enemies.push(new Enemy(2050, canvas.height - 90, 'spider'));
             enemies.push(new Enemy(2200, canvas.height - 90, 'spider'));
-            // Morcegos posicionados mais distantes do spawn (50) para não pegar jogador desprevenido
-            // Eles patrulham áreas específicas começando longe do início da fase
-            enemies.push(new Enemy(700, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(950, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(1200, canvas.height - 410, 'bat'));
-            enemies.push(new Enemy(1450, canvas.height - 430, 'bat'));
-            enemies.push(new Enemy(1700, canvas.height - 410, 'bat'));
+            // Morcegos agora usam patrulha (startX definido) para não voar direto no jogador
+            enemies.push(new Enemy(600, canvas.height - 410, 'bat'));
+            enemies.push(new Enemy(800, canvas.height - 430, 'bat'));
+            enemies.push(new Enemy(1000, canvas.height - 410, 'bat'));
+            enemies.push(new Enemy(1200, canvas.height - 430, 'bat'));
+            enemies.push(new Enemy(1400, canvas.height - 410, 'bat'));
+            enemies.push(new Enemy(1600, canvas.height - 430, 'bat'));
 
             coins.push(new Coin(280, canvas.height - 210));
             coins.push(new Coin(480, canvas.height - 320));
@@ -1456,18 +1420,16 @@
             }
         }
 
-        // Inimigos - filtra primeiro os mortos para evitar colisão no mesmo frame
-        const activeEnemies = enemies.filter(e => !e.dead);
-        for (let e of activeEnemies) {
+        // Inimigos
+        for (let e of enemies) {
             if (player.x < e.x + e.w &&
                 player.x + player.width > e.x &&
                 player.y < e.y + e.h &&
                 player.y + player.height > e.y) {
                 
                 // Verifica se o jogador pulou em cima do inimigo (estilo Mario)
-                // Condição mais permissiva: basta estar caindo e com a parte inferior do jogador perto do topo do inimigo
                 const hitFromAbove = (player.vy > 0) && 
-                                     (player.y + player.height <= e.y + e.h * 0.7);
+                                     (player.y + player.height - player.vy <= e.y + e.h * 0.5);
                 
                 if (hitFromAbove) {
                     // Mata o inimigo ao pular em cima
@@ -1505,7 +1467,7 @@
             }
         }
         
-        // Remove inimigos mortos APÓS a colisão (já filtramos antes, mas mantemos para segurança)
+        // Remove inimigos mortos
         enemies = enemies.filter(e => !e.dead);
 
         // Moedas
@@ -1553,26 +1515,22 @@
         } else {
             // Sistema de checkpoint: se estiver na fase 6 ou superior, volta na fase anterior
             if (currentLevelIdx >= 5) {
-                // Salva o checkpoint atual antes de morrer (usa a posição atual do jogador como referência)
-                savedCheckpoint = { 
-                    level: currentLevelIdx - 1, 
-                    x: player.x, // Usa a posição atual do jogador
-                    y: player.y 
-                };
+                // Salva o checkpoint atual antes de morrer
+                savedCheckpoint = { level: currentLevelIdx - 1, x: 50, y: 0 };
                 
                 // Volta para a fase anterior com 1 vida
                 currentLevelIdx = Math.max(0, currentLevelIdx - 1);
                 lives = 1;
                 livesEl.innerText = `VIDAS: ${lives}`;
                 
-                // Respawn no checkpoint salvo da fase anterior
-                player.x = savedCheckpoint.x;
-                player.y = savedCheckpoint.y;
+                // Respawn no início da fase anterior
+                player.x = 50;
+                player.y = 0;
                 player.vx = 0;
                 player.vy = 0;
-                cameraX = Math.max(0, player.x - canvas.width / 3);
+                cameraX = 0;
                 
-                // Recarrega a fase anterior (loadLevel vai resetar checkpointX para 50)
+                // Recarrega a fase anterior
                 loadLevel(currentLevelIdx);
                 
                 // Mostra mensagem de checkpoint
@@ -1590,14 +1548,14 @@
                 document.getElementById('game-container').appendChild(checkpointMsg);
                 setTimeout(() => checkpointMsg.remove(), 2000);
             } else {
-                // Respawn no checkpoint da fase atual para fases 1-5 (ou início se não houver checkpoint)
-                player.x = Math.max(50, checkpointX);
+                // Respawn no início da fase atual para fases 1-5
+                player.x = 50;
                 player.y = 0;
                 player.vx = 0;
                 player.vy = 0;
-                cameraX = Math.max(0, player.x - canvas.width / 3);
+                cameraX = 0;
                 
-                // Recarrega a fase do início (mas o checkpointX mantém a posição)
+                // Recarrega a fase do início
                 loadLevel(currentLevelIdx);
             }
         }
@@ -1666,10 +1624,7 @@
     function resumeGame() {
         pauseScreen.style.display = 'none';
         gameState = 'PLAYING';
-        // Reinicia o loop de animação se não estiver rodando
-        if (!gameLoopId) {
-            gameLoop();
-        }
+        gameLoop();
     }
 
     function updateCamera() {
@@ -1743,7 +1698,7 @@
         player.draw();
 
         frames++;
-        gameLoopId = requestAnimationFrame(gameLoop);
+        requestAnimationFrame(gameLoop);
     }
 
     // Inicialização
