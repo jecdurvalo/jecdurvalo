@@ -1035,14 +1035,17 @@ function addItemToInventory(baseItem) {
     return false; // Item foi adicionado como novo
 }
 
-const miniMapCanvas = document.getElementById('minimapCanvas');
-const ctxM = miniMapCanvas.getContext('2d');
-
-// Mapa Expandido (Tecla M)
-const fullMapModal = document.getElementById('fullMapModal');
-const fullMapCanvas = document.getElementById('fullMapCanvas');
-const ctxFullMap = fullMapCanvas.getContext('2d');
+// Mapa Expandido (Tecla M) - Inicializado após DOM estar pronto
+let miniMapCanvas, ctxM, fullMapModal, fullMapCanvas, ctxFullMap;
 let isFullMapOpen = false;
+
+function initMapCanvases() {
+    miniMapCanvas = document.getElementById('minimapCanvas');
+    ctxM = miniMapCanvas.getContext('2d');
+    fullMapModal = document.getElementById('fullMapModal');
+    fullMapCanvas = document.getElementById('fullMapCanvas');
+    ctxFullMap = fullMapCanvas.getContext('2d');
+}
 
 // lootTable organizada em 5 tiers de nível.
 // minLevel controla quando o item começa a dropar.
