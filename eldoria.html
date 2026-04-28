@@ -506,7 +506,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <button onclick="setShopTab('sell')" id="shopTabSell" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-weight:bold; font-size:15px;">💰 Vender</button>
     </div>
     <div id="shopBuyPanel">
+        <p style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p>
         <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
+        <div id="shopBuyItemsPanel" class="inventory-grid"></div>
     </div>
     <div id="shopSellPanel" style="display:none;">
         <div class="qi-filter-bar" id="shopSellFilterBar" style="margin-bottom:12px;"></div>
@@ -800,6 +802,7 @@ function buyItem(catalogItem) {
     playSound('buy');
     log("<span style='color:gold'>🛒 Comprou: " + catalogItem.icon + " " + catalogItem.name + " por " + catalogItem.buyPrice + " gold!</span>");
     floatingText("🛒 " + catalogItem.name, hero.position, "gold");
+    updateShopBuyPanel();
     updatePanels();
 }
 
@@ -2766,65 +2769,8 @@ function updatePanels(){
         inventoryPanel.innerHTML = `<p style="color:#666; font-size:13px; text-align:center; padding:20px 0; grid-column:1/-1;">Nenhum item nesta categoria.</p>`;
     }
 
-    // Shop buy panel
-    let buyPanel = document.getElementById('shopBuyPanel');
-    if(buyPanel) {
-        let html = `<p style="color:#aaa; font-size:13px; margin:0 0 12px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p><div class="inventory-grid">`;
-        shopCatalog.forEach((item, i) => {
-            // Aplica filtro de compra
-            let slot = item.slot || '';
-            let matchFilter =
-                shopBuyFilter === 'all' ||
-                (shopBuyFilter === 'weapon'     && slot === 'weapon') ||
-                (shopBuyFilter === 'defense'    && ['shield','cape','boots'].includes(slot)) ||
-                (shopBuyFilter === 'ring'       && slot === 'ring') ||
-                (shopBuyFilter === 'consumable' && slot === 'consumable');
-            if(!matchFilter) return;
-            
-            let canBuy = player.gold >= item.buyPrice;
-            let canLevel = !item.reqLevel || player.level >= item.reqLevel;
-            let disabled = !canBuy || !canLevel;
-            let lockInfo = !canLevel ? `<span style="color:#888; font-size:11px;"> 🔒 Lv.${item.reqLevel}</span>` : '';
-            // Stats display similar to inventory
-            let statsInfo = [];
-            if(item.atk)   statsInfo.push(`<span style="color:#ff8844">⚔ +${item.atk} ATK</span>`);
-            if(item.def)   statsInfo.push(`<span style="color:#4488ff">🛡 +${item.def} DEF</span>`);
-            if(item.hp)    statsInfo.push(`<span style="color:#ff5555">❤ +${item.hp} HP</span>`);
-            if(item.sp)    statsInfo.push(`<span style="color:#5599ff">💧 +${item.sp} SP</span>`);
-            if(item.heal)  statsInfo.push(`<span style="color:#44ff88">💊 +${item.heal} HP</span>`);
-            if(item.speed) statsInfo.push(`<span style="color:#ffff44">⚡ +VEL</span>`);
-            let statsLine = statsInfo.length ? `<div style="font-size:11px; margin-top:3px; display:flex; gap:5px; flex-wrap:wrap;">${statsInfo.join('')}</div>` : '';
-            // Comparison with currently equipped
-            let compLine = '';
-            if(item.slot && item.slot !== 'consumable') {
-                let slotKey = item.slot === 'ring' ? (equipped.ring1 ? 'ring2' : 'ring1') : item.slot;
-                let cur = equipped[slotKey];
-                if(cur) {
-                    let diff = [];
-                    ['atk','def','hp','sp'].forEach(s => {
-                        let dv = (item[s]||0) - (cur[s]||0);
-                        if(dv !== 0) diff.push(`<span style="color:${dv>0?'#44ff88':'#ff4444'}">${dv>0?'+':''}${dv} ${s.toUpperCase()}</span>`);
-                    });
-                    if(diff.length) compLine = `<div style="font-size:10px; margin-top:2px; color:#aaa;">vs equipado: ${diff.join(' ')}</div>`;
-                }
-            }
-            html += `<div class='item' style="min-height:65px; opacity:${disabled?0.45:1}; display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <div style="flex:1; min-width:0;">${item.icon} <b>${item.name}</b>${lockInfo}<br><small style="color:#aaa;">${item.desc}</small>${statsLine}${compLine}</div>
-                <button onclick="buyItem(shopCatalog[${i}])" style="padding:8px 14px; border-radius:8px; border:none; background:${canBuy&&canLevel?'linear-gradient(135deg,#f0a500,#c07800)':'#444'}; color:${canBuy&&canLevel?'#fff':'#888'}; cursor:${disabled?'not-allowed':'pointer'}; font-weight:bold; white-space:nowrap; flex-shrink:0;">
-                    ${item.buyPrice}💰
-                </button>
-            </div>`;
-        });
-        html += '</div>';
-        if(html.includes('<div class="inventory-grid">')) {
-            let gridContent = html.match(/<div class="inventory-grid">([\s\S]*)<\/div>/);
-            if(gridContent && gridContent[1].trim() === '') {
-                html = `<p style="color:#aaa; font-size:13px; margin:0 0 12px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p><p style="color:#666; font-size:13px; text-align:center; padding:20px 0;">Nenhum item nesta categoria.</p>`;
-            }
-        }
-        buyPanel.innerHTML = html;
-    }
-
+    // Shop buy panel - agora atualizado via updateShopBuyPanel() quando necessário
+    
     shopInventoryPanel.innerHTML="";
     let visibleSellCount = 0;
     inventory.forEach((it,i)=> {
@@ -3448,7 +3394,64 @@ function renderShopBuyFilterBar() {
 
 function setShopBuyFilter(key) {
     shopBuyFilter = key;
-    updatePanels();
+    updateShopBuyPanel();
+}
+
+function updateShopBuyPanel() {
+    let buyItemsPanel = document.getElementById('shopBuyItemsPanel');
+    if(!buyItemsPanel) return;
+    
+    let html = '';
+    shopCatalog.forEach((item, i) => {
+        // Aplica filtro de compra
+        let slot = item.slot || '';
+        let matchFilter =
+            shopBuyFilter === 'all' ||
+            (shopBuyFilter === 'weapon'     && slot === 'weapon') ||
+            (shopBuyFilter === 'defense'    && ['shield','cape','boots'].includes(slot)) ||
+            (shopBuyFilter === 'ring'       && slot === 'ring') ||
+            (shopBuyFilter === 'consumable' && slot === 'consumable');
+        if(!matchFilter) return;
+        
+        let canBuy = player.gold >= item.buyPrice;
+        let canLevel = !item.reqLevel || player.level >= item.reqLevel;
+        let disabled = !canBuy || !canLevel;
+        let lockInfo = !canLevel ? `<span style="color:#888; font-size:11px;"> 🔒 Lv.${item.reqLevel}</span>` : '';
+        // Stats display similar to inventory
+        let statsInfo = [];
+        if(item.atk)   statsInfo.push(`<span style="color:#ff8844">⚔ +${item.atk} ATK</span>`);
+        if(item.def)   statsInfo.push(`<span style="color:#4488ff">🛡 +${item.def} DEF</span>`);
+        if(item.hp)    statsInfo.push(`<span style="color:#ff5555">❤ +${item.hp} HP</span>`);
+        if(item.sp)    statsInfo.push(`<span style="color:#5599ff">💧 +${item.sp} SP</span>`);
+        if(item.heal)  statsInfo.push(`<span style="color:#44ff88">💊 +${item.heal} HP</span>`);
+        if(item.speed) statsInfo.push(`<span style="color:#ffff44">⚡ +VEL</span>`);
+        let statsLine = statsInfo.length ? `<div style="font-size:11px; margin-top:3px; display:flex; gap:5px; flex-wrap:wrap;">${statsInfo.join('')}</div>` : '';
+        // Comparison with currently equipped
+        let compLine = '';
+        if(item.slot && item.slot !== 'consumable') {
+            let slotKey = item.slot === 'ring' ? (equipped.ring1 ? 'ring2' : 'ring1') : item.slot;
+            let cur = equipped[slotKey];
+            if(cur) {
+                let diff = [];
+                ['atk','def','hp','sp'].forEach(s => {
+                    let dv = (item[s]||0) - (cur[s]||0);
+                    if(dv !== 0) diff.push(`<span style="color:${dv>0?'#44ff88':'#ff4444'}">${dv>0?'+':''}${dv} ${s.toUpperCase()}</span>`);
+                });
+                if(diff.length) compLine = `<div style="font-size:10px; margin-top:2px; color:#aaa;">vs equipado: ${diff.join(' ')}</div>`;
+            }
+        }
+        html += `<div class='item' style="min-height:65px; opacity:${disabled?0.45:1}; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="flex:1; min-width:0;">${item.icon} <b>${item.name}</b>${lockInfo}<br><small style="color:#aaa;">${item.desc}</small>${statsLine}${compLine}</div>
+            <button onclick="buyItem(shopCatalog[${i}])" style="padding:8px 14px; border-radius:8px; border:none; background:${canBuy&&canLevel?'linear-gradient(135deg,#f0a500,#c07800)':'#444'}; color:${canBuy&&canLevel?'#fff':'#888'}; cursor:${disabled?'not-allowed':'pointer'}; font-weight:bold; white-space:nowrap; flex-shrink:0;">
+                ${item.buyPrice}💰
+            </button>
+        </div>`;
+    });
+    if(html.trim() === '') {
+        buyItemsPanel.innerHTML = `<p style="color:#666; font-size:13px; text-align:center; padding:20px 0; grid-column:1/-1;">Nenhum item nesta categoria.</p>`;
+    } else {
+        buyItemsPanel.innerHTML = html;
+    }
 }
 
 function renderShopSellFilterBar() {
@@ -3479,6 +3482,7 @@ function setShopTab(tab) {
     document.getElementById('shopTabSell').style.background = tab === 'sell' ? 'linear-gradient(135deg,rgba(255,215,0,0.4),rgba(255,215,0,0.2))' : 'rgba(255,255,255,0.05)';
     if(tab === 'buy') {
         renderShopBuyFilterBar();
+        updateShopBuyPanel();
     } else if(tab === 'sell') {
         renderShopSellFilterBar();
     }
