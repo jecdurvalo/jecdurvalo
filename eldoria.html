@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
@@ -2176,8 +2175,6 @@ function killMonster(m){
     if(m.userData.isBoss) {
         evolutionData.stats.bossKills++;
         updateQuestProgress('boss_kills', 1);
-    } else {
-        updateQuestProgress('kills', 1);
     }
     
     // Drop de gold (sempre dropa um pouco de gold)
@@ -2673,7 +2670,8 @@ function getSkillBonuses() {
         critChance: 0,
         lifesteal: 0,
         aoeDamageBonus: 0,
-        fireballDamageBonus: 0
+        fireballDamageBonus: 0,
+        speedBonus: 0
     };
     
     evolutionData.skillTree.forEach(skill => {
@@ -2730,6 +2728,25 @@ function getSkillBonuses() {
                 case 'fireball_mastery':
                     bonuses.fireballDamageBonus += 50 * skill.level;
                     break;
+                case 'epic_strength':
+                    bonuses.atkPercent += 40 * skill.level;
+                    break;
+                case 'epic_defense':
+                    bonuses.defPercent += 40 * skill.level;
+                    break;
+                case 'divine_power':
+                    bonuses.atkPercent += 50 * skill.level;
+                    bonuses.defPercent += 50 * skill.level;
+                    break;
+                case 'immortal_vitality':
+                    bonuses.hpPercent += 100 * skill.level;
+                    bonuses.spPercent += 100 * skill.level;
+                    break;
+                case 'god_mode':
+                    bonuses.atkPercent += 100 * skill.level;
+                    bonuses.defPercent += 100 * skill.level;
+                    bonuses.speedBonus += 0.175 * skill.level;
+                    break;
             }
         }
     });
@@ -2774,6 +2791,7 @@ function recalcStats(){
     player.lifesteal = skillBonuses.lifesteal;
     player.aoeDamageBonus = skillBonuses.aoeDamageBonus;
     player.fireballDamageBonus = skillBonuses.fireballDamageBonus;
+    player.speedBonus = skillBonuses.speedBonus;
     
     // Atualiza HP e SP máximos com base nos equipamentos
     let newMaxHp = finalMaxHp + bHp;
@@ -3759,7 +3777,7 @@ function closeAllMenus() {
 // Função para usar poção manualmente (tecla Q)
 function usePotion() {
     if(gamePaused) return;
-    let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.quantity > 0);
+    let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.heal && it.quantity > 0);
     if(potionIndex >= 0) {
         let potion = inventory[potionIndex];
         // Usa player.maxHp diretamente (já inclui bônus de equipamentos via recalcStats)
@@ -3979,8 +3997,10 @@ function animate(time){
                 let mobMin = 3 + groupBonus;
                 let mobMax = 6 + groupBonus;
                 let mobCount = Math.floor(Math.random() * (mobMax - mobMin + 1)) + mobMin;
+                let available = maxMons - monsters.length;
+                mobCount = Math.min(mobCount, available);
                 for(let i = 0; i < mobCount; i++) {
-                    setTimeout(() => spawnMonster(false, true, emergencySpawn), i * 120);
+                    setTimeout(() => { if(monsters.length < maxMons) spawnMonster(false, true, emergencySpawn); }, i * 120);
                 }
                 log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
             } else {
@@ -4043,8 +4063,8 @@ function animate(time){
     // Fireball - usa deltaTime para velocidade consistente
     for(let i=fireballs.length-1; i>=0; i--){
         let f = fireballs[i]; 
-        f.mesh.position.add(f.dir.clone().multiplyScalar(0.8 * (safeDeltaTime / 16.67))); 
-        f.life--;
+        f.mesh.position.add(f.dir.clone().multiplyScalar(0.8 * (safeDeltaTime / 16.67)));
+        f.life -= safeDeltaTime / 16.67;
         let fb_ab = f.activeBonus || { fireballDmg: 0, fireballRadius: 0 };
         let fbRadius = 3.5 + (fb_ab.fireballRadius || 0);
         [...monsters].forEach(m=>{
@@ -4075,7 +4095,7 @@ function animate(time){
         bf.mesh.position.addScaledVector(bf.dir, spd);
         bf.mesh.rotation.x += 0.1;
         bf.mesh.rotation.y += 0.12;
-        bf.life--;
+        bf.life -= safeDeltaTime / 16.67;
         let bfDx = hero.position.x - bf.mesh.position.x, bfDz = hero.position.z - bf.mesh.position.z;
         if(Math.sqrt(bfDx*bfDx + bfDz*bfDz) < 2.0) {
             if(shieldActive) {
@@ -4319,7 +4339,7 @@ function animate(time){
                 let hpPercent = player.hp / player.maxHp;
                 if(player.hp <= 0 || hpPercent < 0.3) {
                     // Procurar poção no inventário
-                    let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.quantity > 0);
+                    let potionIndex = inventory.findIndex(it => it.slot === "consumable" && it.heal && it.quantity > 0);
                     if(potionIndex >= 0) {
                         let potion = inventory[potionIndex];
                         player.hp = Math.min(player.maxHp, player.hp + potion.heal);
