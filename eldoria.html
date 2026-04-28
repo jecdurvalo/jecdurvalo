@@ -149,12 +149,12 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     width:90%; max-width: 680px; max-height:80vh; overflow:auto; 
     background:linear-gradient(135deg, #0a1930, #152545);
-    border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5001; color:white;
+    border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5002; color:white;
     box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
 }
 /* Overlay de fundo para menus */
 #menuOverlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:5000; cursor: pointer;
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:5001; cursor: pointer;
 }
 /* Responsividade para modais em telas menores */
 @media (max-width: 600px) {
@@ -1666,6 +1666,8 @@ function toggleEvolution() {
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         updateEvolutionUI();
+        renderSkillTree();
+        renderActiveSkillTree();
         gamePaused = true;
     }
 }
@@ -3164,6 +3166,8 @@ function toggleV(){
         menuOverlay.style.display = 'block';
         renderInvFilterBar();
         updatePanels();
+        renderSkillTree();
+        renderActiveSkillTree();
         gamePaused = true;
     }
 }
@@ -3705,6 +3709,8 @@ function toggleShop(){
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         setShopTab('buy');
+        renderShopBuyFilterBar();
+        updateShopBuyPanel();
         gamePaused = true;
     }
 }
