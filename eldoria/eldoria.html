@@ -98,6 +98,8 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     backdrop-filter: blur(5px);
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     transition: transform 0.1s, background 0.2s;
+    /* Garante que botões mobile fiquem abaixo de menus modais */
+    z-index: 1;
 }
 .mobile-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
 #joystickArea { 
@@ -652,13 +654,43 @@ const AUTO_SAVE_INTERVAL = 30000; // 30 segundos em milissegundos
 
 // -------- ÁUDIO CHIPTUNE (estilo 8-bit) --------
 let _audioCtx = null;
+let _audioInitialized = false;
+
+function initAudio() {
+    if (!_audioInitialized) {
+        try {
+            _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            _audioInitialized = true;
+            console.log('Audio context initialized');
+        } catch(e) {
+            console.warn('Failed to initialize audio context:', e);
+        }
+    }
+}
+
 function getAudioCtx() {
-    if(!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(!_audioCtx) {
+        // Tenta inicializar, mas pode falhar se não houver interação do usuário
+        try {
+            _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            _audioInitialized = true;
+        } catch(e) {
+            console.warn('Audio context not ready - needs user interaction');
+            return null;
+        }
+    }
     return _audioCtx;
 }
 function playSound(type) {
     try {
         let ctx = getAudioCtx();
+        if(!ctx) return; // Audio context não está pronto
+        
+        // Resume audio context se estiver suspenso (necessário para alguns browsers)
+        if(ctx.state === 'suspended') {
+            ctx.resume().catch(e => console.warn('Could not resume audio context:', e));
+        }
+        
         let t = ctx.currentTime;
         // Nota com square wave (chipy)
         function chip(freq, dur, vol, delay) {
@@ -2632,7 +2664,11 @@ function handleJoy(e) {
     joyStick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
 }
 
-joyArea.addEventListener('touchstart', e => { isJoyactive = true; handleJoy(e); });
+joyArea.addEventListener('touchstart', e => { 
+    isJoyactive = true; 
+    handleJoy(e); 
+    initAudio(); // Inicializa audio no primeiro toque
+});
 window.addEventListener('touchmove', e => { if(isJoyactive) { handleJoy(e); e.preventDefault(); } }, {passive: false});
 window.addEventListener('touchend', () => { 
     isJoyactive = false; 
@@ -2640,23 +2676,23 @@ window.addEventListener('touchend', () => {
     joyStick.style.transform = `translate(0,0)`;
 });
 
-/* Mobile Buttons */
-document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
-document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
-document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); castAOE(); });
-document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); castDash(); });
-document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
-document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
-document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
+/* Mobile Buttons - inicializa audio no primeiro toque */
+document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); attack(); });
+document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castFireball(); });
+document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castAOE(); });
+document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castDash(); });
+document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); toggleV(); });
+document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); toggleShop(); });
+document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); toggleEvolution(); });
 
-// Adicionar eventos de click para desktop
-document.getElementById('btnAtk').addEventListener('click', () => { attack(); });
-document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
-document.getElementById('btnAOE').addEventListener('click', () => { castAOE(); });
-document.getElementById('btnDash').addEventListener('click', () => { castDash(); });
-document.getElementById('btnInv').addEventListener('click', () => { toggleV(); });
-document.getElementById('btnShop').addEventListener('click', () => { toggleShop(); });
-document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
+// Adicionar eventos de click para desktop - inicializa audio no primeiro click
+document.getElementById('btnAtk').addEventListener('click', () => { initAudio(); attack(); });
+document.getElementById('btnSkill').addEventListener('click', () => { initAudio(); castFireball(); });
+document.getElementById('btnAOE').addEventListener('click', () => { initAudio(); castAOE(); });
+document.getElementById('btnDash').addEventListener('click', () => { initAudio(); castDash(); });
+document.getElementById('btnInv').addEventListener('click', () => { initAudio(); toggleV(); });
+document.getElementById('btnShop').addEventListener('click', () => { initAudio(); toggleShop(); });
+document.getElementById('btnEvo').addEventListener('click', () => { initAudio(); toggleEvolution(); });
 
 /* -------- UI E LOJA -------- */
 function getSkillBonuses() {
@@ -3852,7 +3888,8 @@ function saveGame() {
         localStorage.setItem(getSaveKey(), JSON.stringify(saveData));
         log("<span style='color:#888'>💾 Jogo salvo.</span>");
     } catch(e) {
-        console.warn('Auto-save falhou:', e);
+        console.error('Auto-save falhou:', e);
+        log("<span style='color:red'>⚠️ Erro ao salvar jogo. Verifique o armazenamento do navegador.</span>");
     }
 }
 
@@ -3915,7 +3952,8 @@ function loadGame() {
         
         log("<span style='color:cyan'>💾 Progresso carregado! Bem-vindo de volta, " + playerName + "!</span>");
     } catch(e) {
-        console.warn('Falha ao carregar save:', e);
+        console.error('Falha ao carregar save:', e);
+        log("<span style='color:orange'>⚠️ Erro ao carregar progresso. Iniciando novo jogo.</span>");
     }
 }
 
@@ -3991,6 +4029,7 @@ function animate(time){
             let emergencySpawn = nearbyEnemies < 2;
             let isMobMode = !isElite && (Math.random() < mobChance) && currentBiome >= 1;
 
+            // Verifica novamente o limite antes de spawnar (race condition fix)
             if(isMobMode) {
                 // Tamanho do grupo cresce 1 a cada 5 níveis acima de 10 (lv10=3~6, lv15=4~7, lv20=5~8...)
                 let groupBonus = Math.floor(Math.max(0, player.level - 10) / 5);
@@ -3999,12 +4038,19 @@ function animate(time){
                 let mobCount = Math.floor(Math.random() * (mobMax - mobMin + 1)) + mobMin;
                 let available = maxMons - monsters.length;
                 mobCount = Math.min(mobCount, available);
-                for(let i = 0; i < mobCount; i++) {
+                
+                // Verifica se ainda há espaço antes de spawnar cada monstro
+                for(let i = 0; i < mobCount && monsters.length < maxMons; i++) {
                     setTimeout(() => { if(monsters.length < maxMons) spawnMonster(false, true, emergencySpawn); }, i * 120);
                 }
-                log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
+                if(mobCount > 0) {
+                    log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
+                }
             } else {
-                spawnMonster(isElite, false, emergencySpawn);
+                // Verifica limite antes de spawnar monstro único
+                if(monsters.length < maxMons) {
+                    spawnMonster(isElite, false, emergencySpawn);
+                }
             }
         }
         lastSpawnTime = time;
@@ -5232,6 +5278,30 @@ setControlMode('wasd');
 const menuOverlay = document.getElementById('menuOverlay');
 menuOverlay.addEventListener('click', () => {
     closeAllMenus();
+});
+
+// -------- CLEANUP DE EVENT LISTENERS E SAVE AO FECHAR --------
+// Salva jogo ao fechar/abandonar a página
+window.addEventListener('beforeunload', () => {
+    saveGame();
+});
+
+// Limpeza de event listeners ao descarregar a página (evita memory leak)
+window.addEventListener('unload', () => {
+    // Remove listeners do joystick
+    if(joyArea) {
+        joyArea.removeEventListener('touchstart', handleJoy);
+    }
+    window.removeEventListener('touchmove', handleJoy);
+    window.removeEventListener('touchend', handleJoy);
+    
+    // Fecha audio context se existir
+    if(_audioCtx && _audioCtx.state !== 'closed') {
+        _audioCtx.close().catch(e => console.warn('Error closing audio context:', e));
+    }
+    
+    // Salva uma última vez antes de fechar
+    saveGame();
 });
 </script>
 </body>
