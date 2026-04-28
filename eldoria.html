@@ -401,7 +401,11 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background: rgba(255,255,255,0.08); color: #aaa; cursor: pointer; font-size: 12px;
     transition: all 0.15s;
 }
-.qi-filter-btn:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.4); }
+.qi-filter-btn:hover { 
+    background: rgba(90,185,255,0.15); 
+    border-color: rgba(90,185,255,0.4);
+    transform: translateY(-1px);
+}
 .qi-filter-btn.active { 
     background: linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.15)); 
     border-color: rgba(90,185,255,0.9); 
@@ -506,7 +510,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <button onclick="setShopTab('sell')" id="shopTabSell" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-weight:bold; font-size:15px;">💰 Vender</button>
     </div>
     <div id="shopBuyPanel">
-        <p style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p>
+        <p style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold" id="shopGoldDisplay">0</b></p>
         <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
         <div id="shopBuyItemsPanel" class="inventory-grid"></div>
     </div>
@@ -574,6 +578,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
+// Aguardar THREE.js carregar completamente antes de iniciar
 /* -------- ESTADO E MECÂNICAS ORIGINAIS RESTAURADAS -------- */
 let playerName = "Aventureiro"; // Nome do jogador (definido na tela inicial)
 let player={ level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
@@ -585,7 +590,7 @@ let floatTexts=[];
 let fireballs=[];
 let aoes=[]; // Habilidades de área (AOE)
 let visuals=[];
-let lastDir = new THREE.Vector3(0,0,1);
+let lastDir = null; // Será inicializado após THREE.js carregar
 let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
 let isAttacking = false;
 let lastSpawnTime = 0;
@@ -1620,6 +1625,10 @@ function toggleEvolution() {
 }
 
 /* -------- ENGINE 3D -------- */
+// Só inicializa a engine 3D após THREE.js estar disponível
+if (typeof THREE === 'undefined') {
+    console.error("THREE.js não carregou ainda!");
+} else {
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x87ceeb);
 const camera=new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
@@ -1627,6 +1636,9 @@ const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 renderer.domElement.id = "gameCanvas";
 document.body.appendChild(renderer.domElement);
+
+// Inicializa lastDir após THREE.js estar pronto
+lastDir = new THREE.Vector3(0,0,1);
 
 scene.add(new THREE.AmbientLight(0xffffff, .7));
 let sun=new THREE.DirectionalLight(0xffffff, 1.2);
@@ -1639,6 +1651,7 @@ scene.fog = new THREE.Fog(biomes[0].fogColor, 50, 150);
 let ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000), new THREE.MeshStandardMaterial({color:biomes[0].groundColor}));
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
+} // fecha if THREE
 
 // Função para mudar bioma baseado no nível
 function updateBiome() {
@@ -1696,15 +1709,24 @@ function updateBiome() {
 }
 
 /* -------- PERSONAGEM E VISUAIS -------- */
-let hero=new THREE.Group();
-let heroBody=new THREE.Mesh(new THREE.BoxGeometry(1,1.8,.8), new THREE.MeshStandardMaterial({color:0x3f7cff}));
+let hero = null;
+let heroBody = null;
+let hair = null;
+let hand = null;
+
+function initHero() {
+if(!hero) {
+hero=new THREE.Group();
+heroBody=new THREE.Mesh(new THREE.BoxGeometry(1,1.8,.8), new THREE.MeshStandardMaterial({color:0x3f7cff}));
 heroBody.position.y=1; hero.add(heroBody);
-let hair=new THREE.Mesh(new THREE.BoxGeometry(.9,.2,.8), new THREE.MeshStandardMaterial({color:0x2d160d}));
+hair=new THREE.Mesh(new THREE.BoxGeometry(.9,.2,.8), new THREE.MeshStandardMaterial({color:0x2d160d}));
 hair.position.y=1.95; hero.add(hair);
-let hand=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshStandardMaterial({color:0xffdbac}));
+hand=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshStandardMaterial({color:0xffdbac}));
 hand.position.set(0.6,1,0.4); hand.visible=true;
 hero.add(hand);
 scene.add(hero);
+}
+}
 
 // heroLabel será criado em launchGame() para evitar erro de playerName indefinido
 let heroLabel = null;
@@ -2317,7 +2339,7 @@ function castFireball(){
     let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
     fb.position.copy(hero.position); fb.position.y = 1.2;
     scene.add(fb);
-    fireballs.push({ mesh: fb, dir: lastDir.clone().normalize(), life: 80, activeBonus: ab });
+    fireballs.push({ mesh: fb, dir: lastDir ? lastDir.clone().normalize() : new THREE.Vector3(0,0,1), life: 80, activeBonus: ab });
 }
 
 // Habilidade AOE (Area of Effect) - desbloqueada no nível 12
@@ -2415,7 +2437,7 @@ function castDash() {
     lastDashTime = now;
     playSound('dash');
     // Empurrão na direção atual
-    let dashVec = lastDir.clone().normalize().multiplyScalar(6);
+    let dashVec = lastDir ? lastDir.clone().normalize().multiplyScalar(6) : new THREE.Vector3(0,0,1).multiplyScalar(6);
     hero.position.add(dashVec);
     // Partículas de dash
     for(let i=0;i<8;i++) {
@@ -3460,6 +3482,8 @@ function setShopBuyFilter(key) {
 
 function updateShopBuyPanel() {
     let buyItemsPanel = document.getElementById('shopBuyItemsPanel');
+    let goldDisplay = document.getElementById('shopGoldDisplay');
+    if(goldDisplay) goldDisplay.innerText = player.gold;
     if(!buyItemsPanel) return;
     
     let html = '';
@@ -3780,7 +3804,8 @@ function animate(time){
     if(move.length() > 0.05){
         let speed = 0.35 + (equipped.boots ? equipped.boots.speed : 0);
         move.normalize().multiplyScalar(speed);
-        hero.position.add(move); lastDir.copy(move);
+        hero.position.add(move);
+        if(lastDir) lastDir.copy(move);
         hero.rotation.y = Math.atan2(move.x, move.z);
     }
 
@@ -4984,6 +5009,9 @@ function launchNewGame() {
 }
 
 function launchGame(loadSave) {
+    // Inicializa o herói e a engine 3D se ainda não foram inicializados
+    if(!hero) initHero();
+    
     // Cria o heroLabel se ainda não existir
     if(!heroLabel) {
         heroLabel = document.createElement("div");
@@ -5002,6 +5030,10 @@ function launchGame(loadSave) {
     log("<span style='color:gold'>🎮 Bem-vindo, " + playerName + "! Derrote inimigos, colete itens e explore os biomas!</span>");
 }
 
+// Inicializa o jogo após THREE.js carregar
+window.addEventListener('load', function() {
+    // Pequeno delay para garantir que THREE.js está completamente carregado
+    setTimeout(function() {
 renderStartScreen();
 
 // Inicializa modo de controle e lista de teclas
@@ -5014,6 +5046,8 @@ menuOverlay.addEventListener('click', () => {
     closeAllMenus();
 });
 document.body.appendChild(menuOverlay);
+    }, 100);
+});
 </script>
 </body>
 </html>
