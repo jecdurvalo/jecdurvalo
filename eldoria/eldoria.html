@@ -401,17 +401,17 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     #hud {
         top: 10px;
         left: 10px;
-        width: 180px;
-        padding: 10px;
-        border-radius: 12px;
-        font-size: 11px;
+        width: 160px;
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 10px;
     }
     
     /* Barras mais compactas */
     .bar {
-        height: 14px;
-        margin-bottom: 6px;
-        border-radius: 7px;
+        height: 12px;
+        margin-bottom: 4px;
+        border-radius: 6px;
     }
     
     /* Esconder SP e XP por padrão no mobile */
@@ -426,16 +426,12 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     
     /* Labels menores */
     .bar-label, #hpBarContainer, #spBarContainer, #xpBarContainer {
-        font-size: 9px !important;
+        font-size: 8px !important;
     }
     
-    /* Minimap reduzido */
+    /* REMOVER minimapa no mobile */
     #minimapContainer {
-        bottom: 10px;
-        right: 10px;
-        width: 100px;
-        height: 100px;
-        border-width: 2px;
+        display: none !important;
     }
     
     /* Ocultar chat em mobile - mostra apenas notificações floating */
@@ -445,91 +441,165 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     
     /* Joystick menor e mais baixo */
     #joystickArea {
-        bottom: 20px;
-        left: 20px;
-        width: 110px;
-        height: 110px;
+        bottom: 15px;
+        left: 15px;
+        width: 100px;
+        height: 100px;
     }
     
     #joystickStick {
-        top: 35px;
-        left: 35px;
-        width: 40px;
-        height: 40px;
+        top: 30px;
+        left: 30px;
+        width: 36px;
+        height: 36px;
     }
     
-    /* Botões de ação agrupados ergonomicamente */
+    /* Botões de ação agrupados ergonomicamente na base direita */
     #btnAtk {
-        bottom: 80px;
-        right: 20px;
-        width: 75px;
-        height: 75px;
-        font-size: 16px;
+        bottom: 70px;
+        right: 15px;
+        width: 65px;
+        height: 65px;
+        font-size: 14px;
     }
     
     #btnSkill {
-        bottom: 50px;
-        right: 100px;
-        width: 55px;
-        height: 55px;
-        font-size: 12px;
-    }
-    
-    #btnDash {
-        bottom: 110px;
+        bottom: 45px;
         right: 85px;
         width: 50px;
         height: 50px;
         font-size: 11px;
     }
     
+    #btnDash {
+        bottom: 100px;
+        right: 70px;
+        width: 45px;
+        height: 45px;
+        font-size: 10px;
+    }
+    
     #btnAOE {
-        bottom: 110px;
-        right: 25px;
-        width: 50px;
-        height: 50px;
-        font-size: 11px;
+        bottom: 100px;
+        right: 15px;
+        width: 45px;
+        height: 45px;
+        font-size: 10px;
     }
     
-    /* Botões de menu menores e discretos */
-    #btnInv {
-        bottom: 10px;
+    /* ESCONDER botões individuais de menu no mobile - usar menu unificado */
+    #btnInv, #btnShop, #btnMap, #btnEvo {
+        display: none !important;
+    }
+    
+    /* BOTÃO DO MENU UNIFICADO NO TOPO */
+    #mobileMenuBtn {
+        display: flex !important;
+        position: fixed;
+        top: 10px;
         right: 10px;
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, rgba(90,185,255,0.3), rgba(30,60,100,0.5));
+        border: 2px solid rgba(90,185,255,0.5);
+        border-radius: 10px;
+        color: white;
+        font-size: 20px;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 3000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        backdrop-filter: blur(5px);
+        transition: transform 0.2s, background 0.2s;
     }
     
-    #btnShop {
-        bottom: 10px;
-        right: 60px;
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
+    #mobileMenuBtn:active {
+        transform: scale(0.9);
+        background: linear-gradient(135deg, rgba(90,185,255,0.5), rgba(30,60,100,0.7));
     }
     
-    #btnMap {
-        bottom: 10px;
-        right: 110px;
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
+    /* PAINEL DO MENU UNIFICADO INFERIOR */
+    #mobileMenuPanel {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(180deg, rgba(10,25,50,0.98), rgba(5,15,35,0.99));
+        border-top: 3px solid rgba(90,185,255,0.5);
+        border-radius: 20px 20px 0 0;
+        z-index: 5000;
+        padding: 15px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+        max-height: 70vh;
+        overflow-y: auto;
     }
     
-    #btnEvo {
-        display: none; /* Esconder evolution button no mobile - acessível via menu */
+    #mobileMenuPanel.active {
+        display: block;
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    
+    /* ABAS DO MENU MOBILE */
+    .mobile-menu-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid rgba(90,185,255,0.3);
+        padding-bottom: 10px;
+    }
+    
+    .mobile-menu-tab {
+        flex: 1;
+        padding: 10px;
+        background: rgba(90,185,255,0.1);
+        border: 1px solid rgba(90,185,255,0.3);
+        border-radius: 8px;
+        color: rgba(255,255,255,0.7);
+        font-size: 12px;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .mobile-menu-tab.active {
+        background: rgba(90,185,255,0.3);
+        border-color: rgba(90,185,255,0.6);
+        color: white;
+    }
+    
+    .mobile-menu-content {
+        display: none;
+    }
+    
+    .mobile-menu-content.active {
+        display: block;
     }
     
     /* Equip bar menor no mobile */
     #equipBar {
-        top: 140px !important;
+        top: 120px !important;
         left: 10px;
     }
     
     .equip-slot-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 15px;
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+    }
+}
+
+/* Desktop não mostra botão mobile menu */
+@media (min-width: 801px) {
+    #mobileMenuBtn, #mobileMenuPanel {
+        display: none !important;
     }
 }
 
@@ -656,16 +726,40 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div style="font-size:10px; color:rgba(255,255,255,0.3); text-align:center; margin-top:10px;">TAB para abrir/fechar</div>
 </div>
 
+<!-- Botão do menu unificado (visível apenas no mobile) -->
+<div id="mobileMenuBtn">☰</div>
+
+<!-- Painel do menu unificado inferior (visível apenas no mobile) -->
+<div id="mobileMenuPanel">
+    <div class="mobile-menu-tabs">
+        <div class="mobile-menu-tab active" onclick="switchMobileTab('inventory')">🎒 Inventário</div>
+        <div class="mobile-menu-tab" onclick="switchMobileTab('shop')">🏪 Loja</div>
+        <div class="mobile-menu-tab" onclick="switchMobileTab('evolution')">🏆 Evolução</div>
+    </div>
+    
+    <!-- Conteúdo do Inventário -->
+    <div id="mobile-inventory-content" class="mobile-menu-content active">
+        <div id="mobileInventoryGrid" class="inventory-grid"></div>
+    </div>
+    
+    <!-- Conteúdo da Loja -->
+    <div id="mobile-shop-content" class="mobile-menu-content">
+        <div id="mobileShopGrid"></div>
+    </div>
+    
+    <!-- Conteúdo de Evolução -->
+    <div id="mobile-evolution-content" class="mobile-menu-content">
+        <div id="mobileEvolutionTree"></div>
+    </div>
+</div>
+
 <div id="mobileControls">
     <div id="joystickArea"><div id="joystickStick"></div></div>
     <div id="btnAtk" class="mobile-btn">ATK</div>
     <div id="btnSkill" class="mobile-btn">Z</div>
     <div id="btnAOE" class="mobile-btn">X</div>
     <div id="btnDash" class="mobile-btn">C</div>
-    <div id="btnInv" class="mobile-btn">V</div>
-    <div id="btnShop" class="mobile-btn">E</div>
-    <div id="btnEvo" class="mobile-btn">🏆</div>
-    <div id="btnMap" class="mobile-btn">M</div>
+    <!-- Botões de menu removidos - agora usam menu unificado -->
 </div>
 
 <div id="controls-btn">🎮</div>
@@ -1911,6 +2005,8 @@ function toggleEvolution() {
         renderActiveSkillTree();
         gamePaused = true;
     }
+    // Fecha menu mobile se estiver aberto
+    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 /* -------- ENGINE 3D -------- */
@@ -2951,23 +3047,121 @@ if (window.innerWidth <= 800) {
     hudTimeout = setTimeout(() => hideHUD(), 3000);
 }
 
+/* Botão do Menu Unificado Mobile */
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        initAudio();
+        toggleMobileMenu();
+    });
+    
+    mobileMenuBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        initAudio();
+        toggleMobileMenu();
+    });
+}
+
+function toggleMobileMenu() {
+    if (!mobileMenuPanel) return;
+    mobileMenuPanel.classList.toggle('active');
+    // Fecha outros menus abertos
+    if (statusWindow.style.display === 'block') toggleV();
+    if (shopWindow.style.display === 'block') toggleShop();
+    if (evolutionWindow.style.display === 'block') toggleEvolution();
+    // Atualiza conteúdo quando abrir
+    if (mobileMenuPanel.classList.contains('active')) {
+        updateMobileMenuContent();
+    }
+}
+
+function switchMobileTab(tabName) {
+    // Remove active de todas as abas e conteúdos
+    document.querySelectorAll('.mobile-menu-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.mobile-menu-content').forEach(content => content.classList.remove('active'));
+    
+    // Adiciona active na aba selecionada
+    event.target.classList.add('active');
+    document.getElementById(`mobile-${tabName}-content`).classList.add('active');
+    
+    updateMobileMenuContent();
+}
+
+function updateMobileMenuContent() {
+    const activeTab = document.querySelector('.mobile-menu-tab.active');
+    if (!activeTab) return;
+    
+    // Atualiza inventário mobile
+    const mobileInvGrid = document.getElementById('mobileInventoryGrid');
+    if (mobileInvGrid && inventory.length > 0) {
+        mobileInvGrid.innerHTML = '';
+        inventory.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.innerHTML = `
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">${item.icon}</span>
+                    <div>
+                        <div style="font-weight:bold;color:#ffd700;">${item.name}</div>
+                        <div style="font-size:11px;color:#aaa;">${item.desc || ''}</div>
+                    </div>
+                </div>
+                ${item.sellValue ? `<button class="sell-btn" onclick="sellItem(${index})">Vender (${item.sellValue}g)</button>` : ''}
+            `;
+            mobileInvGrid.appendChild(itemDiv);
+        });
+    } else if (mobileInvGrid) {
+        mobileInvGrid.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Inventário vazio</div>';
+    }
+    
+    // Atualiza loja mobile
+    const mobileShopGrid = document.getElementById('mobileShopGrid');
+    if (mobileShopGrid) {
+        mobileShopGrid.innerHTML = '';
+        shopItems.forEach((item, idx) => {
+            const canBuy = gold >= item.price;
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.innerHTML = `
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">${item.icon}</span>
+                    <div>
+                        <div style="font-weight:bold;color:#ffd700;">${item.name}</div>
+                        <div style="font-size:11px;color:#aaa;">${item.desc || ''}</div>
+                        <div style="font-size:12px;color:#ff9800;margin-top:4px;">${item.price}g</div>
+                    </div>
+                </div>
+                <button class="buy-btn ${canBuy ? '' : 'disabled'}" onclick="buyItem(${idx})">Comprar</button>
+            `;
+            mobileShopGrid.appendChild(itemDiv);
+        });
+    }
+    
+    // Atualiza evolução mobile - clona o conteúdo da árvore de habilidades
+    const mobileEvoTree = document.getElementById('mobileEvolutionTree');
+    if (mobileEvoTree && evolutionWindow) {
+        const skillTree = evolutionWindow.querySelector('.skill-tree');
+        if (skillTree) {
+            mobileEvoTree.innerHTML = skillTree.outerHTML;
+        } else {
+            mobileEvoTree.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Árvore de habilidades indisponível</div>';
+        }
+    }
+}
+
 /* Mobile Buttons - inicializa audio no primeiro toque */
 document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); attack(); });
 document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castFireball(); });
 document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castAOE(); });
 document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castDash(); });
-document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); toggleV(); });
-document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); toggleShop(); });
-document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); toggleEvolution(); });
 
 // Adicionar eventos de click para desktop - inicializa audio no primeiro click
 document.getElementById('btnAtk').addEventListener('click', () => { initAudio(); attack(); });
 document.getElementById('btnSkill').addEventListener('click', () => { initAudio(); castFireball(); });
 document.getElementById('btnAOE').addEventListener('click', () => { initAudio(); castAOE(); });
 document.getElementById('btnDash').addEventListener('click', () => { initAudio(); castDash(); });
-document.getElementById('btnInv').addEventListener('click', () => { initAudio(); toggleV(); });
-document.getElementById('btnShop').addEventListener('click', () => { initAudio(); toggleShop(); });
-document.getElementById('btnEvo').addEventListener('click', () => { initAudio(); toggleEvolution(); });
 
 /* -------- UI E LOJA -------- */
 function getSkillBonuses() {
@@ -3501,6 +3695,8 @@ function toggleV(){
         renderActiveSkillTree();
         gamePaused = true;
     }
+    // Fecha menu mobile se estiver aberto
+    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 // ======== QUICK SWAP PANEL ========
@@ -4040,11 +4236,19 @@ function toggleShop(){
         updateShopBuyPanel();
         gamePaused = true;
     }
+    // Fecha menu mobile se estiver aberto
+    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 // Função para fechar todos os menus (usada pela tecla ESC)
 function closeAllMenus() {
     let closed = false;
+    
+    // Fechar menu mobile
+    if (mobileMenuPanel && mobileMenuPanel.classList.contains('active')) {
+        mobileMenuPanel.classList.remove('active');
+        closed = true;
+    }
 
     // Fechar quick swap
     if(quickInvOpen) { closeQuickInv(); closed = true; }
@@ -5177,6 +5381,7 @@ addBiomeDecorations();
 const statusWindow = document.getElementById('statusWindow');
 const shopWindow = document.getElementById('shopWindow');
 const evolutionWindow = document.getElementById('evolutionWindow');
+const mobileMenuPanel = document.getElementById('mobileMenuPanel');
 
 // Overlay e tela de Game Over
 let gameOverOverlay = document.createElement('div');
@@ -5562,6 +5767,15 @@ const menuOverlay = document.getElementById('menuOverlay');
 menuOverlay.addEventListener('click', () => {
     closeAllMenus();
 });
+
+// Fechar menu mobile ao clicar no overlay também
+if (mobileMenuPanel) {
+    menuOverlay.addEventListener('click', () => {
+        if (mobileMenuPanel.classList.contains('active')) {
+            mobileMenuPanel.classList.remove('active');
+        }
+    });
+}
 
 // -------- CLEANUP DE EVENT LISTENERS E SAVE AO FECHAR --------
 // Salva jogo ao fechar/abandonar a página
