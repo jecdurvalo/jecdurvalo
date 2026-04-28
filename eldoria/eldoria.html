@@ -998,6 +998,7 @@ let lastSpawnTime = 0;
 let bossSpawned = false;
 let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
 let gamePaused = false; // Controle de pausa do jogo
+let pauseReason = null; // 'manual', 'menu' ou 'modal'
 let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 let controlMode = 'wasd'; // 'wasd' ou 'arrows'
 
@@ -2106,7 +2107,7 @@ function toggleEvolution() {
         updateEvolutionUI();
         renderSkillTree();
         renderActiveSkillTree();
-        gamePaused = true;
+        setPauseState(true, 'modal');
         // Fecha menu mobile se estiver aberto
         if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
@@ -3165,11 +3166,15 @@ if (mobileMenuBtn) {
 
 function setPauseState(paused, reason = 'manual') {
     gamePaused = paused;
+    pauseReason = paused ? reason : null;
     if (typeof pauseOverlay !== 'undefined' && pauseOverlay) {
         pauseOverlay.style.display = paused && reason === 'manual' ? 'flex' : 'none';
     }
     const pauseBtn = document.getElementById('pauseBtnMobile');
-    if (pauseBtn) pauseBtn.innerHTML = paused ? '▶️' : '⏸️';
+    if (pauseBtn) {
+        pauseBtn.innerHTML = paused ? '▶️' : '⏸️';
+        pauseBtn.setAttribute('aria-label', paused ? 'Continuar jogo' : 'Pausar jogo');
+    }
 }
 
 function openMobileMenu() {
@@ -3208,98 +3213,148 @@ function switchMobileTab(tabName, evt) {
     updateMobileMenuContent();
 }
 
+function getItemStatsLine(item) {
+    const stats = [];
+    if(item.atk) stats.push(`<span style="color:#ff9966">+${item.atk} ATK</span>`);
+    if(item.def) stats.push(`<span style="color:#66aaff">+${item.def} DEF</span>`);
+    if(item.hp) stats.push(`<span style="color:#ff6666">+${item.hp} HP</span>`);
+    if(item.sp) stats.push(`<span style="color:#6699ff">+${item.sp} SP</span>`);
+    if(item.heal) stats.push(`<span style="color:#44ff88">+${item.heal} HP</span>`);
+    if(item.restoreSp) stats.push(`<span style="color:#44aaff">+${item.restoreSp} SP</span>`);
+    if(item.speed) stats.push(`<span style="color:#ffff44">+VEL</span>`);
+    return stats.length ? `<div style="font-size:11px; margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;">${stats.join('')}</div>` : '';
+}
+
+function getMobileSlotLabel(slot) {
+    return ({weapon:'Arma', shield:'Escudo', cape:'Capa', boots:'Botas', ring:'Anel', ring1:'Anel 1', ring2:'Anel 2', consumable:'Consumível'}[slot] || slot || 'Item');
+}
+
 function updateMobileMenuContent() {
-    const activeTab = document.querySelector('.mobile-menu-tab.active');
-    if (!activeTab) return;
-    
-    // Atualiza inventário mobile
+    // Inventário mobile: clica para equipar/usar. Vender fica na loja.
     const mobileInvGrid = document.getElementById('mobileInventoryGrid');
-    if (mobileInvGrid && inventory.length > 0) {
+    if (mobileInvGrid) {
         mobileInvGrid.innerHTML = '';
-        inventory.forEach((item, index) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'item';
-            itemDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:20px;">${item.icon}</span>
-                    <div>
-                        <div style="font-weight:bold;color:#ffd700;">${item.name}</div>
-                        <div style="font-size:11px;color:#aaa;">${item.desc || ''}</div>
+        if (!inventory.length) {
+            mobileInvGrid.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">Inventário vazio</div>';
+        } else {
+            inventory.forEach((item, index) => {
+                const qty = item.quantity && item.quantity > 1 ? ` <span style="color:#aaa">x${item.quantity}</span>` : '';
+                const actionLabel = item.slot === 'consumable' ? 'Usar' : 'Equipar';
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item mobile-inventory-item';
+                itemDiv.style.alignItems = 'stretch';
+                itemDiv.innerHTML = `
+                    <div style="display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1;">
+                        <span style="font-size:22px;line-height:1;">${item.icon || '🎒'}</span>
+                        <div style="min-width:0;flex:1;">
+                            <div style="font-weight:bold;color:#ffd700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}${qty}</div>
+                            <div style="font-size:10px;color:#8fb6d8;text-transform:uppercase;letter-spacing:.5px;">${getMobileSlotLabel(item.slot)}</div>
+                            ${getItemStatsLine(item)}
+                            <div style="font-size:11px;color:#aaa;margin-top:3px;line-height:1.25;">${item.desc || ''}</div>
+                        </div>
                     </div>
-                </div>
-                ${item.sellValue ? `<button class="sell-btn" onclick="sellItem(${index})">Vender (${item.sellValue}g)</button>` : ''}
-            `;
-            mobileInvGrid.appendChild(itemDiv);
-        });
-    } else if (mobileInvGrid) {
-        mobileInvGrid.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Inventário vazio</div>';
+                    <button class="buy-btn" type="button" data-equip-index="${index}" style="align-self:center;">${actionLabel}</button>
+                `;
+                mobileInvGrid.appendChild(itemDiv);
+            });
+            mobileInvGrid.querySelectorAll('[data-equip-index]').forEach(btn => {
+                btn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const idx = Number(e.currentTarget.dataset.equipIndex);
+                    if (!Number.isNaN(idx)) {
+                        equip(idx);
+                        updatePanels();
+                        updateMobileMenuContent();
+                    }
+                });
+            });
+        }
     }
-    
-    // Atualiza equipamento mobile
+
+    // Equipamento mobile.
     const mobileEquippedPanel = document.getElementById('mobileEquippedPanel');
     if (mobileEquippedPanel) {
         mobileEquippedPanel.innerHTML = '';
         const slots = ['weapon', 'shield', 'cape', 'boots', 'ring1', 'ring2'];
-        const slotLabels = {
-            weapon: '⚔️ Arma',
-            shield: '🛡️ Escudo',
-            cape: '🧥 Capa',
-            boots: '👢 Botas',
-            ring1: '💍 Anel 1',
-            ring2: '💍 Anel 2'
-        };
-        
+        const slotLabels = { weapon: '⚔️ Arma', shield: '🛡️ Escudo', cape: '🧥 Capa', boots: '👢 Botas', ring1: '💍 Anel 1', ring2: '💍 Anel 2' };
         slots.forEach(slot => {
             const equippedItem = equipped[slot];
             const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = 'background:rgba(255,255,255,0.08); padding:8px; border-radius:6px; font-size:11px;';
-            
+            itemDiv.style.cssText = 'background:rgba(255,255,255,0.08); padding:8px; border-radius:6px; font-size:11px; min-height:42px;';
             if (equippedItem) {
-                itemDiv.innerHTML = `
-                    <div style="color:#ffd700; font-weight:bold; margin-bottom:3px;">${slotLabels[slot]}</div>
-                    <div style="color:#fff;">${equippedItem.icon} ${equippedItem.name}</div>
-                `;
+                itemDiv.innerHTML = `<div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">${slotLabels[slot]}</div><div style="color:#fff;line-height:1.2;">${equippedItem.icon || ''} ${equippedItem.name}</div>`;
+                itemDiv.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); unequip(slot); updatePanels(); updateMobileMenuContent(); });
             } else {
-                itemDiv.innerHTML = `
-                    <div style="color:#888; font-style:italic;">${slotLabels[slot]}<br>(vazio)</div>
-                `;
+                itemDiv.innerHTML = `<div style="color:#888;font-style:italic;">${slotLabels[slot]}<br>(vazio)</div>`;
             }
             mobileEquippedPanel.appendChild(itemDiv);
         });
     }
-    
-    // Atualiza loja mobile
+
+    // Loja mobile: usa shopCatalog/player.gold e chama buyItem(item), não buyItem(index).
     const mobileShopGrid = document.getElementById('mobileShopGrid');
     if (mobileShopGrid) {
-        mobileShopGrid.innerHTML = '';
-        shopItems.forEach((item, idx) => {
-            const canBuy = gold >= item.price;
+        mobileShopGrid.innerHTML = `<div style="color:gold;font-weight:bold;margin:0 0 10px 0;">💰 Gold: ${player.gold}</div>`;
+        const list = document.createElement('div');
+        list.className = 'inventory-grid';
+        list.style.padding = '0';
+        shopCatalog.forEach((item, idx) => {
+            const canBuy = player.gold >= item.buyPrice;
+            const canLevel = !item.reqLevel || player.level >= item.reqLevel;
+            const disabled = !canBuy || !canLevel;
+            const reason = !canLevel ? `🔒 Lv.${item.reqLevel}` : (!canBuy ? 'Gold insuficiente' : `${item.buyPrice}g`);
             const itemDiv = document.createElement('div');
             itemDiv.className = 'item';
+            itemDiv.style.alignItems = 'stretch';
             itemDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:20px;">${item.icon}</span>
-                    <div>
-                        <div style="font-weight:bold;color:#ffd700;">${item.name}</div>
-                        <div style="font-size:11px;color:#aaa;">${item.desc || ''}</div>
-                        <div style="font-size:12px;color:#ff9800;margin-top:4px;">${item.price}g</div>
+                <div style="display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1;">
+                    <span style="font-size:22px;line-height:1;">${item.icon || '🛒'}</span>
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:bold;color:#ffd700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</div>
+                        <div style="font-size:10px;color:#8fb6d8;text-transform:uppercase;letter-spacing:.5px;">${getMobileSlotLabel(item.slot)}</div>
+                        ${getItemStatsLine(item)}
+                        <div style="font-size:11px;color:#aaa;margin-top:3px;line-height:1.25;">${item.desc || ''}</div>
                     </div>
                 </div>
-                <button class="buy-btn ${canBuy ? '' : 'disabled'}" onclick="buyItem(${idx})">Comprar</button>
+                <button class="buy-btn ${disabled ? 'disabled' : ''}" type="button" data-buy-index="${idx}" ${disabled ? 'disabled' : ''} style="align-self:center;">Comprar<br><span style="font-size:10px;">${reason}</span></button>
             `;
-            mobileShopGrid.appendChild(itemDiv);
+            list.appendChild(itemDiv);
+        });
+        mobileShopGrid.appendChild(list);
+        mobileShopGrid.querySelectorAll('[data-buy-index]').forEach(btn => {
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const idx = Number(e.currentTarget.dataset.buyIndex);
+                if (!Number.isNaN(idx) && shopCatalog[idx]) {
+                    buyItem(shopCatalog[idx]);
+                    updatePanels();
+                    updateMobileMenuContent();
+                }
+            });
         });
     }
-    
-    // Atualiza evolução mobile - clona o conteúdo da árvore de habilidades
+
+    // Evolução mobile: renderiza dados reais, sem depender de clonar .skill-tree inexistente.
     const mobileEvoTree = document.getElementById('mobileEvolutionTree');
-    if (mobileEvoTree && evolutionWindow) {
-        const skillTree = evolutionWindow.querySelector('.skill-tree');
-        if (skillTree) {
-            mobileEvoTree.innerHTML = skillTree.outerHTML;
-        } else {
-            mobileEvoTree.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Árvore de habilidades indisponível</div>';
-        }
+    if (mobileEvoTree) {
+        renderSkillTree();
+        renderActiveSkillTree();
+        updateEvolutionUI();
+        const skillTreePanel = document.getElementById('skillTreePanel');
+        const activeSkillTreePanel = document.getElementById('activeSkillTreePanel');
+        mobileEvoTree.innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+                <div style="background:rgba(255,255,255,.08);padding:10px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:#aaa;">Nível</div><b style="color:gold;font-size:20px;">${player.level}</b></div>
+                <div style="background:rgba(255,255,255,.08);padding:10px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:#aaa;">XP</div><b style="color:cyan;font-size:20px;">${evolutionData.totalXP}</b></div>
+                <div style="background:rgba(255,255,255,.08);padding:10px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:#aaa;">Skill Pts</div><b style="color:#ff69b4;font-size:20px;">${evolutionData.skillPoints}</b></div>
+            </div>
+            <h4 style="margin:10px 0;color:#ffd700;">🌳 Passivas</h4>
+            <div>${skillTreePanel ? skillTreePanel.innerHTML : ''}</div>
+            <h4 style="margin:14px 0 10px;color:orange;">⚡ Ativas</h4>
+            <div>${activeSkillTreePanel ? activeSkillTreePanel.innerHTML : ''}</div>
+        `;
     }
 }
 
@@ -3845,7 +3900,7 @@ function toggleV(){
         updatePanels();
         renderSkillTree();
         renderActiveSkillTree();
-        gamePaused = true;
+        setPauseState(true, 'modal');
         // Fecha menu mobile se estiver aberto
         if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
@@ -4386,7 +4441,7 @@ function toggleShop(){
         setShopTab('buy');
         renderShopBuyFilterBar();
         updateShopBuyPanel();
-        gamePaused = true;
+        setPauseState(true, 'modal');
         // Fecha menu mobile se estiver aberto
         if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
@@ -4410,7 +4465,7 @@ function closeAllMenus() {
     if(statusWin && statusWin.style.display === 'block') {
         statusWin.style.display = 'none';
         menuOverlay.style.display = 'none';
-        gamePaused = false;
+        setPauseState(false);
         closed = true;
     }
     
@@ -4419,7 +4474,7 @@ function closeAllMenus() {
     if(shopWin && shopWin.style.display === 'block') {
         shopWin.style.display = 'none';
         menuOverlay.style.display = 'none';
-        gamePaused = false;
+        setPauseState(false);
         closed = true;
     }
     
@@ -4428,7 +4483,7 @@ function closeAllMenus() {
     if(evoWin && evoWin.style.display === 'block') {
         evoWin.style.display = 'none';
         menuOverlay.style.display = 'none';
-        gamePaused = false;
+        setPauseState(false);
         closed = true;
     }
     
@@ -5165,7 +5220,7 @@ function animate(time){
 
 // Overlay de pausa
 let pauseOverlay = document.createElement('div');
-pauseOverlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; color:white; font-size:48px; font-weight:bold; align-items:center; justify-content:center; flex-direction:column;';
+pauseOverlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:6200; color:white; font-size:48px; font-weight:bold; align-items:center; justify-content:center; flex-direction:column; pointer-events:none;';
 pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18px; margin-top:20px; color:#aaa;">Toque em ▶️ ou pressione P para continuar</div>';
 document.body.appendChild(pauseOverlay);
 
