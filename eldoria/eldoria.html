@@ -1001,6 +1001,10 @@ let gamePaused = false; // Controle de pausa do jogo
 let pauseReason = null; // 'manual', 'menu' ou 'modal'
 let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
 let controlMode = 'wasd'; // 'wasd' ou 'arrows'
+let hasGameStarted = false; // evita criar save fantasma na tela inicial
+let lastSpSpendTime = -999999;
+const SP_REGEN_DELAY = 900; // ms sem regenerar logo após usar magia
+const SP_REGEN_PER_SECOND = 6; // regeneração controlada para SP não parecer infinito
 
 // Sistema de Auto-Save
 let lastAutoSaveTime = 0;
@@ -1730,10 +1734,37 @@ const BOSS_BIOME_VISUALS = [
 ];
 let playerDots = []; // Efeitos de dano ao longo do tempo no player (ex: veneno)
 
+function stripHtmlForLog(m) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = m;
+    return (tmp.textContent || tmp.innerText || '').trim();
+}
+
+function isEssentialMobileLog(m) {
+    const text = stripHtmlForLog(m).toLowerCase();
+    // Evita spam de batalha no celular: kill comum, XP e gold normal já aparecem no progresso/HUD.
+    if(text.includes('derrotado') && !text.includes('boss')) return false;
+    if(text.includes('jogo salvo')) return false;
+    return (
+        text.includes('boss') ||
+        text.includes('level up') ||
+        text.includes('nível') ||
+        text.includes('conquista') ||
+        text.includes('missão') ||
+        text.includes('sp insuficiente') ||
+        text.includes('gold insuficiente') ||
+        text.includes('comprou') ||
+        text.includes('equip') ||
+        text.includes('bem-vindo') ||
+        text.includes('erro') ||
+        text.includes('desbloque')
+    );
+}
+
 function log(m){
-    // Em mobile, não mostra no combatLog (oculto), apenas notificações floating
+    // Em mobile, mostra só eventos importantes para não cobrir a tela durante batalha.
     if (window.innerWidth <= 800) {
-        showFloatingNotification(m);
+        if(isEssentialMobileLog(m)) showFloatingNotification(m, 1600);
         return;
     }
     
@@ -1757,21 +1788,23 @@ function showFloatingNotification(message, duration = 2500) {
         position: fixed;
         left: 50%;
         transform: translateX(-50%);
-        bottom: ${100 + (floatingNotifications.length * 40)}px;
+        bottom: ${72 + (floatingNotifications.length * 30)}px;
         background: linear-gradient(135deg, rgba(5,15,35,0.95), rgba(15,25,45,0.9));
         border: 1px solid rgba(90,185,255,0.4);
         border-radius: 12px;
-        padding: 8px 16px;
+        padding: 6px 11px;
         color: #d8e7ff;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         z-index: 9999;
         box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         backdrop-filter: blur(8px);
         opacity: 0;
         transition: opacity 0.3s ease, bottom 0.3s ease;
-        max-width: 90%;
+        max-width: 74%;
         text-align: center;
+        line-height: 1.25;
+        pointer-events: none;
     `;
     notification.innerHTML = message;
     document.body.appendChild(notification);
@@ -1789,7 +1822,7 @@ function showFloatingNotification(message, duration = 2500) {
             floatingNotifications = floatingNotifications.filter(n => n !== notification);
             // Reposiciona notificações restantes
             floatingNotifications.forEach((n, idx) => {
-                n.style.bottom = (100 + (idx * 40)) + 'px';
+                n.style.bottom = (72 + (idx * 30)) + 'px';
             });
         }, 300);
     }, duration);
@@ -2536,13 +2569,15 @@ function killMonster(m){
         }, 300);
         log(`<span style="color:gold; font-weight:bold;">👹 ${monsterName} (Lv.${monsterLevel}) derrotado! +${xpGain} XP</span>`);
     } else {
-        // Monstros normais: mostra XP no log
-        log(`<span style="color:#88ff88;">⚔️ ${monsterName} (Lv.${monsterLevel}) derrotado! +${xpGain} XP</span>`);
+        // Desktop mantém o log de kill; mobile evita spam visual durante batalha.
+        if(window.innerWidth > 800) {
+            log(`<span style="color:#88ff88;">⚔️ ${monsterName} (Lv.${monsterLevel}) derrotado! +${xpGain} XP</span>`);
+        }
     }
     
     player.xp += xpGain;
     evolutionData.totalXP += xpGain; // Adiciona XP total para evolução
-    if(!m.userData.isBoss) {
+    if(!m.userData.isBoss && window.innerWidth > 800) {
         floatingText("+"+xpGain+" XP", m.position, "lime");
     }
     
@@ -2621,9 +2656,11 @@ function killMonster(m){
     let goldDrop = Math.floor(m.userData.level * 2 + Math.random() * 5);
     if(m.userData.isBoss) goldDrop *= 3; // Boss dropa 3x mais gold
     player.gold += goldDrop;
-    setTimeout(() => {
-        floatingText("+"+goldDrop+" Gold", m.position, "gold");
-    }, m.userData.isBoss ? 600 : 0);
+    if(m.userData.isBoss || window.innerWidth > 800) {
+        setTimeout(() => {
+            floatingText("+"+goldDrop+" Gold", m.position, "gold");
+        }, m.userData.isBoss ? 600 : 0);
+    }
     checkAchievements(); // Verifica conquistas após kill + gold
     
     // Drop de itens no chão (randomico)
@@ -2810,12 +2847,25 @@ function checkLevel(){
     }
 }
 
+function spendSP(cost) {
+    cost = Math.max(0, Number(cost) || 0);
+    if(player.sp < cost) {
+        log("SP insuficiente!");
+        floatingText("Sem SP", hero.position, "#66aaff");
+        return false;
+    }
+    player.sp = Math.max(0, player.sp - cost);
+    lastSpSpendTime = performance.now();
+    sp.style.width = (player.sp / player.maxSp * 100) + "%";
+    updateSkillCooldowns();
+    return true;
+}
+
 function castFireball(){
     let ab = getActiveSkillBonuses();
     let spCost = Math.max(5, 25 + ab.fireballSpCost);
-    if(player.sp < spCost){ log("SP insuficiente!"); return; }
+    if(!spendSP(spCost)) return;
     playSound('fireball');
-    player.sp -= spCost;
     let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
     fb.position.copy(hero.position); fb.position.y = 1.2;
     scene.add(fb);
@@ -2837,9 +2887,8 @@ function castAOE(){
     }
     let aoe_ab = getActiveSkillBonuses();
     let aoeSpCost = Math.max(10, 50 + aoe_ab.aoeSpCost);
-    if(player.sp < aoeSpCost){ log("SP insuficiente!"); return; }
+    if(!spendSP(aoeSpCost)) return;
     lastAoeTime = now;
-    player.sp -= aoeSpCost;
 
     let aoeRadius = 4 + (aoe_ab.aoeRadius || 0);
     // Cria efeito visual de explosão em área
@@ -4542,6 +4591,10 @@ function getAllSaves() {
         if(key && key.startsWith('eldoria_save_')) {
             try {
                 let data = JSON.parse(localStorage.getItem(key));
+                if(isFreshDefaultAventureiroSave(data)) {
+                    localStorage.removeItem(key);
+                    continue;
+                }
                 if(data && data.playerName) saves.push({ key, data });
             } catch(e) {}
         }
@@ -4551,7 +4604,18 @@ function getAllSaves() {
     return saves;
 }
 
+function isFreshDefaultAventureiroSave(data) {
+    if(!data || data.playerName !== 'Aventureiro') return false;
+    const p = data.player || {};
+    const stats = data.evolutionData?.stats || {};
+    return (p.level || 1) === 1 && (p.xp || 0) === 0 && (p.gold || 0) === 0 &&
+           (!data.inventory || data.inventory.length === 0) &&
+           (stats.kills || 0) === 0 && (stats.itemsCollected || 0) === 0;
+}
+
 function saveGame() {
+    // Não cria save enquanto a tela inicial está aberta. Isso eliminava o save fantasma "Aventureiro".
+    if(!hasGameStarted || (startOverlay && startOverlay.style.display !== 'none')) return;
     try {
         let saveData = {
             playerName: playerName,
@@ -4745,8 +4809,12 @@ function animate(time){
     // Atualizar bioma baseado no nível
     updateBiome();
     
-    // Regeneração de SP (usa player.maxSp que já inclui bônus via recalcStats)
-    player.sp = Math.min(player.maxSp, player.sp + 0.1 * (safeDeltaTime / 16.67) * (1 + (player.spRegenMult || 0)));
+    // Regeneração de SP controlada, com pequeno delay após gasto.
+    // Antes regenerava por frame de forma alta demais e dava sensação de SP infinito.
+    if(time - lastSpSpendTime > SP_REGEN_DELAY) {
+        const spRegenPerSecond = SP_REGEN_PER_SECOND * (1 + (player.spRegenMult || 0));
+        player.sp = Math.min(player.maxSp, player.sp + spRegenPerSecond * (safeDeltaTime / 1000));
+    }
 
     // Coletar itens do chão
     for(let i = droppedItems.length - 1; i >= 0; i--) {
@@ -5937,6 +6005,51 @@ function setStartControlMode(mode) {
     }
 }
 
+function resetStateForNewHero() {
+    monsters.forEach(m => {
+        scene.remove(m);
+        if(m.userData.ui && m.userData.ui.bar) m.userData.ui.bar.remove();
+        if(m.userData.label) m.userData.label.remove();
+    });
+    droppedItems.forEach(d => scene.remove(d.mesh));
+    fireballs.forEach(f => scene.remove(f.mesh));
+    aoes.forEach(a => {
+        if(a.effectMesh) scene.remove(a.effectMesh);
+        if(a.lightMesh) scene.remove(a.lightMesh);
+    });
+    floatTexts.forEach(f => f.div.remove());
+    bossFireballs.forEach(bf => scene.remove(bf.mesh));
+
+    monsters = [];
+    droppedItems = [];
+    fireballs = [];
+    aoes = [];
+    floatTexts = [];
+    bossFireballs = [];
+    playerDots = [];
+    inventory = [];
+    equipped = { weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
+    player = { level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
+    bossSpawned = false;
+    currentBiome = 0;
+    savedLevel = 1;
+    lastSpSpendTime = -999999;
+    evolutionData.totalXP = 0;
+    evolutionData.skillPoints = 0;
+    evolutionData.achievements.forEach(a => a.unlocked = false);
+    evolutionData.quests.forEach(q => { q.progress = 0; q.completed = false; });
+    evolutionData.skillTree.forEach(s => s.level = 0);
+    evolutionData.activeSkillTree.forEach(s => s.level = 0);
+    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0, mysticKills:0, crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0 };
+    hero.position.set(0, 0, 0);
+    recalcStats();
+    player.hp = player.maxHp;
+    player.sp = player.maxSp;
+    applyEquipVisual();
+    updateBiome();
+    updatePanels();
+}
+
 function launchNewGame() {
     let inputName = document.getElementById('startNameInput').value.trim();
     if(!inputName) {
@@ -5950,6 +6063,7 @@ function launchNewGame() {
         return;
     }
     playerName = inputName;
+    resetStateForNewHero();
     // Aplica o modo de controle selecionado na tela inicial
     setControlMode(startControlMode);
     launchGame(false);
@@ -5966,6 +6080,7 @@ function launchGame(loadSave) {
         heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv.1";
     }
     startOverlay.style.display = 'none';
+    hasGameStarted = true;
     if(loadSave) loadGame(); // Só carrega se foi pedido (herói existente)
     animate();
     updateEquipBar();
