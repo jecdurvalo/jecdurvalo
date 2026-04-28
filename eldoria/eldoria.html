@@ -88,6 +88,31 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 /* --- CONTROLES MOBILE --- */
 #mobileControls { position: fixed; inset: 0; pointer-events: none; z-index: 4000; }
+
+/* Botão de Pausa Mobile */
+#pauseBtnMobile {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    color: white;
+    font-size: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5000;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+}
+#pauseBtnMobile:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+
 .mobile-btn { 
     pointer-events: auto; position: absolute; 
     background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)); 
@@ -102,6 +127,24 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     z-index: 1;
 }
 .mobile-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
+
+/* Botão de Attack Principal - Maior e em destaque */
+#btnAtk {
+    width: 85px;
+    height: 85px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    border: 3px solid #fff;
+    font-size: 16px;
+    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);
+}
+
+/* Botões de skill menores */
+#btnSkill, #btnAOE, #btnDash {
+    width: 55px;
+    height: 55px;
+    font-size: 14px;
+}
+
 #joystickArea { 
     position: absolute; bottom: 40px; left: 40px; 
     width: 140px; height: 140px; background: rgba(255,255,255,0.08); 
@@ -391,7 +434,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 /* Esconde controles desktop no mobile e vice-versa */
 @media (max-width: 800px) { #controls-btn, #controls-tooltip { display: none; } }
-@media (min-width: 801px) { #mobileControls { display: none; } }
+@media (min-width: 801px) { #mobileControls, #pauseBtnMobile { display: none; } }
 
 /* ============================================
    OTIMIZAÇÕES PARA MOBILE
@@ -456,35 +499,35 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     
     /* Botões de ação agrupados ergonomicamente na base direita */
     #btnAtk {
-        bottom: 70px;
-        right: 15px;
-        width: 65px;
-        height: 65px;
-        font-size: 14px;
+        bottom: 80px;
+        right: 20px;
+        width: 85px !important;
+        height: 85px !important;
+        font-size: 16px !important;
     }
     
     #btnSkill {
-        bottom: 45px;
-        right: 85px;
+        bottom: 40px;
+        right: 115px;
+        width: 55px;
+        height: 55px;
+        font-size: 12px;
+    }
+    
+    #btnDash {
+        bottom: 105px;
+        right: 90px;
         width: 50px;
         height: 50px;
         font-size: 11px;
     }
     
-    #btnDash {
-        bottom: 100px;
-        right: 70px;
-        width: 45px;
-        height: 45px;
-        font-size: 10px;
-    }
-    
     #btnAOE {
-        bottom: 100px;
-        right: 15px;
-        width: 45px;
-        height: 45px;
-        font-size: 10px;
+        bottom: 105px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        font-size: 11px;
     }
     
     /* ESCONDER botões individuais de menu no mobile - usar menu unificado */
@@ -761,6 +804,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="btnDash" class="mobile-btn">C</div>
     <!-- Botões de menu removidos - agora usam menu unificado -->
 </div>
+
+<!-- Botão de Pausa Mobile -->
+<div id="pauseBtnMobile" onclick="togglePause()">⏸️</div>
 
 <div id="controls-btn">🎮</div>
 <div id="controls-tooltip">
