@@ -115,6 +115,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 #btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(211, 51, 51, 0.5), rgba(150, 30, 30, 0.5)); font-size: 18px; }
 #btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
 #btnAOE { bottom: 230px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(153, 51, 255, 0.5), rgba(100, 30, 180, 0.5)); font-weight: bold; }
+#btnDash { bottom: 300px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(51, 255, 153, 0.5), rgba(30, 180, 100, 0.5)); font-weight: bold; }
 #btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
 #btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
 #btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
@@ -304,6 +305,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div id="btnAtk" class="mobile-btn">ATK</div>
     <div id="btnSkill" class="mobile-btn">Z</div>
     <div id="btnAOE" class="mobile-btn">X</div>
+    <div id="btnDash" class="mobile-btn">C</div>
     <div id="btnInv" class="mobile-btn">V</div>
     <div id="btnShop" class="mobile-btn">E</div>
     <div id="btnEvo" class="mobile-btn">🏆</div>
@@ -318,14 +320,16 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <li><span class="key">SPACE</span><span class="desc">Atacar</span></li>
         <li><span class="key">Z</span><span class="desc">Fireball</span></li>
         <li><span class="key">X</span><span class="desc">AOE (Área)</span></li>
-        <li><span class="key">Q</span><span class="desc">Dash (requer skill)</span></li>
+        <li><span class="key">C</span><span class="desc">Dash (requer skill)</span></li>
         <li><span class="key">R</span><span class="desc">Escudo (requer skill)</span></li>
+        <li><span class="key">Q</span><span class="desc">Usar Poção</span></li>
         <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
         <li><span class="key">V</span><span class="desc">Inventário</span></li>
         <li><span class="key">B</span><span class="desc">Evolução</span></li>
         <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
         <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
         <li><span class="key highlight">M</span><span class="desc highlight">Mapa Expandido</span></li>
+        <li><span class="key highlight">ESC</span><span class="desc highlight">Fechar Menus</span></li>
     </ul>
 </div>
 
@@ -1912,6 +1916,7 @@ window.addEventListener('touchend', () => {
 document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
 document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
 document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); castAOE(); });
+document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); castDash(); });
 document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
 document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
 document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
@@ -1920,6 +1925,7 @@ document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.prev
 document.getElementById('btnAtk').addEventListener('click', () => { attack(); });
 document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
 document.getElementById('btnAOE').addEventListener('click', () => { castAOE(); });
+document.getElementById('btnDash').addEventListener('click', () => { castDash(); });
 document.getElementById('btnInv').addEventListener('click', () => { toggleV(); });
 document.getElementById('btnShop').addEventListener('click', () => { toggleShop(); });
 document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
@@ -2538,6 +2544,43 @@ function toggleShop(){
     }
 }
 
+// Função para fechar todos os menus (usada pela tecla ESC)
+function closeAllMenus() {
+    let closed = false;
+    
+    // Fechar inventário/status
+    let statusWin = document.getElementById('statusWindow');
+    if(statusWin && statusWin.style.display === 'block') {
+        statusWin.style.display = 'none';
+        gamePaused = false;
+        closed = true;
+    }
+    
+    // Fechar loja
+    let shopWin = document.getElementById('shopWindow');
+    if(shopWin && shopWin.style.display === 'block') {
+        shopWin.style.display = 'none';
+        gamePaused = false;
+        closed = true;
+    }
+    
+    // Fechar evolução
+    let evoWin = document.getElementById('evolutionWindow');
+    if(evoWin && evoWin.style.display === 'block') {
+        evoWin.style.display = 'none';
+        gamePaused = false;
+        closed = true;
+    }
+    
+    // Fechar mapa expandido
+    if(isFullMapOpen) {
+        toggleFullMap();
+        closed = true;
+    }
+    
+    return closed;
+}
+
 // Função para usar poção manualmente (tecla Q)
 function usePotion() {
     if(gamePaused) return;
@@ -3117,7 +3160,7 @@ window.onkeydown=e=>{
     if(e.code==="Space") attack();
     if(e.key.toLowerCase()==="z") castFireball();
     if(e.key.toLowerCase()==="x") castAOE(); // Tecla X para habilidade AOE (nível 12+)
-    if(e.key.toLowerCase()==="d") castDash(); // D = Dash (requer skill, também move direita)
+    if(e.key.toLowerCase()==="c") castDash(); // C = Dash (requer skill, também move direita)
     if(e.key.toLowerCase()==="r") castShield(); // R = Escudo (requer skill)
     if(e.key.toLowerCase()==="v") toggleV();
     if(e.key.toLowerCase()==="e") toggleShop();
@@ -3126,6 +3169,7 @@ window.onkeydown=e=>{
     if(e.key.toLowerCase()==="p") togglePause(); // Tecla P para pausar
     if(e.key.toLowerCase()==="q") usePotion(); // Q = Usar poção
     if(e.key.toLowerCase()==="m") toggleFullMap(); // Tecla M para abrir mapa expandido
+    if(e.key==="Escape") closeAllMenus(); // ESC fecha todos os menus
 };
 window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
 
