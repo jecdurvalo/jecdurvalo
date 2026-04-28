@@ -493,7 +493,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
     </div>
     <div id="shopSellPanel" style="display:none;">
-        <div class="qi-filter-bar" id="shopFilterBar" style="margin-bottom:12px;"></div>
+        <div class="qi-filter-bar" id="shopSellFilterBar" style="margin-bottom:12px;"></div>
         <div id="shopInventoryPanel" class="inventory-grid"></div>
     </div>
 </div>
@@ -3421,7 +3421,7 @@ function setShopBuyFilter(key) {
 }
 
 function renderShopSellFilterBar() {
-    let bar = document.getElementById('shopFilterBar');
+    let bar = document.getElementById('shopSellFilterBar');
     if(!bar) return;
     bar.innerHTML = SHOP_SELL_FILTERS.map(f => {
         let active = shopSellFilter === f.key;
@@ -3564,6 +3564,8 @@ function saveGame() {
             player: player,
             inventory: inventory,
             equipped: equipped,
+            controlMode: controlMode,
+            currentBiome: currentBiome,
             evolutionData: {
                 totalXP: evolutionData.totalXP,
                 skillPoints: evolutionData.skillPoints,
@@ -3591,6 +3593,12 @@ function loadGame() {
         if(save.equipped) {
             Object.assign(equipped, save.equipped);
             delete equipped['consumable']; // consumíveis nunca devem ficar no slot equipado
+        }
+        if(save.controlMode) {
+            controlMode = save.controlMode;
+        }
+        if(save.currentBiome !== undefined) {
+            currentBiome = save.currentBiome;
         }
         if(save.evolutionData) {
             evolutionData.totalXP = save.evolutionData.totalXP || 0;
@@ -3622,6 +3630,16 @@ function loadGame() {
         xp.style.width = (player.xp / player.next * 100) + "%";
         goldDisplay.innerText = "Gold: " + player.gold;
         updatePanels();
+        
+        // Aplica o biome correto após carregar
+        if(currentBiome > 0) {
+            let biome = biomes[currentBiome];
+            ground.material.color.setHex(biome.groundColor);
+            scene.background.setHex(biome.skyColor);
+            scene.fog.color.setHex(biome.fogColor);
+            log("<span style='color:cyan'>🌍 Bem-vindo ao " + biome.name + "!</span>");
+        }
+        
         log("<span style='color:cyan'>💾 Progresso carregado! Bem-vindo de volta, " + playerName + "!</span>");
     } catch(e) {
         console.warn('Falha ao carregar save:', e);
