@@ -5,7 +5,7 @@
 <title>Eldoria</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <style>
-html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black; font-family:'Segoe UI', Arial, sans-serif; touch-action: none; }
+html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:black; font-family:'Segoe UI', Arial, sans-serif; touch-action: none; -webkit-text-size-adjust: 100%; }
 
 #gameCanvas { position:fixed; inset:0; display:block; width:100vw!important; height:100vh!important; z-index: 1; }
 
@@ -94,54 +94,56 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     position: fixed;
     top: 15px;
     right: 15px;
-    width: 45px;
-    height: 45px;
-    background: rgba(0, 0, 0, 0.6);
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.7);
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
+    border-radius: 12px;
     color: white;
-    font-size: 20px;
+    font-size: 22px;
     display: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 5000;
     backdrop-filter: blur(5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     pointer-events: auto;
     -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s, background 0.2s;
 }
 #pauseBtnMobile:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
 
 .mobile-btn { 
     pointer-events: auto; position: absolute; 
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)); 
-    border: 2px solid rgba(255,255,255,0.4);
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08)); 
+    border: 2px solid rgba(255,255,255,0.35);
     border-radius: 50%; color: white; font-weight: bold;
     display: flex; align-items: center; justify-content: center;
     user-select: none; -webkit-tap-highlight-color: transparent;
     backdrop-filter: blur(5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.35);
     transition: transform 0.1s, background 0.2s;
     /* Garante que botões mobile fiquem abaixo de menus modais */
     z-index: 1;
 }
-.mobile-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
+.mobile-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.25); }
 
 /* Botão de Attack Principal - Maior e em destaque */
 #btnAtk {
-    width: 85px;
-    height: 85px;
-    background: linear-gradient(135deg, #ff4444, #cc0000);
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #ff3333, #cc0000);
     border: 3px solid #fff;
     font-size: 16px;
-    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);
+    box-shadow: 0 4px 25px rgba(255, 51, 51, 0.6);
+    z-index: 2;
 }
 
 /* Botões de skill menores */
 #btnSkill, #btnAOE, #btnDash {
-    width: 55px;
-    height: 55px;
+    width: 58px;
+    height: 58px;
     font-size: 14px;
 }
 
@@ -156,14 +158,15 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3)); border-radius: 50%;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-#btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(211, 51, 51, 0.5), rgba(150, 30, 30, 0.5)); font-size: 18px; }
-#btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
-#btnAOE { bottom: 230px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(153, 51, 255, 0.5), rgba(100, 30, 180, 0.5)); font-weight: bold; }
-#btnDash { bottom: 300px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(51, 255, 153, 0.5), rgba(30, 180, 100, 0.5)); font-weight: bold; }
-#btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
-#btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
-#btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
-#btnMap { bottom: 60px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.5), rgba(0, 180, 80, 0.5)); font-size: 20px; font-weight: bold; }
+/* Layout desktop dos botões - cluster ergonômico */
+#btnAtk { bottom: 70px; right: 160px; }
+#btnSkill { bottom: 40px; right: 90px; }
+#btnAOE { bottom: 100px; right: 90px; }
+#btnDash { bottom: 70px; right: 50px; }
+#btnInv { bottom: 160px; right: 40px; }
+#btnShop { bottom: 60px; right: 40px; }
+#btnEvo { bottom: 120px; right: 40px; }
+#btnMap { bottom: 60px; right: 110px; }
 
 #controls{
     position:fixed; top:18px; right:18px; background:linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
@@ -195,6 +198,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background:linear-gradient(135deg, #0a1930, #152545);
     border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5002; color:white;
     box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
+    /* Previne scroll indevido */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 /* Overlay de fundo para menus */
 #menuOverlay {
@@ -202,20 +208,22 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 }
-/* Responsividade para modais em telas menores */
-@media (max-width: 600px) {
+/* Responsividade para modais em telas menores - tela cheia no mobile */
+@media (max-width: 800px) {
     #statusWindow, #shopWindow, #evolutionWindow {
-        width: 100%;
-        height: 100%;
-        max-width: 100%;
-        max-height: 100%;
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
         top: 0;
         left: 0;
         transform: none;
-        padding: 15px;
+        padding: 60px 15px 15px 15px; /* Padding superior maior para não sobrepor botão de pausa */
         border-radius: 0;
         border: none;
         box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     #statusWindow h2, #shopWindow h2, #evolutionWindow h2 {
         font-size: 18px;
@@ -442,7 +450,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 /* Esconde controles desktop no mobile e vice-versa */
 @media (max-width: 800px) { #controls-btn, #controls-tooltip { display: none; } }
-@media (min-width: 801px) { #mobileControls, #pauseBtnMobile { display: none; } }
+@media (min-width: 801px) { 
+    #mobileControls, #pauseBtnMobile, #mobileMenuBtn, #mobileMenuPanel { display: none; } 
+}
 
 /* ============================================
    OTIMIZAÇÕES PARA MOBILE
@@ -505,37 +515,44 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         height: 36px;
     }
     
-    /* Botões de ação agrupados ergonomicamente na base direita */
+    /* Botões de ação agrupados ergonomicamente na base direita - SEM SOBREPOSIÇÃO */
+    /* Botão de ATK principal - maior e em destaque no canto inferior direito */
     #btnAtk {
-        bottom: 80px;
-        right: 20px;
-        width: 85px !important;
-        height: 85px !important;
-        font-size: 16px !important;
+        bottom: 60px !important;
+        right: 20px !important;
+        width: 88px !important;
+        height: 88px !important;
+        font-size: 17px !important;
+        background: linear-gradient(135deg, #ff3333, #cc0000) !important;
+        border: 3px solid #fff !important;
+        box-shadow: 0 4px 25px rgba(255, 51, 51, 0.6) !important;
     }
     
+    /* Skill (Z) - abaixo e à esquerda do ataque */
     #btnSkill {
-        bottom: 40px;
-        right: 115px;
-        width: 55px;
-        height: 55px;
-        font-size: 12px;
+        bottom: 25px !important;
+        right: 100px !important;
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 13px !important;
     }
     
+    /* Dash (C) - acima e à esquerda do ataque */
     #btnDash {
-        bottom: 105px;
-        right: 90px;
-        width: 50px;
-        height: 50px;
-        font-size: 11px;
+        bottom: 95px !important;
+        right: 75px !important;
+        width: 52px !important;
+        height: 52px !important;
+        font-size: 12px !important;
     }
     
+    /* AOE (X) - acima do ataque */
     #btnAOE {
-        bottom: 105px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        font-size: 11px;
+        bottom: 125px !important;
+        right: 25px !important;
+        width: 52px !important;
+        height: 52px !important;
+        font-size: 12px !important;
     }
     
     /* ESCONDER botões individuais de menu no mobile - usar menu unificado */
@@ -647,7 +664,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     }
 }
 
-/* Desktop não mostra botão mobile menu */
+/* Desktop não mostra elementos mobile */
 @media (min-width: 801px) {
     #mobileMenuBtn, #mobileMenuPanel {
         display: none !important;
