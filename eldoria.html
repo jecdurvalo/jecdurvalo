@@ -923,11 +923,11 @@ let evolutionData = {
         { id: 'atk_boost_1', name: 'Força Bruta I', desc: '+10% de dano físico', icon: '⚔️', cost: 1, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.1); }, reqLevel: 5 },
         { id: 'def_boost_1', name: 'Pele de Ferro I', desc: '+10% de defesa', icon: '🛡️', cost: 1, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.1); }, reqLevel: 5 },
         { id: 'hp_boost_1', name: 'Vitalidade I', desc: '+15% de HP máximo', icon: '❤️', cost: 1, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 1.15); player.hp = player.maxHp; }, reqLevel: 5 },
-        { id: 'sp_boost_1', name: 'Energia I', desc: '+20% de SP máximo', icon: '💙', cost: 1, maxLevel: 1, level: 0, effect: () => { player.maxSp = Math.floor(player.maxSp * 1.2); player.sp = player.maxSp; }, reqLevel: 5 },
+        { id: 'sp_boost_1', name: 'Energia I', desc: '+20% de SP máximo e +50% de regeneração de SP', icon: '💙', cost: 1, maxLevel: 1, level: 0, effect: () => { player.maxSp = Math.floor(player.maxSp * 1.2); player.sp = player.maxSp; }, reqLevel: 5 },
         { id: 'atk_boost_2', name: 'Força Bruta II', desc: '+15% de dano físico', icon: '⚔️', cost: 2, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.15); }, reqLevel: 10, requires: ['atk_boost_1'] },
         { id: 'def_boost_2', name: 'Pele de Ferro II', desc: '+15% de defesa', icon: '🛡️', cost: 2, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.15); }, reqLevel: 10, requires: ['def_boost_1'] },
         { id: 'hp_boost_2', name: 'Vitalidade II', desc: '+20% de HP máximo', icon: '❤️', cost: 2, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 1.2); player.hp = player.maxHp; }, reqLevel: 10, requires: ['hp_boost_1'] },
-        { id: 'sp_boost_2', name: 'Energia II', desc: '+25% de SP máximo', icon: '💙', cost: 2, maxLevel: 1, level: 0, effect: () => { player.maxSp = Math.floor(player.maxSp * 1.25); player.sp = player.maxSp; }, reqLevel: 10, requires: ['sp_boost_1'] },
+        { id: 'sp_boost_2', name: 'Energia II', desc: '+25% de SP máximo e +75% de regeneração de SP', icon: '💙', cost: 2, maxLevel: 1, level: 0, effect: () => { player.maxSp = Math.floor(player.maxSp * 1.25); player.sp = player.maxSp; }, reqLevel: 10, requires: ['sp_boost_1'] },
         { id: 'crit_chance', name: 'Olho de Águia', desc: '+5% de chance de crítico', icon: '🎯', cost: 3, maxLevel: 1, level: 0, effect: () => { if(!player.critChance) player.critChance = 0; player.critChance += 5; }, reqLevel: 15 },
         { id: 'lifesteal', name: 'Vampirismo', desc: 'Roubo de vida: 3%', icon: '🩸', cost: 3, maxLevel: 1, level: 0, effect: () => { if(!player.lifesteal) player.lifesteal = 0; player.lifesteal += 3; }, reqLevel: 15 },
         { id: 'atk_boost_3', name: 'Força Bruta III', desc: '+20% de dano físico', icon: '⚔️', cost: 3, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.2); }, reqLevel: 20, requires: ['atk_boost_2'] },
@@ -1660,14 +1660,11 @@ function updateQuestProgress(type, amount) {
 }
 
 function toggleEvolution() {
-    // Fecha todos os outros menus antes de abrir evolução
-    closeAllMenus();
     let win = document.getElementById('evolutionWindow');
-    if(win.style.display === 'block') {
-        win.style.display = 'none';
-        menuOverlay.style.display = 'none';
-        gamePaused = false;
-    } else {
+    let isOpen = win.style.display === 'block';
+    closeAllMenus(); // fecha outros menus (e este, se já estava aberto)
+    if(!isOpen) {
+        // Só abre se NÃO estava aberto antes
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         updateEvolutionUI();
@@ -2672,6 +2669,7 @@ function getSkillBonuses() {
         defPercent: 0,
         hpPercent: 0,
         spPercent: 0,
+        spRegenMult: 0,
         critChance: 0,
         lifesteal: 0,
         aoeDamageBonus: 0,
@@ -2714,9 +2712,11 @@ function getSkillBonuses() {
                     break;
                 case 'sp_boost_1':
                     bonuses.spPercent += 20 * skill.level;
+                    bonuses.spRegenMult += 0.5 * skill.level;
                     break;
                 case 'sp_boost_2':
                     bonuses.spPercent += 25 * skill.level;
+                    bonuses.spRegenMult += 0.75 * skill.level;
                     break;
                 case 'crit_chance':
                     bonuses.critChance += 5 * skill.level;
@@ -2769,6 +2769,7 @@ function recalcStats(){
     let finalMaxSp = Math.floor(baseMaxSp * (1 + skillBonuses.spPercent / 100));
     
     // Atribui bônus de habilidades de stat
+    player.spRegenMult = skillBonuses.spRegenMult;
     player.critChance = skillBonuses.critChance;
     player.lifesteal = skillBonuses.lifesteal;
     player.aoeDamageBonus = skillBonuses.aoeDamageBonus;
@@ -3159,14 +3160,10 @@ function unequipInternal(k){
     }
 }
 function toggleV(){
-    // Fecha todos os outros menus antes de abrir status
-    closeAllMenus();
     let win = document.getElementById('statusWindow');
-    if(win.style.display === 'block') {
-        win.style.display = 'none';
-        menuOverlay.style.display = 'none';
-        gamePaused = false;
-    } else {
+    let isOpen = win.style.display === 'block';
+    closeAllMenus();
+    if(!isOpen) {
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         renderInvFilterBar();
@@ -3703,14 +3700,10 @@ function setShopTab(tab) {
     updatePanels();
 }
 function toggleShop(){
-    // Fecha todos os outros menus antes de abrir loja
-    closeAllMenus();
     let win = document.getElementById('shopWindow');
-    if(win.style.display === 'block') {
-        win.style.display = 'none';
-        menuOverlay.style.display = 'none';
-        gamePaused = false;
-    } else {
+    let isOpen = win.style.display === 'block';
+    closeAllMenus();
+    if(!isOpen) {
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         setShopTab('buy');
@@ -4001,7 +3994,7 @@ function animate(time){
     updateBiome();
     
     // Regeneração de SP (usa player.maxSp que já inclui bônus via recalcStats)
-    player.sp = Math.min(player.maxSp, player.sp + 0.1 * (safeDeltaTime / 16.67));
+    player.sp = Math.min(player.maxSp, player.sp + 0.1 * (safeDeltaTime / 16.67) * (1 + (player.spRegenMult || 0)));
 
     // Coletar itens do chão
     for(let i = droppedItems.length - 1; i >= 0; i--) {
@@ -4178,23 +4171,29 @@ function animate(time){
             
             // ---- BOSS AI ----
             if(m.userData.isBoss) {
-                // Inicializa ângulo de órbita baseado na posição atual (garante 360° sem pontos cegos)
-                if(m.userData.orbitAngle === undefined) {
-                    m.userData.orbitAngle = Math.atan2(m.position.z - hero.position.z, m.position.x - hero.position.x);
-                }
-                m.userData.orbitAngle += 0.018; // rotação suave do ângulo de órbita
-                if(d > 12) {
-                    // Perseguição direta quando longe
-                    let toHero = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
-                    m.position.addScaledVector(toHero, 0.09);
-                } else if(d > 2) {
-                    // Órbita a raio fixo ~4u usando ângulo rastreado — cobre 360° sem pontos cegos
-                    let orbitRadius = 4;
-                    let tx = hero.position.x + Math.cos(m.userData.orbitAngle) * orbitRadius;
-                    let tz = hero.position.z + Math.sin(m.userData.orbitAngle) * orbitRadius;
-                    let toTarget = new THREE.Vector3(tx - m.position.x, 0, tz - m.position.z);
-                    let tLen = toTarget.length();
-                    if(tLen > 0.01) m.position.addScaledVector(toTarget.normalize(), Math.min(0.07, tLen));
+                // ---- LEASH: boss para de perseguir fora do raio ----
+                const BOSS_LEASH_RADIUS = 35; // unidades de distância
+                const bossLeashed = d > BOSS_LEASH_RADIUS;
+
+                if(!bossLeashed) {
+                    // Inicializa ângulo de órbita baseado na posição atual (garante 360° sem pontos cegos)
+                    if(m.userData.orbitAngle === undefined) {
+                        m.userData.orbitAngle = Math.atan2(m.position.z - hero.position.z, m.position.x - hero.position.x);
+                    }
+                    m.userData.orbitAngle += 0.018; // rotação suave do ângulo de órbita
+                    if(d > 12) {
+                        // Perseguição direta quando longe mas dentro do leash
+                        let toHero = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
+                        m.position.addScaledVector(toHero, 0.09);
+                    } else if(d > 2) {
+                        // Órbita a raio fixo ~4u usando ângulo rastreado — cobre 360° sem pontos cegos
+                        let orbitRadius = 4;
+                        let tx = hero.position.x + Math.cos(m.userData.orbitAngle) * orbitRadius;
+                        let tz = hero.position.z + Math.sin(m.userData.orbitAngle) * orbitRadius;
+                        let toTarget = new THREE.Vector3(tx - m.position.x, 0, tz - m.position.z);
+                        let tLen = toTarget.length();
+                        if(tLen > 0.01) m.position.addScaledVector(toTarget.normalize(), Math.min(0.07, tLen));
+                    }
                 }
                 // Boss dispara habilidades variadas por bioma — cada uma com timer próprio
                 let biomeAbilities = BOSS_ABILITIES[Math.min(currentBiome, BOSS_ABILITIES.length-1)];
@@ -4208,7 +4207,8 @@ function animate(time){
                     Math.floor(playerFbBase * projScale),
                     Math.floor(m.userData.atk * projScale * 0.75)
                 );
-                if(d < 40) {
+                // Boss só ataca se o jogador estiver dentro do leash
+                if(d < 40 && !bossLeashed) {
                     biomeAbilities.forEach((ability, ai) => {
                         if(!m.userData.abilityTimers[ai]) m.userData.abilityTimers[ai] = 0;
                         // Cooldown diminui com o nível, mas nunca abaixo de 35% do base
@@ -4245,8 +4245,8 @@ function animate(time){
                         }
                     });
                 }
-                // Depois do nível 12 o boss convoca mobs a cada 15s
-                if(player.level >= 12) {
+                // Depois do nível 12 o boss convoca mobs a cada 15s (só se dentro do leash)
+                if(player.level >= 12 && !bossLeashed) {
                     if(!m.userData.lastMobSpawn) m.userData.lastMobSpawn = 0;
                     let maxMons = getMaxMonsters();
                     if(time - m.userData.lastMobSpawn > 15000 && monsters.length < maxMons) {
