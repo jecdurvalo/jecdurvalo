@@ -149,8 +149,12 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     width:90%; max-width: 680px; max-height:80vh; overflow:auto; 
     background:linear-gradient(135deg, #0a1930, #152545);
-    border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5000; color:white;
+    border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5001; color:white;
     box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
+}
+/* Overlay de fundo para menus */
+#menuOverlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:5000; cursor: pointer;
 }
 /* Responsividade para modais em telas menores */
 @media (max-width: 600px) {
@@ -1598,10 +1602,12 @@ function toggleEvolution() {
     let win = document.getElementById('evolutionWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
+        menuOverlay.style.display = 'none';
         gamePaused = false;
     } else {
         closeQuickInv();
         win.style.display = 'block';
+        menuOverlay.style.display = 'block';
         updateEvolutionUI();
         gamePaused = true;
     }
@@ -3057,10 +3063,12 @@ function toggleV(){
     let win = document.getElementById('statusWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
+        menuOverlay.style.display = 'none';
         gamePaused = false;
     } else {
         closeQuickInv();
         win.style.display = 'block';
+        menuOverlay.style.display = 'block';
         renderInvFilterBar();
         updatePanels();
         gamePaused = true;
@@ -3123,6 +3131,7 @@ function openQuickInv() {
     document.getElementById('shopWindow').style.display = 'none';
     quickInvOpen = true;
     gamePaused = true;
+    menuOverlay.style.display = 'block';
     renderQuickInv();
     document.getElementById('quickInvPanel').classList.add('open');
 }
@@ -3130,6 +3139,7 @@ function openQuickInv() {
 function closeQuickInv() {
     quickInvOpen = false;
     gamePaused = false;
+    menuOverlay.style.display = 'none';
     document.getElementById('quickInvPanel').classList.remove('open');
 }
 
@@ -3478,9 +3488,11 @@ function toggleShop(){
     let win = document.getElementById('shopWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
+        menuOverlay.style.display = 'none';
         gamePaused = false;
     } else {
         win.style.display = 'block';
+        menuOverlay.style.display = 'block';
         setShopTab('buy');
         gamePaused = true;
     }
@@ -3497,6 +3509,7 @@ function closeAllMenus() {
     let statusWin = document.getElementById('statusWindow');
     if(statusWin && statusWin.style.display === 'block') {
         statusWin.style.display = 'none';
+        menuOverlay.style.display = 'none';
         gamePaused = false;
         closed = true;
     }
@@ -3505,6 +3518,7 @@ function closeAllMenus() {
     let shopWin = document.getElementById('shopWindow');
     if(shopWin && shopWin.style.display === 'block') {
         shopWin.style.display = 'none';
+        menuOverlay.style.display = 'none';
         gamePaused = false;
         closed = true;
     }
@@ -3513,6 +3527,7 @@ function closeAllMenus() {
     let evoWin = document.getElementById('evolutionWindow');
     if(evoWin && evoWin.style.display === 'block') {
         evoWin.style.display = 'none';
+        menuOverlay.style.display = 'none';
         gamePaused = false;
         closed = true;
     }
@@ -4917,6 +4932,14 @@ renderStartScreen();
 
 // Inicializa modo de controle e lista de teclas
 setControlMode('wasd');
+
+// Overlay para menus (fundo escuro estilo pause)
+const menuOverlay = document.createElement('div');
+menuOverlay.id = 'menuOverlay';
+menuOverlay.addEventListener('click', () => {
+    closeAllMenus();
+});
+document.body.appendChild(menuOverlay);
 </script>
 </body>
 </html>
