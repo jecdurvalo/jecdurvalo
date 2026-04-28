@@ -1857,6 +1857,27 @@ function attack(){
                             equipped.weapon = null;
                             applyEquipVisual();
                         }
+                    }
+                    
+                    // Itens equipados também sofrem desgaste gradual em combate
+                    const equipmentSlots = ['armor', 'helmet', 'boots', 'ring', 'amulet'];
+                    equipmentSlots.forEach(slot => {
+                        if(equipped[slot] && equipped[slot].durability !== undefined) {
+                            // Chance de 30% de reduzir durabilidade por ataque
+                            if(Math.random() < 0.3) {
+                                equipped[slot].durability -= 1;
+                                if(equipped[slot].durability <= 0) {
+                                    const slotNames = { armor: 'Armadura', helmet: 'Capacete', boots: 'Botas', ring: 'Anel', amulet: 'Amuleto' };
+                                    floatingText("💔 " + slotNames[slot] + " Quebrou!", hero.position, "red");
+                                    log("<span style='color:red'>Seu(a) " + slotNames[slot].toLowerCase() + " quebrou!</span>");
+                                    equipped[slot] = null;
+                                    applyEquipVisual();
+                                }
+                            }
+                        }
+                    });
+                    
+                    if(equipped.weapon || equipmentSlots.some(s => equipped[s])) {
                         updatePanels();
                     }
                     
