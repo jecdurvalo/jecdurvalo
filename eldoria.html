@@ -241,6 +241,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 #controls-tooltip:hover {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 #controls-tooltip h4 {
@@ -315,22 +316,12 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <div id="controls-btn">🎮</div>
 <div id="controls-tooltip">
     <h4>🎮 Controles</h4>
-    <ul>
-        <li><span class="key">WASD</span><span class="desc">Mover</span></li>
-        <li><span class="key">SPACE</span><span class="desc">Atacar</span></li>
-        <li><span class="key">Z</span><span class="desc">Fireball</span></li>
-        <li><span class="key">X</span><span class="desc">AOE (Área)</span></li>
-        <li><span class="key">C</span><span class="desc">Dash (requer skill)</span></li>
-        <li><span class="key">R</span><span class="desc">Escudo (requer skill)</span></li>
-        <li><span class="key">Q</span><span class="desc">Usar Poção</span></li>
-        <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
-        <li><span class="key">V</span><span class="desc">Inventário</span></li>
-        <li><span class="key">B</span><span class="desc">Evolução</span></li>
-        <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
-        <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
-        <li><span class="key highlight">M</span><span class="desc highlight">Mapa Expandido</span></li>
-        <li><span class="key highlight">ESC</span><span class="desc highlight">Fechar Menus</span></li>
-    </ul>
+    <div style="margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; color:#aaa;">Modo:</span>
+        <button onclick="setControlMode('wasd')" id="btnModeWASD" style="padding:4px 10px; border-radius:6px; border:1px solid rgba(255,215,0,0.6); background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,215,0,0.1)); color:white; cursor:pointer; font-size:12px; font-weight:bold;">WASD</button>
+        <button onclick="setControlMode('arrows')" id="btnModeArrows" style="padding:4px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-size:12px; font-weight:bold;">Setas</button>
+    </div>
+    <ul id="controlsList"></ul>
 </div>
 
 <div id="minimapContainer">
@@ -389,10 +380,11 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     </div>
     
     <!-- Tabs de navegação -->
-    <div style="display:flex; gap:10px; margin-bottom:15px; border-bottom:2px solid rgba(90,185,255,0.3); padding-bottom:10px;">
-        <button onclick="showEvolutionTab('quests')" id="tabQuests" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.1)); border:1px solid rgba(90,185,255,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">📜 Missões</button>
-        <button onclick="showEvolutionTab('achievements')" id="tabAchievements" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,215,0,0.1)); border:1px solid rgba(255,215,0,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">🏅 Conquistas</button>
-        <button onclick="showEvolutionTab('skilltree')" id="tabSkilltree" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(255,105,180,0.3), rgba(255,105,180,0.1)); border:1px solid rgba(255,105,180,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">🌳 Habilidades</button>
+    <div style="display:flex; gap:10px; margin-bottom:15px; border-bottom:2px solid rgba(90,185,255,0.3); padding-bottom:10px; flex-wrap:wrap;">
+        <button onclick="showEvolutionTab('quests')" id="tabQuests" style="flex:1; min-width:80px; padding:10px; background:linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.1)); border:1px solid rgba(90,185,255,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">📜 Missões</button>
+        <button onclick="showEvolutionTab('achievements')" id="tabAchievements" style="flex:1; min-width:80px; padding:10px; background:linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,215,0,0.1)); border:1px solid rgba(255,215,0,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">🏅 Conquistas</button>
+        <button onclick="showEvolutionTab('skilltree')" id="tabSkilltree" style="flex:1; min-width:80px; padding:10px; background:linear-gradient(135deg, rgba(255,105,180,0.3), rgba(255,105,180,0.1)); border:1px solid rgba(255,105,180,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">🌳 Passivas</button>
+        <button onclick="showEvolutionTab('activeskills')" id="tabActiveskills" style="flex:1; min-width:80px; padding:10px; background:linear-gradient(135deg, rgba(255,120,30,0.3), rgba(255,120,30,0.1)); border:1px solid rgba(255,120,30,0.5); border-radius:8px; color:white; cursor:pointer; font-weight:bold;">⚡ Ativas</button>
     </div>
     
     <div id="tabContentQuests">
@@ -409,9 +401,15 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     </div>
     
     <div id="tabContentSkilltree" style="display:none;">
-        <h3>🌳 Árvore de Habilidades</h3>
+        <h3>🌳 Habilidades Passivas</h3>
         <p style="color:#aaa; font-size:13px; margin-bottom:10px;">Gaste Skill Points para desbloquear habilidades passivas permanentes.</p>
         <div id="skillTreePanel" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; max-height:400px; overflow-y:auto;"></div>
+    </div>
+
+    <div id="tabContentActiveskills" style="display:none;">
+        <h3>⚡ Habilidades Ativas</h3>
+        <p style="color:#aaa; font-size:13px; margin-bottom:10px;">Evolua suas habilidades de combate ativas gastando Skill Points.</p>
+        <div id="activeSkillTreePanel" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; max-height:400px; overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -437,6 +435,7 @@ let bossSpawned = false;
 let currentBiome = 0; // 0: Plains, 1: Forest, 2: Desert, 3: Snow, 4: Volcanic
 let gamePaused = false; // Controle de pausa do jogo
 let savedLevel = 1; // Nível salvo ao morrer para reviver no mesmo local
+let controlMode = 'wasd'; // 'wasd' ou 'arrows'
 
 // Sistema de Auto-Save
 let lastAutoSaveTime = 0;
@@ -705,8 +704,26 @@ let evolutionData = {
         { id: 'divine_power', name: 'Poder Divino', desc: '+50% de dano e defesa', icon: '👼', cost: 10, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.5); player.baseDef = Math.floor(player.baseDef * 1.5); }, reqLevel: 60, requires: ['epic_strength', 'epic_defense'] },
         { id: 'immortal_vitality', name: 'Vitalidade Imortal', desc: '+100% de HP e SP máximos', icon: '☄️', cost: 8, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 2); player.maxSp = Math.floor(player.maxSp * 2); player.hp = player.maxHp; player.sp = player.maxSp; }, reqLevel: 75 },
         { id: 'god_mode', name: 'Modo Deus', desc: '+100% de dano, defesa e velocidade', icon: '🌟', cost: 15, maxLevel: 1, level: 0, effect: () => { player.baseAtk *= 2; player.baseDef *= 2; moveSpeed *= 1.5; }, reqLevel: 100, requires: ['divine_power', 'immortal_vitality'] },
-        { id: 'dash_unlock', name: 'Passo Sombrio', desc: 'Desbloqueia Dash (Q). Esquiva rápida com cooldown de 3s.', icon: '💨', cost: 3, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 10 },
-        { id: 'shield_unlock', name: 'Escudo Místico', desc: 'Desbloqueia Escudo (R): 2s de invencibilidade, cooldown 15s.', icon: '🔮', cost: 4, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 15 }
+        { id: 'dash_unlock', name: 'Passo Sombrio', desc: 'Desbloqueia Dash. Esquiva rápida com cooldown de 3s.', icon: '💨', cost: 3, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 10 },
+        { id: 'shield_unlock', name: 'Escudo Místico', desc: 'Desbloqueia Escudo: 2s de invencibilidade, cooldown 15s.', icon: '🔮', cost: 4, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 15 }
+    ],
+    activeSkillTree: [
+        // Fireball
+        { id: 'fb_dmg_1', name: 'Fireball I', desc: '+30 de dano na Fireball', icon: '🔥', cost: 2, maxLevel: 1, level: 0, reqLevel: 1, category: 'fireball' },
+        { id: 'fb_dmg_2', name: 'Fireball II', desc: '+30 de dano adicional', icon: '🔥', cost: 3, maxLevel: 1, level: 0, reqLevel: 8, category: 'fireball', requires: ['fb_dmg_1'] },
+        { id: 'fb_dmg_3', name: 'Fireball III', desc: '+50 de dano adicional', icon: '🔥', cost: 4, maxLevel: 1, level: 0, reqLevel: 18, category: 'fireball', requires: ['fb_dmg_2'] },
+        { id: 'fb_dmg_4', name: 'Fireball IV', desc: '+80 de dano adicional', icon: '🔥', cost: 5, maxLevel: 1, level: 0, reqLevel: 30, category: 'fireball', requires: ['fb_dmg_3'] },
+        { id: 'fb_sp_1',  name: 'Fogo Eficiente', desc: 'Fireball custa -10 SP', icon: '💧', cost: 2, maxLevel: 1, level: 0, reqLevel: 5, category: 'fireball' },
+        { id: 'fb_radius', name: 'Explosão Maior', desc: 'Raio de impacto da Fireball +2', icon: '💥', cost: 3, maxLevel: 1, level: 0, reqLevel: 15, category: 'fireball', requires: ['fb_dmg_1'] },
+        // AOE
+        { id: 'aoe_dmg_1', name: 'AOE I', desc: '+20 de dano no AOE', icon: '💫', cost: 2, maxLevel: 1, level: 0, reqLevel: 12, category: 'aoe' },
+        { id: 'aoe_dmg_2', name: 'AOE II', desc: '+40 de dano adicional', icon: '💫', cost: 3, maxLevel: 1, level: 0, reqLevel: 20, category: 'aoe', requires: ['aoe_dmg_1'] },
+        { id: 'aoe_dmg_3', name: 'AOE III', desc: '+70 de dano adicional', icon: '💫', cost: 4, maxLevel: 1, level: 0, reqLevel: 35, category: 'aoe', requires: ['aoe_dmg_2'] },
+        { id: 'aoe_radius', name: 'Onda Expansiva', desc: 'Raio do AOE +3', icon: '🌊', cost: 3, maxLevel: 1, level: 0, reqLevel: 16, category: 'aoe' },
+        { id: 'aoe_sp_1',  name: 'AOE Eficiente', desc: 'AOE custa -15 SP', icon: '💧', cost: 2, maxLevel: 1, level: 0, reqLevel: 14, category: 'aoe' },
+        // Ataque físico
+        { id: 'atk_range_1', name: 'Alcance+', desc: 'Alcance do ataque físico +1', icon: '⚔️', cost: 2, maxLevel: 1, level: 0, reqLevel: 5, category: 'attack' },
+        { id: 'atk_speed_1', name: 'Velocidade de Ataque+', desc: 'Animação de ataque 20% mais rápida', icon: '⚡', cost: 3, maxLevel: 1, level: 0, reqLevel: 10, category: 'attack' },
     ],
     stats: {
         kills: 0,
@@ -944,6 +961,7 @@ function showEvolutionTab(tabName) {
     if(activeBtn) activeBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.15))';
     
     if(tabName === 'skilltree') renderSkillTree();
+    if(tabName === 'activeskills') renderActiveSkillTree();
 }
 
 function renderSkillTree() {
@@ -1023,9 +1041,86 @@ function buySkill(skillId) {
     
     floatingText(`+${skill.name}`, hero.position, "magenta");
     log(`<span style='color:magenta'>✨ Habilidade desbloqueada: ${skill.name}!</span>`);
-    
+
     updateEvolutionUI();
     renderSkillTree();
+}
+
+// -------- ÁRVORE DE HABILIDADES ATIVAS --------
+function getActiveSkillBonuses() {
+    let bonuses = { fireballDmg: 0, fireballRadius: 0, fireballSpCost: 0, aoeDmg: 0, aoeRadius: 0, aoeSpCost: 0, atkRange: 0, atkSpeedMult: 1 };
+    evolutionData.activeSkillTree.forEach(skill => {
+        if(skill.level <= 0) return;
+        switch(skill.id) {
+            case 'fb_dmg_1': bonuses.fireballDmg += 30; break;
+            case 'fb_dmg_2': bonuses.fireballDmg += 30; break;
+            case 'fb_dmg_3': bonuses.fireballDmg += 50; break;
+            case 'fb_dmg_4': bonuses.fireballDmg += 80; break;
+            case 'fb_sp_1':  bonuses.fireballSpCost -= 10; break;
+            case 'fb_radius': bonuses.fireballRadius += 2; break;
+            case 'aoe_dmg_1': bonuses.aoeDmg += 20; break;
+            case 'aoe_dmg_2': bonuses.aoeDmg += 40; break;
+            case 'aoe_dmg_3': bonuses.aoeDmg += 70; break;
+            case 'aoe_radius': bonuses.aoeRadius += 3; break;
+            case 'aoe_sp_1':  bonuses.aoeSpCost -= 15; break;
+            case 'atk_range_1': bonuses.atkRange += 1; break;
+            case 'atk_speed_1': bonuses.atkSpeedMult = 1.2; break;
+        }
+    });
+    return bonuses;
+}
+
+function renderActiveSkillTree() {
+    let categories = { fireball: '🔥 Fireball', aoe: '💫 AOE', attack: '⚔️ Ataque Físico' };
+    let html = '';
+    Object.keys(categories).forEach(cat => {
+        html += `<div style="margin-bottom:15px;"><div style="font-size:14px; font-weight:bold; color:orange; margin-bottom:8px; border-bottom:1px solid rgba(255,165,0,0.3); padding-bottom:5px;">${categories[cat]}</div>`;
+        evolutionData.activeSkillTree.filter(s => s.category === cat).forEach(skill => {
+            let canAfford = evolutionData.skillPoints >= skill.cost;
+            let hasPrereq = !skill.requires || skill.requires.every(reqId => {
+                let req = evolutionData.activeSkillTree.find(s => s.id === reqId);
+                return req && req.level > 0;
+            });
+            let meetsLevel = player.level >= skill.reqLevel;
+            let canUnlock = canAfford && hasPrereq && meetsLevel && skill.level < skill.maxLevel;
+            let bg = skill.level > 0 ? 'rgba(255,165,0,0.2)' : (canUnlock ? 'rgba(100,255,100,0.15)' : 'rgba(255,255,255,0.05)');
+            let border = skill.level > 0 ? 'border:2px solid orange;' : (canUnlock ? 'border:2px solid lime;' : 'border:2px solid #555;');
+            let opacity = (hasPrereq && meetsLevel) ? 1 : 0.5;
+            html += `<div style="background:${bg}; padding:10px; margin:5px 0; border-radius:10px; ${border} opacity:${opacity}; display:flex; align-items:center; gap:10px;">
+                <span style="font-size:26px;">${skill.icon}</span>
+                <div style="flex:1;">
+                    <div style="font-weight:bold; color:${skill.level > 0 ? 'orange' : 'white'};">${skill.name}${skill.level > 0 ? ' ✓' : ''}</div>
+                    <div style="font-size:12px; color:#ccc;">${skill.desc}</div>
+                    <div style="font-size:11px; color:#888; margin-top:3px;">Nível ${skill.reqLevel}${skill.requires ? ' • Requer: ' + skill.requires.map(r => evolutionData.activeSkillTree.find(s=>s.id===r)?.name).join(', ') : ''}</div>
+                </div>
+                <div>
+                    ${skill.level < skill.maxLevel
+                        ? `<button onclick="buyActiveSkill('${skill.id}')" style="padding:7px 14px; background:${canUnlock ? 'linear-gradient(135deg,#e67e22,#c96b1a)' : 'linear-gradient(135deg,#666,#555)'}; border:none; border-radius:6px; color:white; cursor:${canUnlock ? 'pointer' : 'not-allowed'}; font-weight:bold;" ${!canUnlock ? 'disabled' : ''}>💎 ${skill.cost} SP</button>`
+                        : '<span style="color:orange; font-weight:bold;">✓ MAX</span>'
+                    }
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    });
+    document.getElementById('activeSkillTreePanel').innerHTML = html;
+}
+
+function buyActiveSkill(skillId) {
+    let skill = evolutionData.activeSkillTree.find(s => s.id === skillId);
+    if(!skill) return;
+    if(skill.requires && !skill.requires.every(reqId => {
+        let req = evolutionData.activeSkillTree.find(s => s.id === reqId);
+        return req && req.level > 0;
+    })) { log(`<span style='color:red'>❌ Pré-requisitos não atendidos!</span>`); return; }
+    if(player.level < skill.reqLevel) { log(`<span style='color:red'>❌ Nível ${skill.reqLevel} necessário!</span>`); return; }
+    if(skill.level >= skill.maxLevel) { log(`<span style='color:orange'>⚠️ Habilidade já no máximo!</span>`); return; }
+    if(evolutionData.skillPoints < skill.cost) { log(`<span style='color:red'>❌ Skill Points insuficientes!</span>`); return; }
+    evolutionData.skillPoints -= skill.cost;
+    skill.level = 1;
+    log(`<span style='color:orange'>⚡ Habilidade ativa desbloqueada: ${skill.name}!</span>`);
+    updateEvolutionUI();
+    renderActiveSkillTree();
 }
 
 function updateEvolutionUI() {
@@ -1746,13 +1841,15 @@ function checkLevel(){
 }
 
 function castFireball(){
-    if(player.sp < 25){ log("SP insuficiente!"); return; }
+    let ab = getActiveSkillBonuses();
+    let spCost = Math.max(5, 25 + ab.fireballSpCost);
+    if(player.sp < spCost){ log("SP insuficiente!"); return; }
     playSound('fireball');
-    player.sp -= 25;
+    player.sp -= spCost;
     let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
-    fb.position.copy(hero.position).y = 1.2;
+    fb.position.copy(hero.position); fb.position.y = 1.2;
     scene.add(fb);
-    fireballs.push({ mesh: fb, dir: lastDir.clone().normalize(), life: 80 });
+    fireballs.push({ mesh: fb, dir: lastDir.clone().normalize(), life: 80, activeBonus: ab });
 }
 
 // Habilidade AOE (Area of Effect) - desbloqueada no nível 12
@@ -1768,17 +1865,20 @@ function castAOE(){
         floatingText("⏳ " + remaining + "s", hero.position, "purple");
         return;
     }
-    if(player.sp < 50){ log("SP insuficiente!"); return; }
+    let aoe_ab = getActiveSkillBonuses();
+    let aoeSpCost = Math.max(10, 50 + aoe_ab.aoeSpCost);
+    if(player.sp < aoeSpCost){ log("SP insuficiente!"); return; }
     lastAoeTime = now;
-    player.sp -= 50;
+    player.sp -= aoeSpCost;
 
+    let aoeRadius = 4 + (aoe_ab.aoeRadius || 0);
     // Cria efeito visual de explosão em área
     let aoeMesh = new THREE.Mesh(
-        new THREE.RingGeometry(0.5, 4, 32),
+        new THREE.RingGeometry(0.5, aoeRadius, 32),
         new THREE.MeshBasicMaterial({color:0x9933ff, transparent:true, opacity:0.7, side:THREE.DoubleSide})
     );
     aoeMesh.rotation.x = -Math.PI / 2;
-    aoeMesh.position.copy(hero.position).y = 0.1;
+    aoeMesh.position.copy(hero.position); aoeMesh.position.y = 0.1;
     scene.add(aoeMesh);
 
     // Adiciona partícula de luz central
@@ -1786,15 +1886,15 @@ function castAOE(){
         new THREE.SphereGeometry(1.5, 16, 16),
         new THREE.MeshBasicMaterial({color:0xcc66ff, transparent:true, opacity:0.5})
     );
-    lightMesh.position.copy(hero.position).y = 1.5;
+    lightMesh.position.copy(hero.position); lightMesh.position.y = 1.5;
     scene.add(lightMesh);
 
     aoes.push({
         effectMesh: aoeMesh,
         lightMesh: lightMesh,
         center: hero.position.clone(),
-        radius: 4,
-        damage: player.atk * 2.5,
+        radius: aoeRadius,
+        damage: player.atk * 2.5 + (aoe_ab.aoeDmg || 0),
         life: 20
     });
 
@@ -1811,8 +1911,8 @@ function castAOE(){
     // Monstros comuns recebem pelo menos 50% do HP máximo
     [...monsters].forEach(monster => {
         let dist = monster.position.distanceTo(hero.position);
-        if(dist <= 4){
-            let baseDmg = player.atk * 2.5;
+        if(dist <= aoeRadius){
+            let baseDmg = player.atk * 2.5 + (aoe_ab.aoeDmg || 0);
             if(player.aoeDamageBonus) baseDmg *= (1 + player.aoeDamageBonus / 100);
             let calcDmg = Math.max(1, baseDmg - monster.userData.def);
             let dmg;
@@ -1937,14 +2037,14 @@ function attack(){
                     }
                     
                     // Itens equipados também sofrem desgaste gradual em combate
-                    const equipmentSlots = ['armor', 'helmet', 'boots', 'ring', 'amulet'];
+                    const equipmentSlots = ['shield', 'cape', 'boots', 'ring1', 'ring2'];
+                    const slotNames = { shield: 'Escudo', cape: 'Capa', boots: 'Botas', ring1: 'Anel 1', ring2: 'Anel 2' };
                     equipmentSlots.forEach(slot => {
                         if(equipped[slot] && equipped[slot].durability !== undefined) {
                             // Chance de 30% de reduzir durabilidade por ataque
                             if(Math.random() < 0.3) {
                                 equipped[slot].durability -= 1;
                                 if(equipped[slot].durability <= 0) {
-                                    const slotNames = { armor: 'Armadura', helmet: 'Capacete', boots: 'Botas', ring: 'Anel', amulet: 'Amuleto' };
                                     floatingText("💔 " + slotNames[slot] + " Quebrou!", hero.position, "red");
                                     log("<span style='color:red'>Seu(a) " + slotNames[slot].toLowerCase() + " quebrou!</span>");
                                     equipped[slot] = null;
@@ -1953,7 +2053,7 @@ function attack(){
                             }
                         }
                     });
-                    
+
                     if(equipped.weapon || equipmentSlots.some(s => equipped[s])) {
                         updatePanels();
                     }
@@ -2812,11 +2912,18 @@ function animate(time){
     }
 
     let move = new THREE.Vector3(0,0,0);
-    // Teclado - WASD e Setas Direcionais
-    if(keys.w || keys.arrowup) move.z -= 1; 
-    if(keys.s || keys.arrowdown) move.z += 1;
-    if(keys.a || keys.arrowleft) move.x -= 1; 
-    if(keys.d || keys.arrowright) move.x += 1;
+    // Teclado — respeita modo de controle
+    if(controlMode === 'wasd') {
+        if(keys.w) move.z -= 1;
+        if(keys.s) move.z += 1;
+        if(keys.a) move.x -= 1;
+        if(keys.d) move.x += 1;
+    } else {
+        if(keys.arrowup)    move.z -= 1;
+        if(keys.arrowdown)  move.z += 1;
+        if(keys.arrowleft)  move.x -= 1;
+        if(keys.arrowright) move.x += 1;
+    }
     // Joystick Mobile
     if(isJoyactive){ move.x = joyStickVector.x; move.z = joyStickVector.y; }
 
@@ -2918,15 +3025,17 @@ function animate(time){
     // Fireball
     for(let i=fireballs.length-1; i>=0; i--){
         let f = fireballs[i]; f.mesh.position.add(f.dir.clone().multiplyScalar(0.8)); f.life--;
+        let fb_ab = f.activeBonus || { fireballDmg: 0, fireballRadius: 0 };
+        let fbRadius = 3.5 + (fb_ab.fireballRadius || 0);
         monsters.forEach(m=>{
-            if(f.mesh.position.distanceTo(m.position)<3.5){
-                let baseDmg = 40;
-                // Aplica bônus de dano da skill tree
+            if(f.mesh.position.distanceTo(m.position) < fbRadius){
+                let baseDmg = 40 + (fb_ab.fireballDmg || 0);
+                // Aplica bônus percentual da skill tree passiva
                 if(player.fireballDamageBonus) {
                     baseDmg *= (1 + player.fireballDamageBonus / 100);
                 }
-                m.userData.hp -= baseDmg; 
-                floatingText("-" + Math.round(baseDmg), m.position, "red"); 
+                m.userData.hp -= baseDmg;
+                floatingText("-" + Math.round(baseDmg), m.position, "red");
                 f.life=0;
                 if(m.userData.hp <= 0) killMonster(m);
             }
@@ -2940,11 +3049,18 @@ function animate(time){
         bf.mesh.position.addScaledVector(bf.dir, 0.55);
         bf.mesh.rotation.y += 0.15;
         bf.life--;
-        if(hero.position.distanceTo(bf.mesh.position) < 1.5) {
+        let bfDx = hero.position.x - bf.mesh.position.x, bfDz = hero.position.z - bf.mesh.position.z;
+        if(Math.sqrt(bfDx*bfDx + bfDz*bfDz) < 2.0) {
             if(shieldActive) {
                 floatingText("🔮 BLOQUEADO!", hero.position, "purple");
             } else {
-                let dmg = Math.max(1, bf.dmg - player.def);
+                // Dano mágico (magical:true) não é reduzido por def; físico sofre redução parcial
+                let dmg;
+                if(bf.magical) {
+                    dmg = bf.dmg; // Fireball ignora def
+                } else {
+                    dmg = Math.max(1, bf.dmg - Math.floor(player.def * 0.4)); // Físico: penetra 60% da def
+                }
                 player.hp -= dmg;
                 floatingText("-"+dmg, hero.position, "orange");
                 playSound('hit'); screenShake(0.3);
@@ -3019,8 +3135,8 @@ function animate(time){
                     if(tLen > 0.01) m.position.addScaledVector(toTarget.normalize(), Math.min(0.07, tLen));
                 }
                 // Boss dispara fireball — intervalo diminui suavemente nível a nível
-                // lv5=2500ms, lv10=2000ms, lv15=1500ms, lv20=1000ms, cap 700ms
-                let bossFireInterval = Math.max(700, 2500 - Math.max(0, player.level - 5) * 90);
+                // lv5=2000ms, lv10=1500ms, lv15=1000ms, lv20=700ms, cap 500ms
+                let bossFireInterval = Math.max(500, 2000 - Math.max(0, player.level - 5) * 90);
                 if(!m.userData.lastBossFireball) m.userData.lastBossFireball = 0;
                 if(d < 40 && time - m.userData.lastBossFireball > bossFireInterval) {
                     m.userData.lastBossFireball = time;
@@ -3032,7 +3148,11 @@ function animate(time){
                     bMesh.position.copy(m.position);
                     bMesh.position.y = 1.5;
                     scene.add(bMesh);
-                    bossFireballs.push({ mesh: bMesh, dir: bDir, dmg: Math.floor(m.userData.atk * 0.7), life: 80 });
+                    // Fireball do boss: sempre pelo menos 2x o dano máximo da fireball do jogador
+                    // Ignora def (dano mágico) — calculado na hora do impacto sem redução
+                    let playerFbBase = 40 + getActiveSkillBonuses().fireballDmg;
+                    let bossFbDmg = Math.max(playerFbBase * 2, Math.floor(m.userData.atk * 1.5));
+                    bossFireballs.push({ mesh: bMesh, dir: bDir, dmg: bossFbDmg, life: 80, magical: true });
                     playSound('bossFireball');
                 }
                 // Depois do nível 12 o boss convoca mobs a cada 15s
@@ -3070,7 +3190,7 @@ function animate(time){
                         rMesh.position.copy(m.position);
                         rMesh.position.y = 1.2;
                         scene.add(rMesh);
-                        bossFireballs.push({ mesh: rMesh, dir: rDir, dmg: Math.floor(m.userData.atk * 0.6), life: 60, isMonster: true });
+                        bossFireballs.push({ mesh: rMesh, dir: rDir, dmg: Math.floor(m.userData.atk * 0.6), life: 60, isMonster: true, magical: false });
                     }
                 } else if(d < 40) {
                     m.position.add(new THREE.Vector3().subVectors(hero.position, m.position).normalize().multiplyScalar(0.06));
@@ -3080,12 +3200,21 @@ function animate(time){
                     m.position.add(new THREE.Vector3().subVectors(m.position, hero.position).normalize().multiplyScalar(0.09));
                 }
             }
-            // Apenas ataca de perto e dentro do cooldown
-            if(d < 1.8 && time - m.userData.lastAttack > 1500){
+            // Apenas ataca de perto e dentro do cooldown (boss é mais rápido)
+            let meleeCooldown = m.userData.isBoss ? 1000 : 1500;
+            if(d < 1.8 && time - m.userData.lastAttack > meleeCooldown){
                 m.userData.lastAttack = time;
                 if(shieldActive) { floatingText("🔮 BLOQUEADO!", hero.position, "purple"); }
                 else {
-                let dmg = Math.max(1, m.userData.atk-player.def);
+                let dmg;
+                if(m.userData.isBoss) {
+                    // Boss penetra 75% da def do jogador + mínimo de 5% do HP máximo
+                    let reducedDef = Math.floor(player.def * 0.25);
+                    let minDmg = Math.max(5, Math.floor(player.maxHp * 0.05));
+                    dmg = Math.max(minDmg, m.userData.atk - reducedDef);
+                } else {
+                    dmg = Math.max(1, m.userData.atk - player.def);
+                }
                 player.hp -= dmg; floatingText("-"+dmg, hero.position, "red");
                 playSound('hit'); screenShake(0.25);
                 
@@ -3253,21 +3382,75 @@ function togglePause() {
     }
 }
 
-window.onkeydown=e=>{ 
-    keys[e.key.toLowerCase()]=true; 
+// -------- SISTEMA DE MODO DE CONTROLE --------
+function setControlMode(mode) {
+    controlMode = mode;
+    // Atualiza visuais dos botões
+    let btnW = document.getElementById('btnModeWASD');
+    let btnA = document.getElementById('btnModeArrows');
+    if(btnW && btnA) {
+        btnW.style.background = mode === 'wasd' ? 'linear-gradient(135deg,rgba(255,215,0,0.5),rgba(255,215,0,0.3))' : 'rgba(255,255,255,0.05)';
+        btnW.style.borderColor = mode === 'wasd' ? 'rgba(255,215,0,0.9)' : 'rgba(255,255,255,0.2)';
+        btnA.style.background = mode === 'arrows' ? 'linear-gradient(135deg,rgba(90,185,255,0.5),rgba(90,185,255,0.3))' : 'rgba(255,255,255,0.05)';
+        btnA.style.borderColor = mode === 'arrows' ? 'rgba(90,185,255,0.9)' : 'rgba(255,255,255,0.2)';
+    }
+    updateControlsList();
+}
+
+function updateControlsList() {
+    let list = document.getElementById('controlsList');
+    if(!list) return;
+    let isWasd = controlMode === 'wasd';
+    list.innerHTML = `
+        <li><span class="key">${isWasd ? 'WASD' : '↑↓←→'}</span><span class="desc">Mover</span></li>
+        <li><span class="key">SPACE</span><span class="desc">Atacar</span></li>
+        <li><span class="key">${isWasd ? 'J' : 'Z'}</span><span class="desc">Fireball</span></li>
+        <li><span class="key">${isWasd ? 'K' : 'X'}</span><span class="desc">AOE (Área)</span></li>
+        <li><span class="key">${isWasd ? 'L' : 'C'}</span><span class="desc">Dash (requer skill)</span></li>
+        <li><span class="key">${isWasd ? 'U' : 'R'}</span><span class="desc">Escudo (requer skill)</span></li>
+        <li><span class="key">${isWasd ? 'H' : 'Q'}</span><span class="desc">Usar Poção</span></li>
+        <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
+        <li><span class="key">V</span><span class="desc">Inventário</span></li>
+        <li><span class="key highlight">ESC</span><span class="desc highlight">Evolução / Fechar</span></li>
+        <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
+        <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
+        <li><span class="key highlight">M</span><span class="desc highlight">Mapa Expandido</span></li>
+    `;
+}
+
+window.onkeydown=e=>{
+    let k = e.key.toLowerCase();
+    keys[k] = true;
+    // Movimento — setas sempre funcionam; WASD só se modo wasd
+    // (apenas registrado via keys[], o loop de movimento decide)
+
     if(e.code==="Space") attack();
-    if(e.key.toLowerCase()==="z") castFireball();
-    if(e.key.toLowerCase()==="x") castAOE(); // Tecla X para habilidade AOE (nível 12+)
-    if(e.key.toLowerCase()==="c") castDash(); // C = Dash (requer skill, também move direita)
-    if(e.key.toLowerCase()==="r") castShield(); // R = Escudo (requer skill)
-    if(e.key.toLowerCase()==="v") toggleV();
-    if(e.key.toLowerCase()==="e") toggleShop();
-    if(e.key.toLowerCase()==="b") toggleEvolution(); // Tecla B para Evolução
-    if(e.key.toLowerCase()==="f") document.documentElement.requestFullscreen();
-    if(e.key.toLowerCase()==="p") togglePause(); // Tecla P para pausar
-    if(e.key.toLowerCase()==="q") usePotion(); // Q = Usar poção
-    if(e.key.toLowerCase()==="m") toggleFullMap(); // Tecla M para abrir mapa expandido
-    if(e.key==="Escape") closeAllMenus(); // ESC fecha todos os menus
+
+    if(controlMode === 'wasd') {
+        // Modo WASD: habilidades na mão direita
+        if(k==="j") castFireball();
+        if(k==="k") castAOE();
+        if(k==="l") castDash();
+        if(k==="u") castShield();
+        if(k==="h") usePotion();
+    } else {
+        // Modo Setas: atalhos originais
+        if(k==="z") castFireball();
+        if(k==="x") castAOE();
+        if(k==="c") castDash();
+        if(k==="r") castShield();
+        if(k==="q") usePotion();
+    }
+    // Atalhos comuns a ambos os modos
+    if(k==="v") toggleV();
+    if(k==="e") toggleShop();
+    if(k==="f") document.documentElement.requestFullscreen();
+    if(k==="p") togglePause();
+    if(k==="m") toggleFullMap();
+    if(e.key==="Escape") {
+        let closed = closeAllMenus();
+        if(!closed) toggleEvolution(); // ESC abre evolução quando nenhum menu está aberto
+    }
 };
 window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
 
@@ -3644,6 +3827,9 @@ function launchGame(loadSave) {
 }
 
 renderStartScreen();
+
+// Inicializa modo de controle e lista de teclas
+setControlMode('wasd');
 </script>
 </body>
 </html>
