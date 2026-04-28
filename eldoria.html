@@ -4661,6 +4661,7 @@ document.body.appendChild(gameOverOverlay);
 function showGameOver() {
     gamePaused = true;
     savedLevel = player.level; // Salva o nível atual para usar se reviver
+    pauseOverlay.style.display = 'none'; // Esconde pause overlay se estiver visível
     
     // BUG FIX: Resetar HP do player para 0 antes de mostrar game over
     // Isso evita que o player herde o % de vida do boss
