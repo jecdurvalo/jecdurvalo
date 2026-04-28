@@ -1455,26 +1455,43 @@ function updateBiome() {
     if(newBiomeIndex !== currentBiome) {
         currentBiome = newBiomeIndex;
         let biome = biomes[currentBiome];
-        
+
+        // Limpar TODOS os monstros e projéteis do bioma anterior
+        for(let i = monsters.length - 1; i >= 0; i--) {
+            let m = monsters[i];
+            if(m.userData.ui) m.userData.ui.remove();
+            if(m.userData.label) m.userData.label.remove();
+            scene.remove(m);
+        }
+        monsters.length = 0;
+        bossSpawned = false;
+
+        // Limpar projéteis inimigos
+        for(let bf of bossFireballs) scene.remove(bf.mesh);
+        bossFireballs.length = 0;
+
+        // Limpar DOTs ativos (veneno etc)
+        playerDots.length = 0;
+
         // Mudar cor do chão
         ground.material.color.setHex(biome.groundColor);
-        
+
         // Mudar céu e névoa
         scene.background.setHex(biome.skyColor);
         scene.fog.color.setHex(biome.fogColor);
         scene.fog.near = 30;
         scene.fog.far = 120;
-        
+
         floatingText("🌍 " + biome.name, hero.position, "white");
-        log("<span style='color:cyan'>Entrou em: " + biome.name + "</span>");
-        
+        log("<span style='color:cyan'>🌍 Bem-vindo ao " + biome.name + "! Inimigos do bioma anterior foram embora.</span>");
+
         // Atualizar estatísticas de biomas visitados
         if(!evolutionData.stats.visitedBiomes.includes(currentBiome)) {
             evolutionData.stats.visitedBiomes.push(currentBiome);
             evolutionData.stats.biomesVisited = evolutionData.stats.visitedBiomes.length;
             checkAchievements();
         }
-        
+
         // Atualizar decorações do bioma
         addBiomeDecorations();
     }
@@ -1995,8 +2012,13 @@ function checkLevel(){
         screenShake(0.3);
         floatingText("LEVEL UP! " + bonus, hero.position, "gold");
 
-        // Boss aparece a cada 3 níveis (level 3, 6, 9, 12...)
-        if(player.level >= 3 && player.level % 3 === 0) {
+        // Progressão de boss: intervalos menores conforme os níveis avançam
+        // Lv 1-4: sem boss (aprendizado)
+        // Lv 5-12: a cada 5 níveis   → 5, 10
+        // Lv 13-24: a cada 3 níveis  → 15, 18, 21, 24
+        // Lv 25+: a cada 2 níveis    → 26, 28, 30...
+        let bossInterval = player.level >= 25 ? 2 : player.level >= 13 ? 3 : 5;
+        if(player.level >= 5 && player.level % bossInterval === 0) {
             spawnBossWithScaling();
         }
         
@@ -3812,16 +3834,18 @@ function updateControlsList() {
         <li><span class="key">SPACE</span><span class="desc">Atacar</span></li>
         <li><span class="key">${isWasd ? 'J' : 'Z'}</span><span class="desc">Fireball</span></li>
         <li><span class="key">${isWasd ? 'K' : 'X'}</span><span class="desc">AOE (Área)</span></li>
-        <li><span class="key">${isWasd ? 'L' : 'C'}</span><span class="desc">Dash (requer skill)</span></li>
-        <li><span class="key">${isWasd ? 'U' : 'R'}</span><span class="desc">Escudo (requer skill)</span></li>
-        <li><span class="key">${isWasd ? 'H' : 'Q'}</span><span class="desc">Usar Poção</span></li>
-        <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
-        <li><span class="key highlight">TAB</span><span class="desc highlight">Quick Swap</span></li>
-        <li><span class="key">V</span><span class="desc">Inventário Completo</span></li>
+        <li><span class="key">${isWasd ? 'L' : 'C'}</span><span class="desc">Dash</span></li>
+        <li><span class="key">${isWasd ? 'U' : 'R'}</span><span class="desc">Escudo</span></li>
+        <li><span class="key">${isWasd ? 'H' : 'Q'}</span><span class="desc">Poção</span></li>
+        <li style="border-top:1px solid rgba(255,255,255,0.08); margin-top:4px; padding-top:4px;">
+            <span class="key highlight">TAB</span><span class="desc highlight">Quick Swap</span></li>
+        <li><span class="key">V</span><span class="desc">Inventário</span></li>
+        <li><span class="key">E</span><span class="desc">Loja</span></li>
         <li><span class="key highlight">ESC</span><span class="desc highlight">Evolução / Fechar</span></li>
+        <li style="border-top:1px solid rgba(255,255,255,0.08); margin-top:4px; padding-top:4px;">
+            <span class="key">M</span><span class="desc">Mapa</span></li>
+        <li><span class="key">P</span><span class="desc">Pausar</span></li>
         <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
-        <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
-        <li><span class="key highlight">M</span><span class="desc highlight">Mapa Expandido</span></li>
     `;
 }
 
