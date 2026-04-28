@@ -1703,10 +1703,8 @@ hand.position.set(0.6,1,0.4); hand.visible=true;
 hero.add(hand);
 scene.add(hero);
 
-let heroLabel=document.createElement("div");
-heroLabel.className="nameplate";
-heroLabel.innerHTML=`<span class='guild'>[Legends of Eldoria]</span><span class='playerName'>${playerName} Lv.1</span><span class='title'>Dragon Slayer</span>`;
-document.body.appendChild(heroLabel);
+// heroLabel será criado em launchGame() para evitar erro de playerName indefinido
+let heroLabel = null;
 
 // Grupo para armas animadas
 let weaponGroup = null;
@@ -2281,7 +2279,7 @@ function checkLevel(){
             bonus = "+" + spBonus + " SP"; 
         }
         player.hp = player.maxHp; player.sp = player.maxSp;
-        heroLabel.querySelector(".playerName").innerHTML=playerName+" Lv."+player.level;
+        if(heroLabel) heroLabel.querySelector(".playerName").innerHTML=playerName+" Lv."+player.level;
         playSound('levelup');
         screenShake(0.3);
         floatingText("LEVEL UP! " + bonus, hero.position, "gold");
@@ -3725,7 +3723,7 @@ function loadGame() {
         recalcStats();
         applyEquipVisual();
         // Atualiza HUD e nameplate com dados carregados
-        heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv." + player.level;
+        if(heroLabel) heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv." + player.level;
         hp.style.width = (player.hp / player.maxHp * 100) + "%";
         sp.style.width = (player.sp / player.maxSp * 100) + "%";
         xp.style.width = (player.xp / player.next * 100) + "%";
@@ -4982,7 +4980,15 @@ function launchNewGame() {
 }
 
 function launchGame(loadSave) {
-    heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv.1";
+    // Cria o heroLabel se ainda não existir
+    if(!heroLabel) {
+        heroLabel = document.createElement("div");
+        heroLabel.className = "nameplate";
+        heroLabel.innerHTML = `<span class='guild'>[Legends of Eldoria]</span><span class='playerName'>${playerName} Lv.1</span><span class='title'>Dragon Slayer</span>`;
+        document.body.appendChild(heroLabel);
+    } else {
+        heroLabel.querySelector(".playerName").innerHTML = playerName + " Lv.1";
+    }
     startOverlay.style.display = 'none';
     if(loadSave) loadGame(); // Só carrega se foi pedido (herói existente)
     animate();
