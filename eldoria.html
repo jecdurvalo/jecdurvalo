@@ -955,59 +955,80 @@ const fullMapCanvas = document.getElementById('fullMapCanvas');
 const ctxFullMap = fullMapCanvas.getContext('2d');
 let isFullMapOpen = false;
 
+// lootTable organizada em 5 tiers de nível.
+// minLevel controla quando o item começa a dropar.
+// Stats base são modestos — raridade escala em cima, mas sem explodir nos primeiros níveis.
 const lootTable=[
-    // Armas (weapon) - com diferentes níveis de dado
-    { name:"Rusty Dagger", slot:"weapon", atk:3, desc:"Adaga enferrujada.", icon:"🗡️", stackable:true, value:10 },
-    { name:"Iron Sword", slot:"weapon", atk:7, desc:"Lâmina de aço temperado.", icon:"🗡️", stackable:true, value:25 },
-    { name:"Steel Longsword", slot:"weapon", atk:12, desc:"Espada longa de aço.", icon:"⚔️", stackable:true, value:50 },
-    { name:"Knight Blade", slot:"weapon", atk:18, desc:"Lâmina de cavaleiro.", icon:"⚔️", stackable:true, value:80 },
-    { name:"Dragon Slayer", slot:"weapon", atk:25, desc:"Espada lendária.", icon:"🐉", stackable:true, value:150 },
-    { name:"Shadow Dagger", slot:"weapon", atk:15, sp:10, desc:"Adaga das sombras.", icon:"🗡️", stackable:true, value:70 },
-    { name:"Fire Axe", slot:"weapon", atk:20, desc:"Machado de fogo.", icon:"🪓", stackable:true, value:100 },
-    { name:"Frost Blade", slot:"weapon", atk:22, sp:15, desc:"Lâmina congelante.", icon:"❄️", stackable:true, value:110 },
-    { name:"Thunder Spear", slot:"weapon", atk:28, desc:"Lança do trovão.", icon:"⚡", stackable:true, value:160 },
-    { name:"Void Scythe", slot:"weapon", atk:35, hp:-10, desc:"Foice do vazio.", icon:"💀", stackable:true, value:200 },
-    { name:"Holy Mace", slot:"weapon", atk:16, hp:25, desc:"Maça sagrada.", icon:"✨", stackable:true, value:95 },
-    { name:"Assassin Dagger", slot:"weapon", atk:30, sp:20, desc:"Adaga assassina.", icon:"🗡️", stackable:true, value:180 },
-    
-    // Escudos (shield)
-    { name:"Wooden Shield", slot:"shield", def:3, desc:"Escudo de madeira.", icon:"🛡️", stackable:true, value:15 },
-    { name:"Knight Shield", slot:"shield", def:8, desc:"Proteção de cavalaria.", icon:"🛡️", stackable:true, value:40 },
-    { name:"Tower Shield", slot:"shield", def:15, desc:"Escudo de torre.", icon:"🛡️", stackable:true, value:90 },
-    { name:"Dragon Shield", slot:"shield", def:22, hp:20, desc:"Escudo dracônico.", icon:"🐉", stackable:true, value:140 },
-    { name:"Mirror Shield", slot:"shield", def:18, sp:15, desc:"Reflete magia.", icon:"🪞", stackable:true, value:115 },
-    { name:"Phoenix Shield", slot:"shield", def:25, hp:35, desc:"Escudo da fênix.", icon:"🔥", stackable:true, value:170 },
-    { name:"Ice Barrier", slot:"shield", def:20, sp:25, desc:"Barreira de gelo.", icon:"❄️", stackable:true, value:130 },
-    
-    // Capas (cape)
-    { name:"Cloth Cape", slot:"cape", def:2, desc:"Capa de tecido.", icon:"🧥", stackable:true, value:12 },
-    { name:"Shadow Cape", slot:"cape", def:5, sp:20, desc:"Feita de sombras puras.", icon:"🧥", stackable:true, value:60 },
-    { name:"Royal Cape", slot:"cape", def:8, sp:35, desc:"Capa real.", icon:"👑", stackable:true, value:100 },
-    { name:"Wind Cape", slot:"cape", def:6, sp:25, speed:0.05, desc:"Capa dos ventos.", icon:"💨", stackable:true, value:85 },
-    { name:"Star Cloak", slot:"cape", def:10, sp:50, desc:"Manto estelar.", icon:"⭐", stackable:true, value:145 },
-    { name:"Demon Wings", slot:"cape", def:12, sp:40, hp:15, desc:"Asas demoníacas.", icon:"🦇", stackable:true, value:155 },
-    
-    // Botas (boots)
-    { name:"Travel Boots", slot:"boots", def:2, speed:0.08, desc:"Aumenta velocidade.", icon:"👢", stackable:true, value:30 },
-    { name:"Swift Boots", slot:"boots", def:4, speed:0.12, desc:"Botas rápidas.", icon:"👢", stackable:true, value:70 },
-    { name:"Dragon Boots", slot:"boots", def:7, speed:0.15, hp:15, desc:"Botas dracônicas.", icon:"🐉", stackable:true, value:120 },
-    { name:"Mercury Boots", slot:"boots", def:5, speed:0.20, sp:10, desc:"Velocidade extrema.", icon:"⚡", stackable:true, value:100 },
-    { name:"Titan Greaves", slot:"boots", def:12, speed:0.10, hp:30, desc:"Greaves titânicas.", icon:"🦵", stackable:true, value:135 },
-    
-    // Anéis (ring)
-    { name:"Ring of Power", slot:"ring", atk:5, desc:"Anel dourado brilhante.", icon:"💍", stackable:true, value:35 },
-    { name:"Ring of Life", slot:"ring", hp:30, desc:"Anel com gema azul.", icon:"💎", stackable:true, value:40 },
-    { name:"Ring of Defense", slot:"ring", def:6, desc:"Anel protetor.", icon:"💍", stackable:true, value:45 },
-    { name:"Dragon Ring", slot:"ring", atk:10, hp:20, desc:"Anel do dragão.", icon:"🐉", stackable:true, value:130 },
-    { name:"Ring of Wisdom", slot:"ring", sp:40, desc:"Anel da sabedoria.", icon:"💍", stackable:true, value:55 },
-    { name:"Twin Ring", slot:"ring", atk:8, def:8, sp:15, desc:"Anel gêmeo.", icon:"💞", stackable:true, value:95 },
-    { name:"Eternal Ring", slot:"ring", atk:15, hp:50, sp:25, desc:"Anel eterno.", icon:"♾️", stackable:true, value:220 },
-    
-    // Consumíveis
-    { name:"Health Potion", slot:"consumable", heal:50, desc:"Recupera 50 HP.", icon:"🧪", stackable:true, value:20 },
-    { name:"Super Potion", slot:"consumable", heal:100, desc:"Recupera 100 HP.", icon:"🧪", stackable:true, value:40 },
-    { name:"Ultra Potion", slot:"consumable", heal:200, desc:"Recupera 200 HP.", icon:"🧪", stackable:true, value:75 },
-    { name:"Elixir", slot:"consumable", heal:500, desc:"Recupera 500 HP.", icon:"💧", stackable:true, value:150 }
+    // ══════════════════════════════════════════════
+    // TIER 1 — Lv 1-4  (Planícies, início absoluto)
+    // ══════════════════════════════════════════════
+    { name:"Graveto Afiado",    slot:"weapon",     atk:2,               desc:"Um galho endurecido no fogo.",  icon:"🪵", value:6,  minLevel:1 },
+    { name:"Faca Enferrujada",  slot:"weapon",     atk:4,               desc:"Lâmina gasta mas funcional.",   icon:"🗡️", value:12, minLevel:1 },
+    { name:"Tampa de Barril",   slot:"shield",     def:2,               desc:"Proteção improvisada.",          icon:"🪣", value:8,  minLevel:1 },
+    { name:"Capa de Pano",      slot:"cape",       def:1,               desc:"Tecido velho costurado.",        icon:"🧥", value:5,  minLevel:1 },
+    { name:"Botas Gastas",      slot:"boots",      def:1,  speed:0.03,  desc:"Sola quase no fim.",             icon:"👟", value:7,  minLevel:1 },
+    { name:"Anel de Cobre",     slot:"ring",       atk:1,               desc:"Simples anel de cobre.",         icon:"💍", value:8,  minLevel:1 },
+    { name:"Poção de Saúde",    slot:"consumable", heal:40,             desc:"Recupera 40 HP.",                icon:"🧪", stackable:true, value:15, minLevel:1 },
+
+    // ══════════════════════════════════════════════
+    // TIER 2 — Lv 5-9  (Floresta Negra)
+    // ══════════════════════════════════════════════
+    { name:"Espada de Ferro",   slot:"weapon",     atk:7,               desc:"Lâmina de ferro forjado.",       icon:"🗡️", value:28, minLevel:5 },
+    { name:"Arco da Floresta",  slot:"weapon",     atk:9,  sp:10,       desc:"Precisão entre as árvores.",     icon:"🏹", value:35, minLevel:5 },
+    { name:"Escudo de Madeira", slot:"shield",     def:5,               desc:"Tábuas de carvalho unidas.",     icon:"🛡️", value:22, minLevel:5 },
+    { name:"Capa das Sombras",  slot:"cape",       def:3,  sp:15,       desc:"Tecida nas sombras da floresta.",icon:"🌑", value:40, minLevel:5 },
+    { name:"Botas de Couro",    slot:"boots",      def:3,  speed:0.08,  desc:"Couro curtido à mão.",           icon:"👢", value:32, minLevel:5 },
+    { name:"Anel de Prata",     slot:"ring",       def:3,  hp:15,       desc:"Prata com inscrição rúnica.",    icon:"🔮", value:30, minLevel:5 },
+    { name:"Poção Média",       slot:"consumable", heal:80,             desc:"Recupera 80 HP.",                icon:"🧪", stackable:true, value:30, minLevel:5 },
+
+    // ══════════════════════════════════════════════
+    // TIER 3 — Lv 10-19  (Deserto / Neve)
+    // ══════════════════════════════════════════════
+    { name:"Lâmina de Aço",     slot:"weapon",     atk:13,              desc:"Aço bem temperado.",             icon:"⚔️", value:60,  minLevel:10 },
+    { name:"Machado de Fogo",   slot:"weapon",     atk:15, sp:10,       desc:"Emana calor constante.",         icon:"🪓", value:75,  minLevel:10 },
+    { name:"Lança Glacial",     slot:"weapon",     atk:14, sp:20,       desc:"Fria e afiada como gelo.",       icon:"🧊", value:70,  minLevel:10 },
+    { name:"Escudo de Ferro",   slot:"shield",     def:10,              desc:"Sólido escudo de ferro.",        icon:"🛡️", value:55,  minLevel:10 },
+    { name:"Barreira de Gelo",  slot:"shield",     def:12, sp:20,       desc:"Bloco de gelo comprimido.",      icon:"❄️", value:72,  minLevel:10 },
+    { name:"Manto do Vento",    slot:"cape",       def:5,  sp:22, speed:0.04, desc:"Levíssimo.",              icon:"💨", value:68,  minLevel:10 },
+    { name:"Botas Ágeis",       slot:"boots",      def:5,  speed:0.13,  desc:"Leves e responsivas.",           icon:"👢", value:62,  minLevel:10 },
+    { name:"Anel de Força",     slot:"ring",       atk:7,               desc:"Gravado com runa de poder.",     icon:"💍", value:58,  minLevel:10 },
+    { name:"Anel de Vida",      slot:"ring",       hp:45,  def:3,       desc:"Pulsa com energia vital.",       icon:"💎", value:62,  minLevel:10 },
+    { name:"Poção Forte",       slot:"consumable", heal:150,            desc:"Recupera 150 HP.",               icon:"🧪", stackable:true, value:55, minLevel:10 },
+
+    // ══════════════════════════════════════════════
+    // TIER 4 — Lv 20-34  (Vulcânico / Místico / Cristal)
+    // ══════════════════════════════════════════════
+    { name:"Lâmina do Cavaleiro",  slot:"weapon",  atk:20,              desc:"Forjada para cavaleiros reais.", icon:"⚔️", value:110,  minLevel:20 },
+    { name:"Espada das Sombras",   slot:"weapon",  atk:18, sp:25,       desc:"Absorve energia das trevas.",    icon:"🌑", value:120,  minLevel:20 },
+    { name:"Báculo Arcano",        slot:"weapon",  atk:16, sp:40,       desc:"Amplifica habilidades mágicas.", icon:"🪄", value:130,  minLevel:20 },
+    { name:"Lâmina de Cristal",    slot:"weapon",  atk:22, sp:15,       desc:"Forjada em cavernas cristalinas.",icon:"💎",value:125,  minLevel:20 },
+    { name:"Escudo do Dragão",     slot:"shield",  def:17, hp:25,       desc:"Escamas autênticas de dragão.",  icon:"🐉", value:115,  minLevel:20 },
+    { name:"Escudo de Espelhos",   slot:"shield",  def:14, sp:28,       desc:"Reflete projéteis mágicos.",     icon:"🪞", value:108,  minLevel:20 },
+    { name:"Asas Demoníacas",      slot:"cape",    def:9,  sp:35, hp:20,desc:"Voou direto do inferno.",        icon:"🦇", value:132,  minLevel:20 },
+    { name:"Manto Arcano",         slot:"cape",    def:8,  sp:50,       desc:"Tecido com fios de mana.",       icon:"🔮", value:128,  minLevel:20 },
+    { name:"Greaves de Titã",      slot:"boots",   def:11, speed:0.11, hp:30, desc:"Pesadas mas protetoras.", icon:"🦵", value:122,  minLevel:20 },
+    { name:"Botas do Vento",       slot:"boots",   def:7,  speed:0.18,  desc:"Quase flutuam.",                 icon:"🌬️",value:118,  minLevel:20 },
+    { name:"Anel do Dragão",       slot:"ring",    atk:11, hp:25,       desc:"Escama de dragão no centro.",    icon:"🐉", value:118,  minLevel:20 },
+    { name:"Anel Gêmeo",           slot:"ring",    atk:7,  def:7, sp:18,desc:"Um par perfeito.",               icon:"💞", value:105,  minLevel:20 },
+    { name:"Elixir",               slot:"consumable", heal:300,         desc:"Recupera 300 HP.",               icon:"💧", stackable:true, value:100, minLevel:20 },
+
+    // ══════════════════════════════════════════════
+    // TIER 5 — Lv 35+  (Sombra / Celestial / Vazio)
+    // ══════════════════════════════════════════════
+    { name:"Foice do Vazio",       slot:"weapon",  atk:32, hp:-15,      desc:"Drena a vida do portador.",      icon:"💀", value:200, minLevel:35 },
+    { name:"Maça Sagrada",         slot:"weapon",  atk:26, hp:40,       desc:"Abençoada pelos céus.",          icon:"✨", value:185, minLevel:35 },
+    { name:"Adaga do Assassino",   slot:"weapon",  atk:28, sp:30,       desc:"Veloz como um relâmpago.",       icon:"🗡️", value:190, minLevel:35 },
+    { name:"Lança do Trovão",      slot:"weapon",  atk:35,              desc:"Raio eterno aprisionado.",       icon:"⚡", value:210, minLevel:35 },
+    { name:"Espada Celestial",     slot:"weapon",  atk:30, hp:30, sp:20,desc:"Forjada além das nuvens.",       icon:"🌟", value:220, minLevel:35 },
+    { name:"Escudo da Fênix",      slot:"shield",  def:22, hp:50,       desc:"Renasce junto com o dono.",      icon:"🔥", value:180, minLevel:35 },
+    { name:"Égide do Vazio",       slot:"shield",  def:25, sp:40,       desc:"Nada a atravessa.",              icon:"🌌", value:195, minLevel:35 },
+    { name:"Manto Estelar",        slot:"cape",    def:13, sp:55,       desc:"Tecido de luz das estrelas.",    icon:"⭐", value:172, minLevel:35 },
+    { name:"Manto do Vazio",       slot:"cape",    def:15, sp:45, hp:25,desc:"Tecido com escuridão pura.",     icon:"🌌", value:178, minLevel:35 },
+    { name:"Botas de Mercúrio",    slot:"boots",   def:8,  speed:0.22, sp:15, desc:"Velocidade máxima.",      icon:"⚡", value:165, minLevel:35 },
+    { name:"Sabotons Celestiais",  slot:"boots",   def:14, speed:0.13, hp:40, desc:"Bênção divina nos pés.", icon:"🌟", value:170, minLevel:35 },
+    { name:"Anel Eterno",          slot:"ring",    atk:16, hp:55, sp:28,desc:"Poder que não acaba.",          icon:"♾️", value:225, minLevel:35 },
+    { name:"Anel das Sombras",     slot:"ring",    atk:14, sp:40,       desc:"Feito de trevas condensadas.",   icon:"🌑", value:210, minLevel:35 },
+    { name:"Elixir Supremo",       slot:"consumable", heal:600,         desc:"Restaura quase toda a vida.",    icon:"🌟", stackable:true, value:200, minLevel:35 },
 ];
 
 // Adicionar durabilidade aos itens e quantidade para stackables
