@@ -649,10 +649,17 @@ let evolutionData = {
         { id: 'level_15', name: 'Herói', desc: 'Alcance o nível 15', icon: '🔥', unlocked: false, condition: (data) => data.level >= 15, rewardSP: 2, rewardGold: 150 },
         { id: 'level_20', name: 'Mestre', desc: 'Alcance o nível 20', icon: '💫', unlocked: false, condition: (data) => data.level >= 20, rewardSP: 3, rewardGold: 200 },
         { id: 'level_30', name: 'Lendário', desc: 'Alcance o nível 30', icon: '✨', unlocked: false, condition: (data) => data.level >= 30, rewardSP: 5, rewardGold: 500 },
+        { id: 'level_40', name: 'Épico', desc: 'Alcance o nível 40', icon: '🌈', unlocked: false, condition: (data) => data.level >= 40, rewardSP: 6, rewardGold: 750 },
+        { id: 'level_50', name: 'Divino', desc: 'Alcance o nível 50', icon: '👼', unlocked: false, condition: (data) => data.level >= 50, rewardSP: 8, rewardGold: 1000 },
+        { id: 'level_60', name: 'Transcendente', desc: 'Alcance o nível 60', icon: '💎', unlocked: false, condition: (data) => data.level >= 60, rewardSP: 10, rewardGold: 1500 },
+        { id: 'level_75', name: 'Imortal', desc: 'Alcance o nível 75', icon: '☄️', unlocked: false, condition: (data) => data.level >= 75, rewardSP: 12, rewardGold: 2000 },
+        { id: 'level_100', name: 'Deus de Eldoria', desc: 'Alcance o nível 100', icon: '🌟', unlocked: false, condition: (data) => data.level >= 100, rewardSP: 15, rewardGold: 5000 },
         { id: 'looter', name: 'Saqueador', desc: 'Colete 20 itens', icon: '📦', unlocked: false, condition: (data) => data.itemsCollected >= 20, rewardSP: 1, rewardGold: 30 },
         { id: 'rich', name: 'Mercador', desc: 'Acumule 500 gold', icon: '💰', unlocked: false, condition: (data) => data.gold >= 500, rewardSP: 1, rewardGold: 0 },
         { id: 'rich_1000', name: 'Magnata', desc: 'Acumule 1000 gold', icon: '💎', unlocked: false, condition: (data) => data.gold >= 1000, rewardSP: 2, rewardGold: 100 },
         { id: 'explorer', name: 'Explorador', desc: 'Visite todos os biomas', icon: '🗺️', unlocked: false, condition: (data) => data.biomesVisited >= 5, rewardSP: 2, rewardGold: 100 },
+        { id: 'master_explorer', name: 'Mestre Explorador', desc: 'Visite 8 biomas', icon: '🧭', unlocked: false, condition: (data) => data.biomesVisited >= 8, rewardSP: 4, rewardGold: 300 },
+        { id: 'legend_explorer', name: 'Lenda dos Biomas', desc: 'Visite todos os 10 biomas', icon: '🌍', unlocked: false, condition: (data) => data.biomesVisited >= 10, rewardSP: 6, rewardGold: 500 },
         { id: 'boss_slayer', name: 'Matador de Bosses', desc: 'Derrote 10 bosses', icon: '👹', unlocked: false, condition: (data) => data.bossKills >= 10, rewardSP: 3, rewardGold: 200 },
         { id: 'aoe_master', name: 'Mestre do AOE', desc: 'Use AOE 50 vezes', icon: '💥', unlocked: false, condition: (data) => data.aoeUses >= 50, rewardSP: 2, rewardGold: 75 }
     ],
@@ -668,7 +675,12 @@ let evolutionData = {
         { id: 'quest_9', name: 'Treant Hunter', desc: 'Derrote 10 Treants', icon: '🌳', target: 10, progress: 0, type: 'treant_kills', completed: false, rewardXP: 150, rewardGold: 80, rewardSP: 2 },
         { id: 'quest_10', name: 'Desert Explorer', desc: 'Derrote 20 monstros do deserto', icon: '🏜️', target: 20, progress: 0, type: 'desert_kills', completed: false, rewardXP: 180, rewardGold: 100, rewardSP: 2 },
         { id: 'quest_11', name: 'Ice Master', desc: 'Derrote 15 monstros de gelo', icon: '❄️', target: 15, progress: 0, type: 'ice_kills', completed: false, rewardXP: 200, rewardGold: 120, rewardSP: 2 },
-        { id: 'quest_12', name: 'Fire Walker', desc: 'Derrote 25 monstros vulcânicos', icon: '🔥', target: 25, progress: 0, type: 'fire_kills', completed: false, rewardXP: 350, rewardGold: 200, rewardSP: 4 }
+        { id: 'quest_12', name: 'Fire Walker', desc: 'Derrote 25 monstros vulcânicos', icon: '🔥', target: 25, progress: 0, type: 'fire_kills', completed: false, rewardXP: 350, rewardGold: 200, rewardSP: 4 },
+        { id: 'quest_13', name: 'Mystic Slayer', desc: 'Derrote 30 monstros das Terras Místicas', icon: '🔮', target: 30, progress: 0, type: 'mystic_kills', completed: false, rewardXP: 400, rewardGold: 250, rewardSP: 5 },
+        { id: 'quest_14', name: 'Crystal Hunter', desc: 'Derrote 40 monstros das Cavernas de Cristal', icon: '💎', target: 40, progress: 0, type: 'crystal_kills', completed: false, rewardXP: 500, rewardGold: 300, rewardSP: 6 },
+        { id: 'quest_15', name: 'Shadow Warrior', desc: 'Derrote 50 monstros do Reino Sombrio', icon: '🌑', target: 50, progress: 0, type: 'shadow_kills', completed: false, rewardXP: 600, rewardGold: 400, rewardSP: 7 },
+        { id: 'quest_16', name: 'Celestial Champion', desc: 'Derrote 60 monstros dos Picos Celestiais', icon: '⭐', target: 60, progress: 0, type: 'celestial_kills', completed: false, rewardXP: 750, rewardGold: 500, rewardSP: 8 },
+        { id: 'quest_17', name: 'Void Conqueror', desc: 'Derrote 75 monstros do Vazio Eterno', icon: '🕳️', target: 75, progress: 0, type: 'void_kills', completed: false, rewardXP: 1000, rewardGold: 750, rewardSP: 10 }
     ],
     // Árvore de Habilidades
     skillTree: [
@@ -688,6 +700,11 @@ let evolutionData = {
         { id: 'fireball_mastery', name: 'Mestre da Fireball', desc: 'Fireball causa +50% de dano', icon: '🔥', cost: 4, maxLevel: 1, level: 0, effect: () => { if(!player.fireballDamageBonus) player.fireballDamageBonus = 0; player.fireballDamageBonus += 50; }, reqLevel: 20 },
         { id: 'legendary_strength', name: 'Força Lendária', desc: '+30% de dano físico', icon: '👑', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.3); }, reqLevel: 25, requires: ['atk_boost_3'] },
         { id: 'legendary_defense', name: 'Defesa Lendária', desc: '+30% de defesa', icon: '🏆', cost: 5, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.3); }, reqLevel: 25, requires: ['def_boost_3'] },
+        { id: 'epic_strength', name: 'Força Épica', desc: '+40% de dano físico', icon: '🌈', cost: 7, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.4); }, reqLevel: 40, requires: ['legendary_strength'] },
+        { id: 'epic_defense', name: 'Defesa Épica', desc: '+40% de defesa', icon: '🛡️', cost: 7, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.4); }, reqLevel: 40, requires: ['legendary_defense'] },
+        { id: 'divine_power', name: 'Poder Divino', desc: '+50% de dano e defesa', icon: '👼', cost: 10, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.5); player.baseDef = Math.floor(player.baseDef * 1.5); }, reqLevel: 60, requires: ['epic_strength', 'epic_defense'] },
+        { id: 'immortal_vitality', name: 'Vitalidade Imortal', desc: '+100% de HP e SP máximos', icon: '☄️', cost: 8, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 2); player.maxSp = Math.floor(player.maxSp * 2); player.hp = player.maxHp; player.sp = player.maxSp; }, reqLevel: 75 },
+        { id: 'god_mode', name: 'Modo Deus', desc: '+100% de dano, defesa e velocidade', icon: '🌟', cost: 15, maxLevel: 1, level: 0, effect: () => { player.baseAtk *= 2; player.baseDef *= 2; moveSpeed *= 1.5; }, reqLevel: 100, requires: ['divine_power', 'immortal_vitality'] },
         { id: 'dash_unlock', name: 'Passo Sombrio', desc: 'Desbloqueia Dash (Q). Esquiva rápida com cooldown de 3s.', icon: '💨', cost: 3, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 10 },
         { id: 'shield_unlock', name: 'Escudo Místico', desc: 'Desbloqueia Escudo (R): 2s de invencibilidade, cooldown 15s.', icon: '🔮', cost: 4, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 15 }
     ],
@@ -712,7 +729,12 @@ let evolutionData = {
         aoeUses: 0,
         desertKills: 0,
         iceKills: 0,
-        fireKills: 0
+        fireKills: 0,
+        mysticKills: 0,
+        crystalKills: 0,
+        shadowKills: 0,
+        celestialKills: 0,
+        voidKills: 0
     }
 };
 
@@ -741,11 +763,41 @@ const monsterTypes = {
         { name: 'Frost Spirit', baseHp: 160, baseAtk: 28, baseXp: 85, color: 0xb0e0e6, eyeColor: 0x00ffff, size: 1.4, icon: '❄️', canBeMob: false },
         { name: 'Snow Golem', baseHp: 220, baseAtk: 26, baseXp: 90, color: 0xe0ffff, eyeColor: 0x4169e1, size: 2.2, icon: '⛄', canBeMob: false }
     ],
-    4: [ // Volcanic (Nível 20+)
+    4: [ // Volcanic (Nível 20-29)
         { name: 'Fire Imp', baseHp: 280, baseAtk: 38, baseXp: 120, color: 0xaa4433, eyeColor: 0xff4500, size: 1.5, icon: '👿', canBeMob: true },
         { name: 'Lava Elemental', baseHp: 350, baseAtk: 45, baseXp: 150, color: 0xff4500, eyeColor: 0xffff00, size: 2.3, icon: '🔥', canBeMob: false },
         { name: 'Obsidian Golem', baseHp: 400, baseAtk: 42, baseXp: 140, color: 0x2f2f2f, eyeColor: 0xff0000, size: 2.4, icon: '🗿', canBeMob: false },
         { name: 'Flame Dragon', baseHp: 320, baseAtk: 48, baseXp: 160, color: 0xdc143c, eyeColor: 0xffd700, size: 2.0, icon: '🐉', canBeMob: false }
+    ],
+    5: [ // Mystic Highlands (Nível 30-44)
+        { name: 'Mystic Spirit', baseHp: 450, baseAtk: 52, baseXp: 180, color: 0x9a7abf, eyeColor: 0xd4a5ff, size: 1.6, icon: '👻', canBeMob: true },
+        { name: 'Arcane Guardian', baseHp: 550, baseAtk: 60, baseXp: 220, color: 0x6a4a8a, eyeColor: 0xe8d4ff, size: 2.2, icon: '🛡️', canBeMob: false },
+        { name: 'Highland Wolf', baseHp: 480, baseAtk: 55, baseXp: 200, color: 0x8a6a9a, eyeColor: 0xffaaff, size: 1.8, icon: '🐺', canBeMob: true },
+        { name: 'Magic Construct', baseHp: 520, baseAtk: 58, baseXp: 210, color: 0xb59ad4, eyeColor: 0xffffff, size: 2.0, icon: '🤖', canBeMob: false }
+    ],
+    6: [ // Crystal Caves (Nível 45-59)
+        { name: 'Crystal Golem', baseHp: 650, baseAtk: 68, baseXp: 260, color: 0x7ac8e8, eyeColor: 0xa5e8ff, size: 2.4, icon: '💎', canBeMob: false },
+        { name: 'Gem Spider', baseHp: 580, baseAtk: 72, baseXp: 280, color: 0x4a9abf, eyeColor: 0x00ffff, size: 1.7, icon: '🕷️', canBeMob: true },
+        { name: 'Mineral Beast', baseHp: 700, baseAtk: 65, baseXp: 250, color: 0x5ab5d5, eyeColor: 0x7fff00, size: 2.1, icon: '🦎', canBeMob: true },
+        { name: 'Cave Warden', baseHp: 750, baseAtk: 70, baseXp: 300, color: 0x3a8aaf, eyeColor: 0x00bfff, size: 2.5, icon: '👹', canBeMob: false }
+    ],
+    7: [ // Shadow Realm (Nível 60-79)
+        { name: 'Shadow Wraith', baseHp: 850, baseAtk: 82, baseXp: 350, color: 0x3a3a4a, eyeColor: 0x8a2be2, size: 1.8, icon: '👻', canBeMob: true },
+        { name: 'Dark Phantom', baseHp: 900, baseAtk: 88, baseXp: 380, color: 0x2a2a3a, eyeColor: 0x9400d3, size: 2.0, icon: '💀', canBeMob: false },
+        { name: 'Void Stalker', baseHp: 950, baseAtk: 85, baseXp: 370, color: 0x1a1a2a, eyeColor: 0x4b0082, size: 2.2, icon: '🐆', canBeMob: true },
+        { name: 'Nightmare Knight', baseHp: 1000, baseAtk: 92, baseXp: 400, color: 0x0a0a1a, eyeColor: 0xff1493, size: 2.3, icon: '🏇', canBeMob: false }
+    ],
+    8: [ // Celestial Peaks (Nível 80-99)
+        { name: 'Celestial Angel', baseHp: 1150, baseAtk: 98, baseXp: 450, color: 0xfff5d8, eyeColor: 0xffd700, size: 2.0, icon: '👼', canBeMob: true },
+        { name: 'Divine Protector', baseHp: 1300, baseAtk: 105, baseXp: 500, color: 0xf5e8d8, eyeColor: 0xffec8b, size: 2.5, icon: '😇', canBeMob: false },
+        { name: 'Sky Sentinel', baseHp: 1200, baseAtk: 102, baseXp: 480, color: 0xe8d8c8, eyeColor: 0xffa500, size: 2.3, icon: '🦅', canBeMob: false },
+        { name: 'Light Bringer', baseHp: 1250, baseAtk: 108, baseXp: 520, color: 0xffffe0, eyeColor: 0xffff00, size: 2.2, icon: '✨', canBeMob: true }
+    ],
+    9: [ // Eternal Void (Nível 100+)
+        { name: 'Void Abomination', baseHp: 1500, baseAtk: 120, baseXp: 600, color: 0x2a0a3a, eyeColor: 0x9932cc, size: 2.8, icon: '👾', canBeMob: false },
+        { name: 'Eternal Horror', baseHp: 1600, baseAtk: 128, baseXp: 650, color: 0x1a0a2a, eyeColor: 0x8b00ff, size: 3.0, icon: '👹', canBeMob: false },
+        { name: 'Abyss Lord', baseHp: 1700, baseAtk: 135, baseXp: 700, color: 0x0a001a, eyeColor: 0xbf00ff, size: 3.2, icon: '👑', canBeMob: false },
+        { name: 'Null Entity', baseHp: 1400, baseAtk: 115, baseXp: 550, color: 0x3a1a4a, eyeColor: 0xda70d6, size: 2.5, icon: '🌑', canBeMob: true }
     ]
 };
 
@@ -863,7 +915,12 @@ const biomes = [
     { name: "Dark Forest", groundColor: 0x2d5a2d, skyColor: 0x4a6b4a, fogColor: 0x3d5a3d, level: 5 },
     { name: "Golden Desert", groundColor: 0xd4c96e, skyColor: 0xffd7a0, fogColor: 0xe8c890, level: 10 },
     { name: "Frozen Snow", groundColor: 0xe8f4f8, skyColor: 0xb0d4e8, fogColor: 0xc8e0e8, level: 15 },
-    { name: "Volcanic Lands", groundColor: 0x4a2a2a, skyColor: 0xff6b35, fogColor: 0x8b4513, level: 20 }
+    { name: "Volcanic Lands", groundColor: 0x4a2a2a, skyColor: 0xff6b35, fogColor: 0x8b4513, level: 20 },
+    { name: "Mystic Highlands", groundColor: 0x6a4a8a, skyColor: 0xd4a5ff, fogColor: 0x9a7abf, level: 30 },
+    { name: "Crystal Caves", groundColor: 0x4a9abf, skyColor: 0xa5e8ff, fogColor: 0x7ac8e8, level: 45 },
+    { name: "Shadow Realm", groundColor: 0x2a2a3a, skyColor: 0x4a4a6a, fogColor: 0x3a3a4a, level: 60 },
+    { name: "Celestial Peaks", groundColor: 0xf5e8d8, skyColor: 0xfff5d8, fogColor: 0xffeebb, level: 80 },
+    { name: "Eternal Void", groundColor: 0x1a0a2a, skyColor: 0x3a1a5a, fogColor: 0x2a0a3a, level: 100 }
 ];
 
 function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
@@ -1514,6 +1571,26 @@ function killMonster(m){
     if(monsterName.includes('fire') || monsterName.includes('lava') || monsterName.includes('obsidian') || monsterName.includes('imp')) {
         evolutionData.stats.fireKills++;
         updateQuestProgress('fire_kills', 1);
+    }
+    if(monsterName.includes('mystic') || monsterName.includes('highland') || monsterName.includes('arcane') || monsterName.includes('spirit')) {
+        evolutionData.stats.mysticKills++;
+        updateQuestProgress('mystic_kills', 1);
+    }
+    if(monsterName.includes('crystal') || monsterName.includes('cave') || monsterName.includes('gem') || monsterName.includes('mineral')) {
+        evolutionData.stats.crystalKills++;
+        updateQuestProgress('crystal_kills', 1);
+    }
+    if(monsterName.includes('shadow') || monsterName.includes('dark') || monsterName.includes('wraith') || monsterName.includes('phantom')) {
+        evolutionData.stats.shadowKills++;
+        updateQuestProgress('shadow_kills', 1);
+    }
+    if(monsterName.includes('celestial') || monsterName.includes('peak') || monsterName.includes('angel') || monsterName.includes('divine')) {
+        evolutionData.stats.celestialKills++;
+        updateQuestProgress('celestial_kills', 1);
+    }
+    if(monsterName.includes('void') || monsterName.includes('eternal') || monsterName.includes('abyss') || monsterName.includes('null')) {
+        evolutionData.stats.voidKills++;
+        updateQuestProgress('void_kills', 1);
     }
     
     if(m.userData.isBoss) {
