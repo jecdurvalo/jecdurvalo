@@ -3879,8 +3879,17 @@ function loadGame() {
 }
 
 /* -------- LOOP DE JOGO -------- */
+let lastFrameTime = 0;
 function animate(time){
     requestAnimationFrame(animate);
+    
+    // Calcula deltaTime para movimento consistente independente do framerate
+    if (!lastFrameTime) lastFrameTime = time;
+    const deltaTime = time - lastFrameTime;
+    lastFrameTime = time;
+    
+    // Evita acumulo de tempo muito grande (ex: quando aba fica inativa)
+    const safeDeltaTime = Math.min(deltaTime, 100);
 
     // Se jogo estiver pausado, não atualiza lógica do jogo
     if(gamePaused) {
@@ -3908,7 +3917,7 @@ function animate(time){
     if(isJoyactive){ move.x = joyStickVector.x; move.z = joyStickVector.y; }
 
     if(move.length() > 0.05){
-        let speed = 0.35 + (equipped.boots ? equipped.boots.speed : 0);
+        let speed = (0.35 + (equipped.boots ? equipped.boots.speed : 0)) * (safeDeltaTime / 16.67);
         move.normalize().multiplyScalar(speed);
         hero.position.add(move);
         if(lastDir) lastDir.copy(move);
@@ -3963,8 +3972,8 @@ function animate(time){
     for(let i = droppedItems.length - 1; i >= 0; i--) {
         let drop = droppedItems[i];
         
-        // Animação do item (girar e flutuar)
-        drop.mesh.rotation.y += 0.03;
+        // Animação do item (girar e flutuar) - usa deltaTime para consistência
+        drop.mesh.rotation.y += 0.03 * (safeDeltaTime / 16.67);
         drop.mesh.position.y = 0.3 + Math.sin(time * 0.005 + i) * 0.1;
         
         // Checar se jogador está perto para coletar
@@ -4003,9 +4012,11 @@ function animate(time){
         }
     }
 
-    // Fireball
+    // Fireball - usa deltaTime para velocidade consistente
     for(let i=fireballs.length-1; i>=0; i--){
-        let f = fireballs[i]; f.mesh.position.add(f.dir.clone().multiplyScalar(0.8)); f.life--;
+        let f = fireballs[i]; 
+        f.mesh.position.add(f.dir.clone().multiplyScalar(0.8 * (safeDeltaTime / 16.67))); 
+        f.life--;
         let fb_ab = f.activeBonus || { fireballDmg: 0, fireballRadius: 0 };
         let fbRadius = 3.5 + (fb_ab.fireballRadius || 0);
         monsters.forEach(m=>{
