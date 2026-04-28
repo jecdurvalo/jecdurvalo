@@ -668,22 +668,22 @@ const RARITIES = {
 };
 function rollRarity(biome, playerLevel) {
     // Chance de raridade baseada no bioma E nível do jogador
-    // Níveis baixos têm chance MUITO menor de itens raros
-    let levelFactor = Math.min(1.0, playerLevel / 50); // Fator que vai de 0 a 1 conforme level 1-50
+    // Níveis baixos têm chance EXTREMAMENTE menor de itens raros
+    let levelFactor = Math.min(1.0, playerLevel / 60); // Fator que vai de 0 a 1 conforme level 1-60
     
     // Pesos base ajustados por bioma
     let baseWeights = {
-        common: Math.max(38, 60 - biome * 5),
-        rare: Math.min(36, 25 + biome * 3),
-        epic: Math.min(18, 12 + biome * 2),
-        legendary: Math.min(8, 3 + biome)
+        common: Math.max(45, 70 - biome * 5),
+        rare: Math.min(30, 20 + biome * 3),
+        epic: Math.min(15, 8 + biome * 2),
+        legendary: Math.min(5, 2 + biome)
     };
     
-    // Aplicar penalidade de nível para raridades altas
-    // Level 1: 90% menos chance de raro+, Level 20: sem penalidade
-    let rarePenalty = Math.max(0.1, 1.0 - (playerLevel - 1) / 20);
-    let epicPenalty = Math.max(0.05, 1.0 - (playerLevel - 1) / 15);
-    let legendaryPenalty = Math.max(0.02, 1.0 - (playerLevel - 1) / 10);
+    // Aplicar penalidade SEVERA de nível para raridades altas
+    // Level 1: 95% menos chance de raro+, Level 5: 80% menos, Level 10: 50% menos, Level 20: sem penalidade
+    let rarePenalty = playerLevel < 5 ? 0.05 : playerLevel < 10 ? 0.2 : playerLevel < 15 ? 0.4 : playerLevel < 20 ? 0.6 : 1.0;
+    let epicPenalty = playerLevel < 8 ? 0.02 : playerLevel < 12 ? 0.1 : playerLevel < 18 ? 0.25 : playerLevel < 25 ? 0.5 : 1.0;
+    let legendaryPenalty = playerLevel < 10 ? 0.01 : playerLevel < 15 ? 0.05 : playerLevel < 20 ? 0.15 : playerLevel < 30 ? 0.35 : 1.0;
     
     let w = {
         common: baseWeights.common,
@@ -1069,6 +1069,36 @@ const lootTable=[
     { name:"Anel Primordial",      slot:"ring",    atk:22, hp:70, sp:35, desc:"Essência da criação.", icon:"💍", value:400, minLevel:50 },
     { name:"Anel do Fênix",        slot:"ring",    atk:18, hp:90, sp:25, desc:"Renasce com você.", icon:"🔥", value:380, minLevel:50 },
     { name:"Orbe Suprema",         slot:"consumable", heal:1000, desc:"Restauração completa.", icon:"💎", stackable:true, value:350, minLevel:50 },
+
+    // ══════════════════════════════════════════════
+    // TIER 7 — Lv 70+  (Celestial Peaks - Equipamentos divinos)
+    // ══════════════════════════════════════════════
+    { name:"Devastadora Celestial", slot:"weapon",  atk:58, hp:40, sp:30, desc:"Fúria dos céus.", icon:"⭐", value:550, minLevel:70 },
+    { name:"Lâmina Transcendente",  slot:"weapon",  atk:55, sp:50, hp:25, desc:"Corta a realidade.", icon:"✨", value:580, minLevel:70 },
+    { name:"Martelo do Titã",       slot:"weapon",  atk:62, hp:60, desc:"Força colossal.", icon:"🔨", value:520, minLevel:70 },
+    { name:"Escudo da Aurora",      slot:"shield",  def:42, hp:100, sp:25, desc:"Luz impenetrável.", icon:"🌅", value:480, minLevel:70 },
+    { name："Égide Cósmica",        slot:"shield",  def:45, sp:80, hp:30, desc:"Proteção estelar.", icon:"🌌", value:500, minLevel:70 },
+    { name:"Asas Divinas",          slot:"cape",    def:24, sp:85, hp:50, speed:0.10, desc:"Graça celestial.", icon:"🕊️", value:520, minLevel:70 },
+    { name:"Capa do Vazio",         slot:"cape",    def:22, sp:75, hp:40, desc:"Escuridão absoluta.", icon:"🌑", value:500, minLevel:70 },
+    { name:"Botas Transcendentais", slot:"boots",   def:18, speed:0.32, hp:60, sp:30, desc:"Movimento divino.", icon:"💫", value:450, minLevel:70 },
+    { name:"Anel Celestial",        slot:"ring",    atk:28, hp:85, sp:45, desc:"Bênção dos deuses.", icon:"⭐", value:550, minLevel:70 },
+    { name:"Anel do Vazio",         slot:"ring",    atk:25, hp:60, sp:65, desc:"Poder cósmico.", icon:"🌌", value:530, minLevel:70 },
+    { name:"Essência Divina",       slot:"consumable", heal:1500, desc:"Vida infinita.", icon:"✨", stackable:true, value:500, minLevel:70 },
+
+    // ══════════════════════════════════════════════
+    // TIER 8 — Lv 100+ (Eternal Void - Equipamentos lendários máximos)
+    // ══════════════════════════════════════════════
+    { name:"Ceifadora do Vazio",    slot:"weapon",  atk:75, sp:60, hp:50, desc:"Fim de todas as coisas.", icon:"💀", value:800, minLevel:100 },
+    { name:"Espada da Criação",     slot:"weapon",  atk:70, hp:100, sp:50, desc:"Origem do universo.", icon:"🌟", value:850, minLevel:100 },
+    { name:"Cajado Infinito",       slot:"weapon",  atk:55, sp:120, hp:40, desc:"Magia sem limites.", icon:"🔮", value:900, minLevel:100 },
+    { name:"Baluarte Eterno",       slot:"shield",  def:55, hp:150, sp:40, desc:"Defesa absoluta.", icon:"🛡️", value:700, minLevel:100 },
+    { name:"Escudo da Singularidade",slot:"shield", def:60, sp:100, hp:50, desc:"Buraco negro vivo.", icon:"🕳️", value:750, minLevel:100 },
+    { name:"Asas do Infinito",      slot:"cape",    def:30, sp:110, hp:70, speed:0.15, desc:"Além do tempo.", icon:"∞", value:800, minLevel:100 },
+    { name:"Manto da Eternidade",   slot:"cape",    def:28, sp:95, hp:60, desc:"Tecido atemporal.", icon:"⏳", value:780, minLevel:100 },
+    { name:"Botas da Singularidade",slot:"boots",   def:22, speed:0.40, hp:80, sp:45, desc:"Passo instantâneo.", icon:"⚡", value:650, minLevel:100 },
+    { name:"Anel da Criação",       slot:"ring",    atk:35, hp:120, sp:60, desc:"Poder criador.", icon:"💍", value:850, minLevel:100 },
+    { name:"Anel do Infinito",      slot:"ring",    atk:30, hp:90, sp:90, desc:"Ciclo eterno.", icon:"♾️", value:820, minLevel:100 },
+    { name:"Néctar dos Deuses",     slot:"consumable", heal:2500, desc:"Imortalidade temporária.", icon:"🏺", stackable:true, value:800, minLevel:100 },
 ];
 
 // Adicionar durabilidade aos itens e quantidade para stackables
@@ -2665,10 +2695,12 @@ function updatePanels(){
         let rarColor = it.rarityData ? it.rarityData.color : '#aaaaaa';
         let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
         let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='openSellModal(${i})'>Vender</button>`;
-        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:45px; opacity:${isEquipped?0.5:1}; border-left:3px solid ${rarColor};"><span>${icon}${qtyText} <b style="color:${rarColor}">${it.name}</b></span>${sellBtn}</div>`;
+        let lvlInfo = it.minLevel ? `<span style="background:rgba(90,185,255,0.3); padding:2px 8px; border-radius:6px; font-size:11px; margin-left:6px; color:#5ab9ff; font-weight:bold;">Lv.${it.minLevel}</span>` : '';
+        let rarTag = it.rarity && it.rarity !== 'common' ? `<span style="color:${rarColor}; font-size:10px; font-weight:bold; margin-left:4px;">[${it.rarityData.name.toUpperCase()}]</span>` : '';
+        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:50px; opacity:${isEquipped?0.5:1}; border-left:3px solid ${rarColor}; display:flex; align-items:center; justify-content:space-between;"><div>${icon}${qtyText} <b style="color:${rarColor}">${it.name}</b>${lvlInfo}${rarTag}</div>${sellBtn}</div>`;
+
     });
 }
-
 // Modal de venda com seleção de quantidade
 let sellModal = document.createElement('div');
 sellModal.id = 'sellModal';
