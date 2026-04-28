@@ -1037,6 +1037,67 @@ const biomes = [
     { name: "Eternal Void", groundColor: 0x1a0a2a, skyColor: 0x3a1a5a, fogColor: 0x2a0a3a, level: 100 }
 ];
 
+// -------- BOSS: VISUAL E HABILIDADES POR BIOMA --------
+// Cada bioma tem um array de habilidades com timers independentes.
+// O boss dispara cada habilidade no seu próprio cooldown — padrão de ataque variado.
+const BOSS_ABILITIES = [
+  [ // 0: Plains — Bola de fogo + rajada de vento dupla
+    { label:'🔥 Fireball!',  color:0xff2200, emissive:0xff2200, ei:1.5, geo:()=>new THREE.SphereGeometry(0.5,8,8),         speed:0.28, dmgMult:1.0,  magical:true,  count:1, interval:2000 },
+    { label:'💨 Rajada!',    color:0xccddff, emissive:0x8899ff, ei:0.8, geo:()=>new THREE.SphereGeometry(0.3,7,6),         speed:0.38, dmgMult:0.6,  magical:false, count:2, spread:0.28, interval:3200 },
+  ],
+  [ // 1: Dark Forest — Esporo venenoso + golpe sombrio rápido
+    { label:'☠️ Veneno!',   color:0x33dd44, emissive:0x22aa33, ei:1.2, geo:()=>new THREE.SphereGeometry(0.55,8,8),        speed:0.17, dmgMult:0.55, magical:true,  count:1, interval:2500, dot:{ dmg:9, ticks:5, interval:1100 } },
+    { label:'🌑 Sombra!',   color:0x1a0033, emissive:0x440088, ei:1.6, geo:()=>new THREE.OctahedronGeometry(0.3),         speed:0.46, dmgMult:0.9,  magical:true,  count:1, interval:1800 },
+  ],
+  [ // 2: Desert — Rajada tripla + ferrão único rápido + onda de calor
+    { label:'🌪️ Areia!',    color:0xffcc44, emissive:0xdd9900, ei:1.0, geo:()=>new THREE.DodecahedronGeometry(0.3,0),     speed:0.3,  dmgMult:0.5,  magical:false, count:3, spread:0.32, interval:1800 },
+    { label:'🦂 Ferrão!',   color:0xdd6600, emissive:0xbb4400, ei:1.2, geo:()=>new THREE.ConeGeometry(0.18,0.9,6),        speed:0.52, dmgMult:0.85, magical:false, count:1, interval:2600 },
+    { label:'🌡️ Calor!',    color:0xff8800, emissive:0xff5500, ei:1.4, geo:()=>new THREE.SphereGeometry(0.65,8,8),        speed:0.15, dmgMult:1.1,  magical:true,  count:1, interval:4500, explode:true },
+  ],
+  [ // 3: Snow — Lança de gelo rápida + blizzard em leque
+    { label:'🧊 Gelo!',     color:0x88ddff, emissive:0x44aaff, ei:1.4, geo:()=>new THREE.ConeGeometry(0.2,1.0,6),         speed:0.5,  dmgMult:0.9,  magical:true,  count:1, interval:1700 },
+    { label:'❄️ Blizzard!', color:0xcceeff, emissive:0x88ccff, ei:0.9, geo:()=>new THREE.OctahedronGeometry(0.25),        speed:0.22, dmgMult:0.55, magical:true,  count:4, spread:0.35, interval:3500 },
+  ],
+  [ // 4: Volcanic — Bomba que explode + chuva de lava em leque
+    { label:'🌋 Magma!',    color:0xff5500, emissive:0xff3300, ei:1.8, geo:()=>new THREE.DodecahedronGeometry(0.7,0),      speed:0.19, dmgMult:1.2,  magical:true,  count:1, interval:2400, explode:true },
+    { label:'🔥 Lava!',     color:0xff8800, emissive:0xff4400, ei:1.3, geo:()=>new THREE.SphereGeometry(0.28,7,6),        speed:0.32, dmgMult:0.5,  magical:true,  count:5, spread:0.28, interval:3200 },
+  ],
+  [ // 5: Mystic Highlands — Raio sombrio rápido + míssil arcano teleguiado
+    { label:'💜 Sombra!',   color:0xaa44ff, emissive:0x8822dd, ei:1.6, geo:()=>new THREE.TetrahedronGeometry(0.45),        speed:0.4,  dmgMult:1.1,  magical:true,  count:1, interval:1600 },
+    { label:'🔮 Arcano!',   color:0xff88ff, emissive:0xcc44cc, ei:1.4, geo:()=>new THREE.SphereGeometry(0.38,8,7),        speed:0.22, dmgMult:1.0,  magical:true,  count:1, interval:3500, homing:true },
+  ],
+  [ // 6: Crystal Caves — Rajada rápida de cristais + leque de 5
+    { label:'💎 Cristal!',  color:0x00ffee, emissive:0x00cccc, ei:1.7, geo:()=>new THREE.OctahedronGeometry(0.28),         speed:0.55, dmgMult:0.45, magical:true,  count:1, interval:600  },
+    { label:'🔷 Leque!',    color:0x44ffdd, emissive:0x22aaaa, ei:1.2, geo:()=>new THREE.OctahedronGeometry(0.22),         speed:0.35, dmgMult:0.6,  magical:true,  count:5, spread:0.3, interval:4000 },
+  ],
+  [ // 7: Shadow Realm — Caça-almas lento teleguiado + lança sombria rápida
+    { label:'👁️ Alma!',     color:0x8800cc, emissive:0xaa00ff, ei:2.0, geo:()=>new THREE.SphereGeometry(0.45,8,8),        speed:0.2,  dmgMult:1.0,  magical:true,  count:1, interval:2000, homing:true },
+    { label:'🌑 Lança!',    color:0x220044, emissive:0x5500aa, ei:1.5, geo:()=>new THREE.ConeGeometry(0.18,0.95,6),        speed:0.5,  dmgMult:0.85, magical:true,  count:1, interval:1500 },
+    { label:'💀 Morte!',    color:0x440066, emissive:0x7700cc, ei:1.8, geo:()=>new THREE.SphereGeometry(0.4,8,8),         speed:0.25, dmgMult:0.7,  magical:true,  count:1, interval:4000, homing:true, dot:{ dmg:12, ticks:4, interval:900 } },
+  ],
+  [ // 8: Celestial Peaks — Raio celestial + descarga tripla de relâmpago
+    { label:'✨ Celestial!', color:0xffffff, emissive:0xffeeaa, ei:2.0, geo:()=>new THREE.SphereGeometry(0.4,12,12),       speed:0.44, dmgMult:1.3,  magical:true,  count:1, interval:1800 },
+    { label:'⚡ Raio!',     color:0xffff44, emissive:0xffdd00, ei:1.8, geo:()=>new THREE.CylinderGeometry(0.08,0.08,0.9,6), speed:0.55, dmgMult:0.75, magical:true,  count:3, spread:0.22, interval:3000 },
+  ],
+  [ // 9: Eternal Void — Dupla explosão + espiral mortífera teleguiada com DOT
+    { label:'🌌 Vazio!',    color:0x3300aa, emissive:0x5500dd, ei:1.9, geo:()=>new THREE.OctahedronGeometry(0.5),          speed:0.32, dmgMult:1.35, magical:true,  count:2, spread:0.4, interval:1600 },
+    { label:'💀 Espiral!',  color:0x110022, emissive:0x6600ff, ei:2.0, geo:()=>new THREE.SphereGeometry(0.42,8,8),        speed:0.2,  dmgMult:1.1,  magical:true,  count:1, interval:4000, homing:true, dot:{ dmg:15, ticks:5, interval:800 } },
+  ],
+];
+const BOSS_BIOME_VISUALS = [
+    { bodyColor:0x8b0000, eyeColor:0xff2200, hornColor:0x333333, name:'Demônio das Planícies' },
+    { bodyColor:0x1a3d1a, eyeColor:0x44ff44, hornColor:0x1a2a1a, name:'Espírito da Floresta Negra' },
+    { bodyColor:0xaa8822, eyeColor:0xffcc44, hornColor:0x886600, name:'Senhor do Deserto' },
+    { bodyColor:0x1a4a6a, eyeColor:0x88ddff, hornColor:0x2a6080, name:'Wraith do Gelo' },
+    { bodyColor:0x4a1a00, eyeColor:0xff5500, hornColor:0x1a0a00, name:'Lorde Vulcânico' },
+    { bodyColor:0x3a1a6a, eyeColor:0xaa44ff, hornColor:0x220055, name:'Arauto Místico' },
+    { bodyColor:0x004a4a, eyeColor:0x00ffee, hornColor:0x003333, name:'Elemental de Cristal' },
+    { bodyColor:0x1a0033, eyeColor:0xaa00dd, hornColor:0x0a0022, name:'Terror Sombrio' },
+    { bodyColor:0x7a6a4a, eyeColor:0xffeeaa, hornColor:0xaa9955, name:'Guardião Celestial' },
+    { bodyColor:0x110033, eyeColor:0x6600ff, hornColor:0x060018, name:'Deus do Vazio' },
+];
+let playerDots = []; // Efeitos de dano ao longo do tempo no player (ex: veneno)
+
 function log(m){
     let entry = document.createElement('div');
     entry.style.cssText = 'white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; animation:logSlideIn .25s ease;';
@@ -1633,29 +1694,30 @@ function spawnBossWithScaling() {
     // Criar modelo de inimigo mais detalhado
     let monsterGroup = new THREE.Group();
     
-    // Corpo principal - cor baseada no tipo de monstro
-    let bodyColor = 0x8b0000;
-    let bodyMat = new THREE.MeshStandardMaterial({color: bodyColor});
+    // Visual do boss muda com o bioma
+    let bv = BOSS_BIOME_VISUALS[Math.min(currentBiome, BOSS_BIOME_VISUALS.length-1)];
+    let bodyColor = bv.bodyColor;
+    let bodyMat = new THREE.MeshStandardMaterial({color: bodyColor, roughness:0.7});
     let body = new THREE.Mesh(new THREE.BoxGeometry(size, size*0.6, size*0.7), bodyMat);
     body.position.y = size * 0.5;
     monsterGroup.add(body);
-    
+
     // Cabeça
     let head = new THREE.Mesh(new THREE.BoxGeometry(size*0.7, size*0.5, size*0.6), bodyMat);
     head.position.y = size * 1.05;
     monsterGroup.add(head);
-    
-    // Olhos brilhantes
-    let eyeMat = new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8});
+
+    // Olhos brilhantes — cor do bioma
+    let eyeMat = new THREE.MeshStandardMaterial({color: bv.eyeColor, emissive: bv.eyeColor, emissiveIntensity: 1.2});
     let eye1 = new THREE.Mesh(new THREE.SphereGeometry(size*0.12), eyeMat);
     eye1.position.set(-size*0.15, size*1.1, size*0.35);
     monsterGroup.add(eye1);
     let eye2 = eye1.clone();
     eye2.position.set(size*0.15, size*1.1, size*0.35);
     monsterGroup.add(eye2);
-    
-    // Chifres/orelhas para elite
-    let hornMat = new THREE.MeshStandardMaterial({color: 0x333333});
+
+    // Chifres
+    let hornMat = new THREE.MeshStandardMaterial({color: bv.hornColor});
     let horn1 = new THREE.Mesh(new THREE.ConeGeometry(size*0.1, size*0.4, 8), hornMat);
     horn1.position.set(-size*0.25, size*1.4, 0);
     horn1.rotation.z = -0.3;
@@ -1664,7 +1726,7 @@ function spawnBossWithScaling() {
     horn2.position.set(size*0.25, size*1.4, 0);
     horn2.rotation.z = 0.3;
     monsterGroup.add(horn2);
-    
+
     // Braços
     let armMat = new THREE.MeshStandardMaterial({color: bodyColor});
     let arm1 = new THREE.Mesh(new THREE.BoxGeometry(size*0.25, size*0.5, size*0.25), armMat);
@@ -1690,19 +1752,20 @@ function spawnBossWithScaling() {
     let atk = Math.floor(baseAtk * bossMultiplier);
     let xpGain = Math.floor(baseXp * bossMultiplier); // XP também escala
     
-    monsterGroup.userData={ 
-        name: "BOSS Demon", 
-        level: lv, 
-        hp, 
-        maxHp: hp, 
-        xp: xpGain, 
-        atk, 
+    let bossName = bv.name;
+    monsterGroup.userData={
+        name: "BOSS " + bossName,
+        level: lv,
+        hp,
+        maxHp: hp,
+        xp: xpGain,
+        atk,
         def: Math.floor(monsterType.baseAtk * 0.3 * bossMultiplier),
-        isBoss: true, 
+        isBoss: true,
         isMob: false,
-        lastAttack: 0, 
-        ui: hpBar(), 
-        label: makeLabel("BOSS Demon Lv." + lv + " (x" + bossMultiplier.toFixed(2) + ")"), 
+        lastAttack: 0,
+        ui: hpBar(),
+        label: makeLabel("👹 " + bossName + " Lv." + lv + " (x" + bossMultiplier.toFixed(2) + ")"), 
         mesh: monsterGroup, 
         breatheOffset: Math.random() * Math.PI * 2,
         monsterType: monsterType,
@@ -1712,8 +1775,8 @@ function spawnBossWithScaling() {
     
     playSound('bossSpawn');
     screenShake(0.6);
-    floatingText("⚠️ BOSS SPAWNED! (x" + bossMultiplier.toFixed(2) + ")", hero.position, "red");
-    log("<span style='color:red; font-weight:bold;'>👹 UM BOSS APARECEU! Poder: x" + bossMultiplier.toFixed(2) + "</span>");
+    floatingText("⚠️ " + bossName + "! (x" + bossMultiplier.toFixed(2) + ")", hero.position, "red");
+    log("<span style='color:red; font-weight:bold;'>👹 " + bossName + " apareceu! Poder: x" + bossMultiplier.toFixed(2) + "</span>");
 }
 
 function killMonster(m){
@@ -3332,24 +3395,46 @@ function animate(time){
     // Boss/Monster Fireballs - projecteis inimigos
     for(let i=bossFireballs.length-1; i>=0; i--) {
         let bf = bossFireballs[i];
-        bf.mesh.position.addScaledVector(bf.dir, 0.55);
-        bf.mesh.rotation.y += 0.15;
+        let spd = bf.speed || 0.55;
+        // Homing: projétil se curva lentamente em direção ao herói
+        if(bf.homing) {
+            let toHero = new THREE.Vector3().subVectors(hero.position, bf.mesh.position).normalize();
+            bf.dir.lerp(toHero, 0.04).normalize();
+        }
+        bf.mesh.position.addScaledVector(bf.dir, spd);
+        bf.mesh.rotation.x += 0.1;
+        bf.mesh.rotation.y += 0.12;
         bf.life--;
         let bfDx = hero.position.x - bf.mesh.position.x, bfDz = hero.position.z - bf.mesh.position.z;
         if(Math.sqrt(bfDx*bfDx + bfDz*bfDz) < 2.0) {
             if(shieldActive) {
                 floatingText("🔮 BLOQUEADO!", hero.position, "purple");
             } else {
-                // Dano mágico (magical:true) não é reduzido por def; físico sofre redução parcial
                 let dmg;
-                if(bf.magical) {
-                    dmg = bf.dmg; // Fireball ignora def
-                } else {
-                    dmg = Math.max(1, bf.dmg - Math.floor(player.def * 0.4)); // Físico: penetra 60% da def
-                }
+                if(bf.magical) { dmg = bf.dmg; }
+                else { dmg = Math.max(1, bf.dmg - Math.floor(player.def * 0.4)); }
                 player.hp -= dmg;
                 floatingText("-"+dmg, hero.position, "orange");
                 playSound('hit'); screenShake(0.3);
+                // Efeito de veneno (DOT)
+                if(bf.dot) {
+                    playerDots.push({ dmg:bf.dot.dmg, ticks:bf.dot.ticks, interval:bf.dot.interval, lastTick:time });
+                    floatingText("☠️ Envenenado!", hero.position, "#33dd44");
+                    log("<span style='color:#33dd44'>☠️ Você foi envenenado! -"+bf.dot.dmg+" HP/tick</span>");
+                }
+                // Explosão: ao acertar spawna 3 projéteis menores
+                if(bf.explode) {
+                    for(let ei=0; ei<3; ei++) {
+                        let eDir = new THREE.Vector3(Math.cos(ei*2.094),0,Math.sin(ei*2.094));
+                        let eMesh = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.22,6,6),
+                            new THREE.MeshStandardMaterial({color:0xff8800,emissive:0xff5500,emissiveIntensity:1.5})
+                        );
+                        eMesh.position.copy(bf.mesh.position);
+                        scene.add(eMesh);
+                        bossFireballs.push({mesh:eMesh, dir:eDir, dmg:Math.floor(bf.dmg*0.35), speed:0.22, life:35, magical:true});
+                    }
+                }
                 if(player.hp <= 0) { playSound('die'); showGameOver(); }
             }
             scene.remove(bf.mesh);
@@ -3357,6 +3442,19 @@ function animate(time){
             continue;
         }
         if(bf.life <= 0) { scene.remove(bf.mesh); bossFireballs.splice(i,1); }
+    }
+
+    // DOT (veneno / efeitos de dano contínuo no player)
+    for(let i=playerDots.length-1; i>=0; i--) {
+        let dot = playerDots[i];
+        if(time - dot.lastTick > dot.interval) {
+            dot.lastTick = time;
+            player.hp = Math.max(0, player.hp - dot.dmg);
+            floatingText("☠️ -"+dot.dmg, hero.position, "#33dd44");
+            dot.ticks--;
+            if(dot.ticks <= 0) playerDots.splice(i,1);
+            if(player.hp <= 0) { playSound('die'); showGameOver(); }
+        }
     }
 
     // Screen shake decay
@@ -3420,26 +3518,48 @@ function animate(time){
                     let tLen = toTarget.length();
                     if(tLen > 0.01) m.position.addScaledVector(toTarget.normalize(), Math.min(0.07, tLen));
                 }
-                // Boss dispara fireball — intervalo diminui suavemente nível a nível
-                // lv5=2000ms, lv10=1500ms, lv15=1000ms, lv20=700ms, cap 500ms
-                let bossFireInterval = Math.max(500, 2000 - Math.max(0, player.level - 5) * 90);
-                if(!m.userData.lastBossFireball) m.userData.lastBossFireball = 0;
-                if(d < 40 && time - m.userData.lastBossFireball > bossFireInterval) {
-                    m.userData.lastBossFireball = time;
-                    let bDir = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
-                    let bMesh = new THREE.Mesh(
-                        new THREE.SphereGeometry(0.5, 8, 8),
-                        new THREE.MeshStandardMaterial({color:0xff2200, emissive:0xff2200, emissiveIntensity:1.5})
-                    );
-                    bMesh.position.copy(m.position);
-                    bMesh.position.y = 1.5;
-                    scene.add(bMesh);
-                    // Fireball do boss: sempre pelo menos 2x o dano máximo da fireball do jogador
-                    // Ignora def (dano mágico) — calculado na hora do impacto sem redução
-                    let playerFbBase = 40 + getActiveSkillBonuses().fireballDmg;
-                    let bossFbDmg = Math.max(playerFbBase * 2, Math.floor(m.userData.atk * 1.5));
-                    bossFireballs.push({ mesh: bMesh, dir: bDir, dmg: bossFbDmg, life: 80, magical: true });
-                    playSound('bossFireball');
+                // Boss dispara habilidades variadas por bioma — cada uma com timer próprio
+                let biomeAbilities = BOSS_ABILITIES[Math.min(currentBiome, BOSS_ABILITIES.length-1)];
+                if(!m.userData.abilityTimers) m.userData.abilityTimers = {};
+                let playerFbBase = 40 + getActiveSkillBonuses().fireballDmg;
+                let bossFbDmg = Math.max(playerFbBase * 1.5, Math.floor(m.userData.atk * 1.2));
+                let lvScale = Math.max(0, player.level - 5);
+                if(d < 40) {
+                    biomeAbilities.forEach((ability, ai) => {
+                        if(!m.userData.abilityTimers[ai]) m.userData.abilityTimers[ai] = 0;
+                        // Cooldown diminui com o nível, mas nunca abaixo de 35% do base
+                        let fireInterval = Math.max(ability.interval * 0.35, ability.interval - lvScale * 50);
+                        if(time - m.userData.abilityTimers[ai] > fireInterval) {
+                            m.userData.abilityTimers[ai] = time;
+                            let baseDir = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
+                            let count = ability.count || 1;
+                            for(let pi = 0; pi < count; pi++) {
+                                let bDir = baseDir.clone();
+                                if(ability.spread && count > 1) {
+                                    let angle = (pi - (count-1)/2) * ability.spread;
+                                    bDir.applyAxisAngle(new THREE.Vector3(0,1,0), angle);
+                                }
+                                let bMesh = new THREE.Mesh(
+                                    ability.geo(),
+                                    new THREE.MeshStandardMaterial({color:ability.color, emissive:ability.emissive, emissiveIntensity:ability.ei})
+                                );
+                                bMesh.position.copy(m.position);
+                                bMesh.position.y = 1.5;
+                                scene.add(bMesh);
+                                bossFireballs.push({
+                                    mesh: bMesh, dir: bDir,
+                                    dmg: Math.floor(bossFbDmg * ability.dmgMult),
+                                    speed: ability.speed,
+                                    life: 95, magical: ability.magical,
+                                    homing: ability.homing || false,
+                                    dot: ability.dot || null,
+                                    explode: ability.explode || false
+                                });
+                            }
+                            floatingText(ability.label, m.position, "#ffcc00");
+                            playSound('bossFireball');
+                        }
+                    });
                 }
                 // Depois do nível 12 o boss convoca mobs a cada 15s
                 if(player.level >= 12) {
@@ -3751,53 +3871,254 @@ window.addEventListener('resize', () => {
     positionEquipBar();
 });
 
-// Adicionar árvores/rochas para decorar biomas (decorações simples)
+// Adicionar decorações ricas por bioma
 function addBiomeDecorations() {
-    // Limpar decorações antigas (iteração reversa para evitar bug de splice em forEach)
     for(let i=visuals.length-1; i>=0; i--) {
         if(visuals[i].userData && visuals[i].userData.isDecoration) {
-            scene.remove(visuals[i]);
-            visuals.splice(i, 1);
+            scene.remove(visuals[i]); visuals.splice(i,1);
         }
     }
-    
-    // Adicionar novas decorações baseadas no bioma
-    let decorationCount = 30;
-    for(let i = 0; i < decorationCount; i++) {
-        let deco;
-        let x = (Math.random() - 0.5) * 400;
-        let z = (Math.random() - 0.5) * 400;
-        
-        if(currentBiome === 1) { // Forest - árvores
-            deco = new THREE.Group();
-            let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 2, 6), new THREE.MeshStandardMaterial({color: 0x4a3728}));
-            trunk.position.y = 1;
-            deco.add(trunk);
-            let leaves = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3, 8), new THREE.MeshStandardMaterial({color: 0x2d5a2d}));
-            leaves.position.y = 3;
-            deco.add(leaves);
-        } else if(currentBiome === 2) { // Desert - cactos
-            deco = new THREE.Group();
-            let cactus = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 2, 8), new THREE.MeshStandardMaterial({color: 0x3d8b3d}));
-            cactus.position.y = 1;
-            deco.add(cactus);
-        } else if(currentBiome === 3) { // Snow - rochas cobertas de neve
-            deco = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8), new THREE.MeshStandardMaterial({color: 0xe8f4f8}));
-            deco.position.y = 0.4;
-        } else if(currentBiome === 4) { // Volcanic - pedras vulcânicas
-            deco = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6), new THREE.MeshStandardMaterial({color: 0x333333, emissive: 0x331111}));
-            deco.position.y = 0.3;
-        } else { // Plains - flores/arbustos
-            deco = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshStandardMaterial({color: 0x44aa44}));
-            deco.position.y = 0.2;
-        }
-        
-        if(deco) {
-            deco.position.set(x, 0, z);
-            deco.userData = { isDecoration: true };
-            scene.add(deco);
-            visuals.push(deco);
-        }
+    const decoBuilders = [
+        // 0: Plains — mistura de árvores, flores, pedras, arbustos
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.35) { // Árvore
+                let s = 0.7 + Math.random()*0.8;
+                let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2*s,0.3*s,1.5*s,7), new THREE.MeshStandardMaterial({color:0x5a3e28}));
+                trunk.position.y = 0.75*s;
+                g.add(trunk);
+                let leaves = new THREE.Mesh(new THREE.SphereGeometry(1.0*s,8,6), new THREE.MeshStandardMaterial({color:0x3a8a3a}));
+                leaves.position.y = 2.0*s;
+                g.add(leaves);
+            } else if(r < 0.6) { // Arbusto
+                let b = new THREE.Mesh(new THREE.SphereGeometry(0.4+Math.random()*0.3,6,5), new THREE.MeshStandardMaterial({color:0x44aa55}));
+                b.position.y = 0.3; g.add(b);
+                if(Math.random()<0.5){ let b2=b.clone(); b2.position.x+=0.3; b2.position.y=0.2; g.add(b2); }
+            } else if(r < 0.8) { // Pedra
+                let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3+Math.random()*0.4,0), new THREE.MeshStandardMaterial({color:0x888888}));
+                rock.position.y=0.2; rock.rotation.y=Math.random()*Math.PI; g.add(rock);
+            } else { // Flor
+                let stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.5,5), new THREE.MeshStandardMaterial({color:0x33aa33}));
+                stem.position.y=0.25; g.add(stem);
+                let flower = new THREE.Mesh(new THREE.SphereGeometry(0.12,6,5), new THREE.MeshStandardMaterial({color:[0xff6688,0xffcc00,0xff8844][Math.floor(Math.random()*3)]}));
+                flower.position.y=0.55; g.add(flower);
+            }
+            return g;
+        },
+        // 1: Dark Forest — árvores altas e densas, troncos retorcidos, cogumelos
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.55) { // Árvore grande da floresta escura
+                let s = 1.2+Math.random()*1.5;
+                let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25*s,0.4*s,2.5*s,7), new THREE.MeshStandardMaterial({color:0x2a1e12}));
+                trunk.position.y=1.25*s; trunk.rotation.z=(Math.random()-0.5)*0.15;
+                g.add(trunk);
+                let leaves = new THREE.Mesh(new THREE.ConeGeometry(1.4*s,2.8*s,8), new THREE.MeshStandardMaterial({color:0x1a3a1a}));
+                leaves.position.y=3.2*s; g.add(leaves);
+                let leaves2 = new THREE.Mesh(new THREE.ConeGeometry(1.0*s,2.0*s,8), new THREE.MeshStandardMaterial({color:0x223a22}));
+                leaves2.position.y=4.4*s; g.add(leaves2);
+            } else if(r < 0.75) { // Cogumelo
+                let stem = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.2,0.8,8), new THREE.MeshStandardMaterial({color:0xddddaa}));
+                stem.position.y=0.4; g.add(stem);
+                let cap = new THREE.Mesh(new THREE.SphereGeometry(0.55,8,5), new THREE.MeshStandardMaterial({color:0xcc3322}));
+                cap.position.y=0.9; cap.scale.y=0.6; g.add(cap);
+            } else { // Raiz/tronco caído
+                let log = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.3,2,7), new THREE.MeshStandardMaterial({color:0x2a1a0a}));
+                log.rotation.z=Math.PI/2; log.position.y=0.3; g.add(log);
+            }
+            return g;
+        },
+        // 2: Desert — cactos variados, pedras, ossos, dunas
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.45) { // Cacto com braços
+                let s = 0.8+Math.random()*0.8;
+                let body = new THREE.Mesh(new THREE.CylinderGeometry(0.25*s,0.3*s,2.5*s,8), new THREE.MeshStandardMaterial({color:0x4a8a3a}));
+                body.position.y=1.25*s; g.add(body);
+                if(Math.random()<0.7) {
+                    let arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.15,1.2*s,7), new THREE.MeshStandardMaterial({color:0x4a8a3a}));
+                    arm.position.set(0.35*s,0.8*s,0); arm.rotation.z=Math.PI/3; g.add(arm);
+                }
+                if(Math.random()<0.5) {
+                    let arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.15,1.0*s,7), new THREE.MeshStandardMaterial({color:0x4a8a3a}));
+                    arm2.position.set(-0.35*s,1.2*s,0); arm2.rotation.z=-Math.PI/3; g.add(arm2);
+                }
+            } else if(r < 0.7) { // Pedra do deserto
+                let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.4+Math.random()*0.6,0), new THREE.MeshStandardMaterial({color:0xc8a060}));
+                rock.position.y=0.3; rock.rotation.y=Math.random()*Math.PI; g.add(rock);
+            } else { // Esqueleto de árvore morta
+                let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.2,1.8,6), new THREE.MeshStandardMaterial({color:0xaaa088}));
+                trunk.position.y=0.9; trunk.rotation.z=(Math.random()-0.5)*0.2; g.add(trunk);
+                let branch = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.1,0.9,5), new THREE.MeshStandardMaterial({color:0xaaa088}));
+                branch.position.set(0.3,1.5,0); branch.rotation.z=0.7; g.add(branch);
+            }
+            return g;
+        },
+        // 3: Snow — pinheiros nevados, cristais de gelo, pedras com neve
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.45) { // Pinheiro nevado
+                let s = 0.9+Math.random()*1.0;
+                let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15*s,0.25*s,1.5*s,7), new THREE.MeshStandardMaterial({color:0x3a2a1a}));
+                trunk.position.y=0.75*s; g.add(trunk);
+                [0.9,0.6,0.35].forEach((h,idx) => {
+                    let layer = new THREE.Mesh(new THREE.ConeGeometry((1.2-idx*0.25)*s,(1.2-idx*0.1)*s,8), new THREE.MeshStandardMaterial({color:idx===0?0x1a4a1a:0x265226}));
+                    layer.position.y=(1.5+idx*0.7)*s; g.add(layer);
+                    let snow = new THREE.Mesh(new THREE.ConeGeometry((1.2-idx*0.25)*s*0.7,0.3*s,8), new THREE.MeshStandardMaterial({color:0xeef5f8}));
+                    snow.position.y=(1.5+idx*0.7)*s; snow.position.y+=0.5*s; g.add(snow);
+                });
+            } else if(r < 0.7) { // Cristal de gelo
+                let h = 0.8+Math.random()*1.4;
+                let crystal = new THREE.Mesh(new THREE.ConeGeometry(0.2,h,6), new THREE.MeshStandardMaterial({color:0xaaeeff,emissive:0x4499cc,emissiveIntensity:0.3,transparent:true,opacity:0.8}));
+                crystal.position.y=h/2; g.add(crystal);
+                if(Math.random()<0.6){ let c2=crystal.clone(); c2.position.x=0.3; c2.scale.set(0.7,0.7,0.7); g.add(c2); }
+            } else { // Pedra com neve
+                let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+Math.random()*0.4,0), new THREE.MeshStandardMaterial({color:0x8a9aaa}));
+                rock.position.y=0.3; g.add(rock);
+                let snow = new THREE.Mesh(new THREE.SphereGeometry(0.4+Math.random()*0.3,7,5), new THREE.MeshStandardMaterial({color:0xeef5ff}));
+                snow.position.y=0.7; snow.scale.y=0.4; g.add(snow);
+            }
+            return g;
+        },
+        // 4: Volcanic — rochas negras, espinhos de lava, pilares de obsidiana
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.4) { // Pilar de obsidiana
+                let h = 1.0+Math.random()*2.5;
+                let pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.35,h,6), new THREE.MeshStandardMaterial({color:0x1a1a2a,roughness:0.2}));
+                pillar.position.y=h/2; g.add(pillar);
+            } else if(r < 0.7) { // Rocha vulcânica com brilho
+                let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+Math.random()*0.6,0), new THREE.MeshStandardMaterial({color:0x2a1a1a,emissive:0x441100,emissiveIntensity:0.4}));
+                rock.position.y=0.3; rock.rotation.y=Math.random()*Math.PI; g.add(rock);
+                if(Math.random()<0.5){ let r2=rock.clone(); r2.position.x=0.6; r2.scale.multiplyScalar(0.7); g.add(r2); }
+            } else { // Espinho de lava
+                for(let si=0;si<3;si++){
+                    let h=0.5+Math.random()*1.0;
+                    let spike = new THREE.Mesh(new THREE.ConeGeometry(0.1,h,5), new THREE.MeshStandardMaterial({color:0x330000,emissive:0xff3300,emissiveIntensity:0.5}));
+                    spike.position.set((Math.random()-0.5)*0.6,(h/2),(Math.random()-0.5)*0.6);
+                    spike.rotation.z=(Math.random()-0.5)*0.4;
+                    g.add(spike);
+                }
+            }
+            return g;
+        },
+        // 5: Mystic Highlands — cristais roxos, pedras flutuantes, plantas brilhantes
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.4) { // Cristal místico
+                let h=1.0+Math.random()*2.0;
+                let c = new THREE.Mesh(new THREE.ConeGeometry(0.18,h,6), new THREE.MeshStandardMaterial({color:0x8844cc,emissive:0x5522aa,emissiveIntensity:0.6,transparent:true,opacity:0.85}));
+                c.position.y=h/2; g.add(c);
+                if(Math.random()<0.6){ let c2=c.clone(); c2.position.x=0.35; c2.scale.multiplyScalar(0.65); g.add(c2); }
+            } else if(r < 0.7) { // Pedra mística
+                let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+Math.random()*0.5,0), new THREE.MeshStandardMaterial({color:0x4a3a6a,emissive:0x220055,emissiveIntensity:0.2}));
+                rock.position.y=0.3; g.add(rock);
+            } else { // Planta brilhante
+                let stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.09,1.2,6), new THREE.MeshStandardMaterial({color:0x6633aa}));
+                stem.position.y=0.6; g.add(stem);
+                let glow = new THREE.Mesh(new THREE.SphereGeometry(0.22,7,6), new THREE.MeshStandardMaterial({color:0xdd88ff,emissive:0xaa44ff,emissiveIntensity:0.9}));
+                glow.position.y=1.35; g.add(glow);
+            }
+            return g;
+        },
+        // 6: Crystal Caves — formações de cristal azul-ciano
+        function() {
+            let g = new THREE.Group();
+            let count = 2+Math.floor(Math.random()*4);
+            for(let ci=0;ci<count;ci++){
+                let h=0.6+Math.random()*2.2;
+                let crystal = new THREE.Mesh(new THREE.ConeGeometry(0.12+Math.random()*0.1,h,6), new THREE.MeshStandardMaterial({color:0x00eeff,emissive:0x00aacc,emissiveIntensity:0.7,transparent:true,opacity:0.85}));
+                crystal.position.set((Math.random()-0.5)*1.2,h/2,(Math.random()-0.5)*1.2);
+                crystal.rotation.z=(Math.random()-0.5)*0.3;
+                g.add(crystal);
+            }
+            return g;
+        },
+        // 7: Shadow Realm — árvores mortas, monólitos sombrios, névoa escura
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.4) { // Árvore morta retorcida
+                let s=0.8+Math.random()*0.9;
+                let trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15*s,0.25*s,2.5*s,6), new THREE.MeshStandardMaterial({color:0x1a1a22}));
+                trunk.position.y=1.25*s; trunk.rotation.z=(Math.random()-0.5)*0.25; g.add(trunk);
+                let b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.12,1.2*s,5), new THREE.MeshStandardMaterial({color:0x1a1a22}));
+                b1.position.set(0.4*s,2.0*s,0); b1.rotation.z=0.8; g.add(b1);
+                let b2=b1.clone(); b2.position.set(-0.35*s,2.4*s,0); b2.rotation.z=-0.7; g.add(b2);
+            } else if(r < 0.7) { // Monólito sombrio
+                let h=1.5+Math.random()*2.5;
+                let mono = new THREE.Mesh(new THREE.BoxGeometry(0.4,h,0.35), new THREE.MeshStandardMaterial({color:0x0a0a14,emissive:0x110033,emissiveIntensity:0.3}));
+                mono.position.y=h/2; mono.rotation.y=Math.random()*Math.PI; g.add(mono);
+            } else { // Pedra sombria
+                let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.45+Math.random()*0.5,0), new THREE.MeshStandardMaterial({color:0x1a1a2a,emissive:0x220044,emissiveIntensity:0.2}));
+                rock.position.y=0.25; g.add(rock);
+            }
+            return g;
+        },
+        // 8: Celestial Peaks — pilares dourados, nuvens sólidas, cristais de luz
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.35) { // Pilar celestial
+                let h=1.5+Math.random()*2.5;
+                let p = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,h,8), new THREE.MeshStandardMaterial({color:0xddcc88,emissive:0xaa8833,emissiveIntensity:0.3}));
+                p.position.y=h/2; g.add(p);
+                let top = new THREE.Mesh(new THREE.SphereGeometry(0.3,8,7), new THREE.MeshStandardMaterial({color:0xffeedd,emissive:0xffcc66,emissiveIntensity:0.7}));
+                top.position.y=h; g.add(top);
+            } else if(r < 0.65) { // Nuvem / rocha celestial
+                let cloud = new THREE.Mesh(new THREE.SphereGeometry(0.8+Math.random()*0.6,8,6), new THREE.MeshStandardMaterial({color:0xfff5e8,transparent:true,opacity:0.85}));
+                cloud.position.y=0.5; cloud.scale.y=0.5; g.add(cloud);
+                let c2=cloud.clone(); c2.position.x=0.7; c2.scale.multiplyScalar(0.75); g.add(c2);
+            } else { // Cristal de luz
+                let h=1.0+Math.random()*1.5;
+                let c=new THREE.Mesh(new THREE.ConeGeometry(0.15,h,6), new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffeeaa,emissiveIntensity:1.0,transparent:true,opacity:0.9}));
+                c.position.y=h/2; g.add(c);
+            }
+            return g;
+        },
+        // 9: Eternal Void — monólitos do vazio, rifts escuros, cristais negativos
+        function() {
+            let r = Math.random();
+            let g = new THREE.Group();
+            if(r < 0.4) { // Monólito do vazio
+                let h=2.0+Math.random()*3.0;
+                let m = new THREE.Mesh(new THREE.BoxGeometry(0.35,h,0.3), new THREE.MeshStandardMaterial({color:0x060010,emissive:0x3300aa,emissiveIntensity:0.5}));
+                m.position.y=h/2; m.rotation.y=Math.random()*Math.PI; g.add(m);
+            } else if(r < 0.7) { // Cristal do vazio
+                let count=2+Math.floor(Math.random()*3);
+                for(let ci=0;ci<count;ci++){
+                    let h=0.8+Math.random()*1.8;
+                    let c=new THREE.Mesh(new THREE.OctahedronGeometry(0.2+Math.random()*0.15), new THREE.MeshStandardMaterial({color:0x110033,emissive:0x5500ff,emissiveIntensity:0.8,transparent:true,opacity:0.8}));
+                    c.position.set((Math.random()-0.5)*1.0,h/2,(Math.random()-0.5)*1.0); g.add(c);
+                }
+            } else { // Rift escuro
+                let rift = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.1,8,16), new THREE.MeshStandardMaterial({color:0x000000,emissive:0x4400cc,emissiveIntensity:1.0}));
+                rift.position.y=0.8; rift.rotation.x=Math.PI/2; g.add(rift);
+            }
+            return g;
+        },
+    ];
+    let builder = decoBuilders[Math.min(currentBiome, decoBuilders.length-1)];
+    let count = 80; // muito mais decorações
+    let spread = 600;
+    for(let i=0; i<count; i++) {
+        let deco = builder();
+        if(!deco) continue;
+        let x = (Math.random()-0.5)*spread;
+        let z = (Math.random()-0.5)*spread;
+        deco.position.set(x, 0, z);
+        deco.rotation.y = Math.random()*Math.PI*2;
+        let s = 0.7 + Math.random()*0.7;
+        deco.scale.set(s, s, s);
+        deco.userData = { isDecoration: true };
+        scene.add(deco);
+        visuals.push(deco);
     }
 }
 
