@@ -401,7 +401,11 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background: rgba(255,255,255,0.08); color: #aaa; cursor: pointer; font-size: 12px;
     transition: all 0.15s;
 }
-.qi-filter-btn:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.4); }
+.qi-filter-btn:hover { 
+    background: rgba(90,185,255,0.15); 
+    border-color: rgba(90,185,255,0.4);
+    transform: translateY(-1px);
+}
 .qi-filter-btn.active { 
     background: linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.15)); 
     border-color: rgba(90,185,255,0.9); 
@@ -506,7 +510,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <button onclick="setShopTab('sell')" id="shopTabSell" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-weight:bold; font-size:15px;">💰 Vender</button>
     </div>
     <div id="shopBuyPanel">
-        <p style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p>
+        <p style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold" id="shopGoldDisplay">0</b></p>
         <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
         <div id="shopBuyItemsPanel" class="inventory-grid"></div>
     </div>
@@ -3459,6 +3463,8 @@ function setShopBuyFilter(key) {
 
 function updateShopBuyPanel() {
     let buyItemsPanel = document.getElementById('shopBuyItemsPanel');
+    let goldDisplay = document.getElementById('shopGoldDisplay');
+    if(goldDisplay) goldDisplay.innerText = player.gold;
     if(!buyItemsPanel) return;
     
     let html = '';
