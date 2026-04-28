@@ -518,8 +518,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     /* Botões de ação agrupados ergonomicamente na base direita - SEM SOBREPOSIÇÃO */
     /* Botão de ATK principal - maior e em destaque no canto inferior direito */
     #btnAtk {
-        bottom: 60px !important;
-        right: 20px !important;
+        bottom: 80px !important;
+        right: 30px !important;
         width: 88px !important;
         height: 88px !important;
         font-size: 17px !important;
@@ -530,8 +530,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     
     /* Skill (Z) - abaixo e à esquerda do ataque */
     #btnSkill {
-        bottom: 25px !important;
-        right: 100px !important;
+        bottom: 30px !important;
+        right: 130px !important;
         width: 56px !important;
         height: 56px !important;
         font-size: 13px !important;
@@ -539,8 +539,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     
     /* Dash (C) - acima e à esquerda do ataque */
     #btnDash {
-        bottom: 95px !important;
-        right: 75px !important;
+        bottom: 115px !important;
+        right: 100px !important;
         width: 52px !important;
         height: 52px !important;
         font-size: 12px !important;
@@ -548,8 +548,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     
     /* AOE (X) - acima do ataque */
     #btnAOE {
-        bottom: 125px !important;
-        right: 25px !important;
+        bottom: 150px !important;
+        right: 45px !important;
         width: 52px !important;
         height: 52px !important;
         font-size: 12px !important;
@@ -770,6 +770,34 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
 .qi-item.equipped-in-slot { opacity: 0.45; cursor: default; }
 .qi-section-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
 @media (max-width: 800px) { #equipBar { display: none; } #quickInvPanel { width: 92vw; right: -100vw; top: 10px; max-height: calc(100vh - 20px); } #quickInvPanel.open { right: 4vw; } }
+
+
+/* === FIX MOBILE 2026-04-28: layout, pause e menu === */
+@media (max-width: 800px) {
+    :root { --safe-bottom: env(safe-area-inset-bottom, 0px); --safe-top: env(safe-area-inset-top, 0px); }
+    #pauseBtnMobile { display: flex !important; top: calc(10px + var(--safe-top)); right: 10px; width: 44px; height: 44px; z-index: 6500; }
+    #mobileMenuBtn { top: calc(10px + var(--safe-top)) !important; right: 62px !important; width: 44px !important; height: 44px !important; z-index: 6400 !important; }
+    #mobileControls { z-index: 3500; }
+    #joystickArea { bottom: calc(22px + var(--safe-bottom)) !important; left: 18px !important; width: 112px !important; height: 112px !important; }
+    #joystickStick { top: 36px !important; left: 36px !important; width: 40px !important; height: 40px !important; }
+    #btnAtk { right: 18px !important; bottom: calc(38px + var(--safe-bottom)) !important; width: 82px !important; height: 82px !important; font-size: 16px !important; }
+    #btnSkill { right: 112px !important; bottom: calc(22px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+    #btnDash { right: 112px !important; bottom: calc(88px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+    #btnAOE { right: 46px !important; bottom: calc(132px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+    #mobileMenuPanel { z-index: 6200 !important; padding: 16px 14px calc(18px + var(--safe-bottom)) 14px !important; max-height: min(72vh, 560px) !important; box-sizing: border-box; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    body.mobile-menu-open #mobileControls { pointer-events: none; opacity: .35; }
+    .mobile-menu-tabs { position: sticky; top: 0; background: linear-gradient(180deg, rgba(10,25,50,1), rgba(10,25,50,.92)); z-index: 2; padding-top: 2px; }
+}
+@media (max-width: 380px) {
+    #hud { width: 145px !important; }
+    #btnAtk { width: 74px !important; height: 74px !important; right: 14px !important; }
+    #btnSkill { right: 100px !important; }
+    #btnDash { right: 100px !important; }
+    #btnAOE { right: 36px !important; }
+    #joystickArea { width: 100px !important; height: 100px !important; }
+    #joystickStick { top: 31px !important; left: 31px !important; width: 38px !important; height: 38px !important; }
+}
+
 </style>
 </head>
 <body>
@@ -800,14 +828,18 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
 <!-- Painel do menu unificado inferior (visível apenas no mobile) -->
 <div id="mobileMenuPanel">
     <div class="mobile-menu-tabs">
-        <div class="mobile-menu-tab active" onclick="switchMobileTab('inventory')">🎒 Inventário</div>
-        <div class="mobile-menu-tab" onclick="switchMobileTab('shop')">🏪 Loja</div>
-        <div class="mobile-menu-tab" onclick="switchMobileTab('evolution')">🏆 Evolução</div>
+        <div class="mobile-menu-tab active" onclick="switchMobileTab('inventory', event)">🎒 Inventário</div>
+        <div class="mobile-menu-tab" onclick="switchMobileTab('shop', event)">🏪 Loja</div>
+        <div class="mobile-menu-tab" onclick="switchMobileTab('evolution', event)">🏆 Evolução</div>
     </div>
     
     <!-- Conteúdo do Inventário -->
     <div id="mobile-inventory-content" class="mobile-menu-content active">
         <div id="mobileInventoryGrid" class="inventory-grid"></div>
+        <div style="margin-top:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
+            <h4 style="margin:0 0 10px 0; color:#ffd700; font-size:13px;">⚔️ Equipamento Atual</h4>
+            <div id="mobileEquippedPanel" style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;"></div>
+        </div>
     </div>
     
     <!-- Conteúdo da Loja -->
@@ -2075,9 +2107,9 @@ function toggleEvolution() {
         renderSkillTree();
         renderActiveSkillTree();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
-    // Fecha menu mobile se estiver aberto
-    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 /* -------- ENGINE 3D -------- */
@@ -3122,41 +3154,57 @@ if (window.innerWidth <= 800) {
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 
 if (mobileMenuBtn) {
-    mobileMenuBtn.addEventListener('click', (e) => {
+    // Usa pointerdown para evitar duplo toggle em celular (touchstart + click).
+    mobileMenuBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         initAudio();
         toggleMobileMenu();
     });
-    
-    mobileMenuBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        initAudio();
-        toggleMobileMenu();
-    });
+}
+
+function setPauseState(paused, reason = 'manual') {
+    gamePaused = paused;
+    if (typeof pauseOverlay !== 'undefined' && pauseOverlay) {
+        pauseOverlay.style.display = paused && reason === 'manual' ? 'flex' : 'none';
+    }
+    const pauseBtn = document.getElementById('pauseBtnMobile');
+    if (pauseBtn) pauseBtn.innerHTML = paused ? '▶️' : '⏸️';
+}
+
+function openMobileMenu() {
+    if (!mobileMenuPanel) return;
+    if (statusWindow && statusWindow.style.display === 'block') statusWindow.style.display = 'none';
+    if (shopWindow && shopWindow.style.display === 'block') shopWindow.style.display = 'none';
+    if (evolutionWindow && evolutionWindow.style.display === 'block') evolutionWindow.style.display = 'none';
+    if (menuOverlay) menuOverlay.style.display = 'none';
+    if (typeof quickInvOpen !== 'undefined' && quickInvOpen) closeQuickInv();
+    mobileMenuPanel.classList.add('active');
+    document.body.classList.add('mobile-menu-open');
+    setPauseState(true, 'menu');
+    updateMobileMenuContent();
+}
+
+function closeMobileMenu() {
+    if (!mobileMenuPanel) return;
+    mobileMenuPanel.classList.remove('active');
+    document.body.classList.remove('mobile-menu-open');
+    setPauseState(false, 'menu');
 }
 
 function toggleMobileMenu() {
     if (!mobileMenuPanel) return;
-    mobileMenuPanel.classList.toggle('active');
-    // Fecha outros menus abertos
-    if (statusWindow.style.display === 'block') toggleV();
-    if (shopWindow.style.display === 'block') toggleShop();
-    if (evolutionWindow.style.display === 'block') toggleEvolution();
-    // Atualiza conteúdo quando abrir
-    if (mobileMenuPanel.classList.contains('active')) {
-        updateMobileMenuContent();
-    }
+    if (mobileMenuPanel.classList.contains('active')) closeMobileMenu();
+    else openMobileMenu();
 }
 
-function switchMobileTab(tabName) {
-    // Remove active de todas as abas e conteúdos
+function switchMobileTab(tabName, evt) {
     document.querySelectorAll('.mobile-menu-tab').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.mobile-menu-content').forEach(content => content.classList.remove('active'));
-    
-    // Adiciona active na aba selecionada
-    event.target.classList.add('active');
-    document.getElementById(`mobile-${tabName}-content`).classList.add('active');
-    
+    const tabEl = evt?.currentTarget || window.event?.target;
+    if (tabEl) tabEl.classList.add('active');
+    const contentEl = document.getElementById(`mobile-${tabName}-content`);
+    if (contentEl) contentEl.classList.add('active');
     updateMobileMenuContent();
 }
 
@@ -3185,6 +3233,39 @@ function updateMobileMenuContent() {
         });
     } else if (mobileInvGrid) {
         mobileInvGrid.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Inventário vazio</div>';
+    }
+    
+    // Atualiza equipamento mobile
+    const mobileEquippedPanel = document.getElementById('mobileEquippedPanel');
+    if (mobileEquippedPanel) {
+        mobileEquippedPanel.innerHTML = '';
+        const slots = ['weapon', 'shield', 'cape', 'boots', 'ring1', 'ring2'];
+        const slotLabels = {
+            weapon: '⚔️ Arma',
+            shield: '🛡️ Escudo',
+            cape: '🧥 Capa',
+            boots: '👢 Botas',
+            ring1: '💍 Anel 1',
+            ring2: '💍 Anel 2'
+        };
+        
+        slots.forEach(slot => {
+            const equippedItem = equipped[slot];
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = 'background:rgba(255,255,255,0.08); padding:8px; border-radius:6px; font-size:11px;';
+            
+            if (equippedItem) {
+                itemDiv.innerHTML = `
+                    <div style="color:#ffd700; font-weight:bold; margin-bottom:3px;">${slotLabels[slot]}</div>
+                    <div style="color:#fff;">${equippedItem.icon} ${equippedItem.name}</div>
+                `;
+            } else {
+                itemDiv.innerHTML = `
+                    <div style="color:#888; font-style:italic;">${slotLabels[slot]}<br>(vazio)</div>
+                `;
+            }
+            mobileEquippedPanel.appendChild(itemDiv);
+        });
     }
     
     // Atualiza loja mobile
@@ -3765,9 +3846,9 @@ function toggleV(){
         renderSkillTree();
         renderActiveSkillTree();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
-    // Fecha menu mobile se estiver aberto
-    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 // ======== QUICK SWAP PANEL ========
@@ -4306,9 +4387,9 @@ function toggleShop(){
         renderShopBuyFilterBar();
         updateShopBuyPanel();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
-    // Fecha menu mobile se estiver aberto
-    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 // Função para fechar todos os menus (usada pela tecla ESC)
@@ -4317,7 +4398,7 @@ function closeAllMenus() {
     
     // Fechar menu mobile
     if (mobileMenuPanel && mobileMenuPanel.classList.contains('active')) {
-        mobileMenuPanel.classList.remove('active');
+        closeMobileMenu();
         closed = true;
     }
 
@@ -5085,17 +5166,27 @@ function animate(time){
 // Overlay de pausa
 let pauseOverlay = document.createElement('div');
 pauseOverlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; color:white; font-size:48px; font-weight:bold; align-items:center; justify-content:center; flex-direction:column;';
-pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18px; margin-top:20px; color:#aaa;">Pressione P para continuar</div>';
+pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18px; margin-top:20px; color:#aaa;">Toque em ▶️ ou pressione P para continuar</div>';
 document.body.appendChild(pauseOverlay);
 
 function togglePause() {
-    gamePaused = !gamePaused;
-    pauseOverlay.style.display = gamePaused ? 'flex' : 'none';
-    if(gamePaused) {
-        log("<span style='color:yellow'>Jogo pausado</span>");
-    } else {
+    // No mobile, o botão de pause também fecha o menu unificado se ele estiver aberto.
+    if (mobileMenuPanel && mobileMenuPanel.classList.contains('active')) {
+        closeMobileMenu();
         log("<span style='color:cyan'>Jogo continuado</span>");
+        return;
     }
+
+    // Não permite pausar manualmente se já houver um modal aberto.
+    if (statusWindow.style.display === 'block' || 
+        shopWindow.style.display === 'block' || 
+        evolutionWindow.style.display === 'block' ||
+        quickInvOpen) {
+        return;
+    }
+    setPauseState(!gamePaused, 'manual');
+    if(gamePaused) log("<span style='color:yellow'>Jogo pausado</span>");
+    else log("<span style='color:cyan'>Jogo continuado</span>");
 }
 
 // -------- SISTEMA DE MODO DE CONTROLE --------
@@ -5835,16 +5926,9 @@ setControlMode('wasd');
 
 // Overlay para menus (fundo escuro estilo pause) — usa o elemento HTML já existente no CSS
 const menuOverlay = document.getElementById('menuOverlay');
-menuOverlay.addEventListener('click', () => {
-    closeAllMenus();
-});
-
-// Fechar menu mobile ao clicar no overlay também
-if (mobileMenuPanel) {
+if (menuOverlay) {
     menuOverlay.addEventListener('click', () => {
-        if (mobileMenuPanel.classList.contains('active')) {
-            mobileMenuPanel.classList.remove('active');
-        }
+        closeAllMenus();
     });
 }
 
