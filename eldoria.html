@@ -1104,6 +1104,45 @@ const lootTable=[
     { name:"Néctar dos Deuses",     slot:"consumable", heal:2500, desc:"Imortalidade temporária.", icon:"🏺", stackable:true, value:800, minLevel:100 },
 ];
 
+// ══════════════════════════════════════════════
+// LOOT EXCLUSIVO DE BOSS (itens que só boss dropa)
+// ══════════════════════════════════════════════
+const bossLootTable = [
+    // Tier 1 - Boss Lv 5+
+    { name:"Espada do Chefe Goblin", slot:"weapon", atk:12, hp:20, desc:"Troféu do primeiro boss.", icon:"🗡️", value:50, minLevel:5, bossOnly: true },
+    { name:"Coroa de Lobo Alfa", slot:"ring", atk:5, def:5, speed:0.05, desc:"Símbolo de dominância.", icon:"👑", value:45, minLevel:5, bossOnly: true },
+    
+    // Tier 2 - Boss Lv 10+
+    { name:"Machado do Rei Orc", slot:"weapon", atk:22, hp:35, desc:"Forjado pelo rei dos orcs.", icon:"🪓", value:95, minLevel:10, bossOnly: true },
+    { name:"Garras da Aranha Rainha", slot:"weapon", atk:18, sp:30, desc:"Veneno concentrado.", icon:"🕷️", value:90, minLevel:10, bossOnly: true },
+    { name:"Amuleto do Dragão Ancião", slot:"ring", atk:10, hp:50, sp:20, desc:"Escama do dragão primordial.", icon:"🐉", value:110, minLevel:10, bossOnly: true },
+    
+    // Tier 3 - Boss Lv 20+
+    { name:"Lâmina do General Esqueleto", slot:"weapon", atk:32, sp:25, hp:-10, desc:"Energia negativa condensada.", icon:"💀", value:165, minLevel:20, bossOnly: true },
+    { name:"Escudo do Titã de Pedra", slot:"shield", def:28, hp:80, speed:-0.03, desc:"Peso de uma montanha.", icon:"🪨", value:155, minLevel:20, bossOnly: true },
+    { name:"Manto da Feiticeira do Caos", slot:"cape", def:12, sp:60, hp:30, desc:"Tecido com magia proibida.", icon:"🔮", value:175, minLevel:20, bossOnly: true },
+    
+    // Tier 4 - Boss Lv 35+
+    { name:"Foice do Ceifador Sombrio", slot:"weapon", atk:45, sp:40, hp:-25, desc:"Almas aprisionadas na lâmina.", icon:"💀", value:280, minLevel:35, bossOnly: true },
+    { name:"Armadura do Cavaleiro Negro", slot:"shield", def:38, hp:100, sp:-15, desc:"Proteção amaldiçoada.", icon:"🛡️", value:265, minLevel:35, bossOnly: true },
+    { name:"Anel do Lich Supremo", slot:"ring", atk:20, hp:80, sp:70, desc:"Poder da lichidade.", icon:"💍", value:320, minLevel:35, bossOnly: true },
+    
+    // Tier 5 - Boss Lv 50+
+    { name:"Espada da Fênix Renascida", slot:"weapon", atk:55, hp:70, sp:30, desc:"Chamas eternas.", icon:"🔥", value:450, minLevel:50, bossOnly: true },
+    { name:"Égide do Deus Ancient", slot:"shield", def:48, hp:120, sp:40, desc:"Bênção divina.", icon:"✨", value:420, minLevel:50, bossOnly: true },
+    { name:"Coroa do Imperador do Vazio", slot:"ring", atk:30, hp:100, sp:80, desc:"Domínio sobre o nada.", icon:"👑", value:500, minLevel:50, bossOnly: true },
+    
+    // Tier 6 - Boss Lv 70+
+    { name:"Lâmina da Entidade Cósmica", slot:"weapon", atk:70, hp:80, sp:90, desc:"Poder além da compreensão.", icon:"🌌", value:720, minLevel:70, bossOnly: true },
+    { name:"Manto da Destruição Eterna", slot:"cape", def:32, sp:120, hp:60, speed:0.12, desc:"Fim de todas as coisas.", icon:"☄️", value:680, minLevel:70, bossOnly: true },
+    { name:"Anel da Criação Primordial", slot:"ring", atk:40, hp:150, sp:100, desc:"Essência do universo.", icon:"♾️", value:800, minLevel:70, bossOnly: true },
+    
+    // Tier 7 - Boss Lv 100+
+    { name:"Ceifadora da Realidade", slot:"weapon", atk:95, hp:120, sp:110, desc:"Corta o tecido da existência.", icon:"⚡", value:1200, minLevel:100, bossOnly: true },
+    { name:"Baluarte do Infinito", slot:"shield", def:70, hp:200, sp:80, desc:"Defesa absoluta.", icon:"🛡️", value:1100, minLevel:100, bossOnly: true },
+    { name:"Coroa da Transcendência", slot:"ring", atk:50, hp:180, sp:130, speed:0.15, desc:"Além da mortalidade.", icon:"👑", value:1350, minLevel:100, bossOnly: true },
+];
+
 // Adicionar durabilidade aos itens e quantidade para stackables
 function createItem(baseItem) {
     let item = JSON.parse(JSON.stringify(baseItem));
@@ -1992,10 +2031,24 @@ function killMonster(m){
     let availableLoot = lootTable.filter(item => item.minLevel <= player.level);
     if(availableLoot.length === 0) availableLoot = lootTable.filter(item => item.minLevel <= 1); // Fallback para level 1
     
+    // Se for boss, adiciona chance de dropar item exclusivo
+    let availableBossLoot = [];
+    if(m.userData.isBoss) {
+        availableBossLoot = bossLootTable.filter(item => item.minLevel <= player.level);
+    }
+    
     for(let i = 0; i < dropCount; i++) {
         if(Math.random() > 0.4) { // 60% chance de dropar cada item
-            // Escolher item apenas dos disponíveis para o nível atual
-            let randomItem = availableLoot[Math.floor(Math.random() * availableLoot.length)];
+            // Escolher item: se for boss, 40% de chance de ser item exclusivo
+            let randomItem;
+            if(m.userData.isBoss && availableBossLoot.length > 0 && Math.random() < 0.4) {
+                // Item exclusivo de boss
+                randomItem = availableBossLoot[Math.floor(Math.random() * availableBossLoot.length)];
+            } else {
+                // Item normal da lootTable
+                randomItem = availableLoot[Math.floor(Math.random() * availableLoot.length)];
+            }
+            
             let itemCopy = createItem(randomItem);
             // Aplicar raridade baseada no bioma (boss sempre tem melhor chance)
             if(m.userData.isBoss) {
@@ -4571,6 +4624,25 @@ function renderStartScreen() {
             <!-- Novo herói -->
             <div>
                 ${!hasSaves ? '<p style="color:#7ea8cc; font-size:13px; letter-spacing:2px; margin:0 0 14px 0; text-transform:uppercase;">⚔ Novo Herói</p>' : ''}
+                
+                <!-- Seleção de Controle -->
+                <p style="color:#7ea8cc; font-size:13px; letter-spacing:2px; margin:0 0 10px 0; text-transform:uppercase;">🎮 Tipo de Controle</p>
+                <div style="display:flex; gap:12px; margin-bottom:14px;">
+                    <button id="startControlWASD" onclick="setStartControlMode('wasd')"
+                        style="flex:1; padding:12px; font-size:15px; font-weight:bold; border-radius:10px;
+                               background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,215,0,0.1)); 
+                               color:white; border:2px solid rgba(255,215,0,0.6); cursor:pointer; 
+                               letter-spacing:1px; transition:all 0.2s;">
+                        WASD
+                    </button>
+                    <button id="startControlArrows" onclick="setStartControlMode('arrows')"
+                        style="flex:1; padding:12px; font-size:15px; font-weight:bold; border-radius:10px;
+                               background:rgba(255,255,255,0.05); color:white; border:2px solid rgba(255,255,255,0.2); 
+                               cursor:pointer; letter-spacing:1px; transition:all 0.2s;">
+                        ⬆️ Setas
+                    </button>
+                </div>
+                
                 <input id="startNameInput" type="text" maxlength="20" placeholder="Nome do herói..."
                     style="width:100%; box-sizing:border-box; padding:14px 18px; font-size:20px; border-radius:12px;
                            border:2px solid rgba(90,185,255,0.4); background:rgba(10,25,60,0.9); color:#ffd66b;
@@ -4666,6 +4738,20 @@ function renderStartScreen() {
     startBtn.addEventListener('click', launchNewGame);
 }
 
+let startControlMode = 'wasd'; // Padrão WASD
+
+function setStartControlMode(mode) {
+    startControlMode = mode;
+    let btnW = document.getElementById('startControlWASD');
+    let btnA = document.getElementById('startControlArrows');
+    if(btnW && btnA) {
+        btnW.style.background = mode === 'wasd' ? 'linear-gradient(135deg,rgba(255,215,0,0.5),rgba(255,215,0,0.3))' : 'rgba(255,255,255,0.05)';
+        btnW.style.borderColor = mode === 'wasd' ? 'rgba(255,215,0,0.9)' : 'rgba(255,255,255,0.2)';
+        btnA.style.background = mode === 'arrows' ? 'linear-gradient(135deg,rgba(90,185,255,0.5),rgba(90,185,255,0.3))' : 'rgba(255,255,255,0.05)';
+        btnA.style.borderColor = mode === 'arrows' ? 'rgba(90,185,255,0.9)' : 'rgba(255,255,255,0.2)';
+    }
+}
+
 function launchNewGame() {
     let inputName = document.getElementById('startNameInput').value.trim();
     if(!inputName) {
@@ -4679,6 +4765,8 @@ function launchNewGame() {
         return;
     }
     playerName = inputName;
+    // Aplica o modo de controle selecionado na tela inicial
+    setControlMode(startControlMode);
     launchGame(false);
 }
 
