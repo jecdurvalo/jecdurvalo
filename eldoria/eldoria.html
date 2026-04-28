@@ -518,8 +518,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     /* Botões de ação agrupados ergonomicamente na base direita - SEM SOBREPOSIÇÃO */
     /* Botão de ATK principal - maior e em destaque no canto inferior direito */
     #btnAtk {
-        bottom: 60px !important;
-        right: 20px !important;
+        bottom: 80px !important;
+        right: 30px !important;
         width: 88px !important;
         height: 88px !important;
         font-size: 17px !important;
@@ -530,8 +530,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     
     /* Skill (Z) - abaixo e à esquerda do ataque */
     #btnSkill {
-        bottom: 25px !important;
-        right: 100px !important;
+        bottom: 30px !important;
+        right: 130px !important;
         width: 56px !important;
         height: 56px !important;
         font-size: 13px !important;
@@ -539,8 +539,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     
     /* Dash (C) - acima e à esquerda do ataque */
     #btnDash {
-        bottom: 95px !important;
-        right: 75px !important;
+        bottom: 115px !important;
+        right: 100px !important;
         width: 52px !important;
         height: 52px !important;
         font-size: 12px !important;
@@ -548,8 +548,8 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     
     /* AOE (X) - acima do ataque */
     #btnAOE {
-        bottom: 125px !important;
-        right: 25px !important;
+        bottom: 150px !important;
+        right: 45px !important;
         width: 52px !important;
         height: 52px !important;
         font-size: 12px !important;
@@ -808,6 +808,10 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     <!-- Conteúdo do Inventário -->
     <div id="mobile-inventory-content" class="mobile-menu-content active">
         <div id="mobileInventoryGrid" class="inventory-grid"></div>
+        <div style="margin-top:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
+            <h4 style="margin:0 0 10px 0; color:#ffd700; font-size:13px;">⚔️ Equipamento Atual</h4>
+            <div id="mobileEquippedPanel" style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;"></div>
+        </div>
     </div>
     
     <!-- Conteúdo da Loja -->
@@ -2075,9 +2079,9 @@ function toggleEvolution() {
         renderSkillTree();
         renderActiveSkillTree();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
-    // Fecha menu mobile se estiver aberto
-    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 /* -------- ENGINE 3D -------- */
@@ -3187,6 +3191,39 @@ function updateMobileMenuContent() {
         mobileInvGrid.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Inventário vazio</div>';
     }
     
+    // Atualiza equipamento mobile
+    const mobileEquippedPanel = document.getElementById('mobileEquippedPanel');
+    if (mobileEquippedPanel) {
+        mobileEquippedPanel.innerHTML = '';
+        const slots = ['weapon', 'shield', 'cape', 'boots', 'ring1', 'ring2'];
+        const slotLabels = {
+            weapon: '⚔️ Arma',
+            shield: '🛡️ Escudo',
+            cape: '🧥 Capa',
+            boots: '👢 Botas',
+            ring1: '💍 Anel 1',
+            ring2: '💍 Anel 2'
+        };
+        
+        slots.forEach(slot => {
+            const equippedItem = equipped[slot];
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = 'background:rgba(255,255,255,0.08); padding:8px; border-radius:6px; font-size:11px;';
+            
+            if (equippedItem) {
+                itemDiv.innerHTML = `
+                    <div style="color:#ffd700; font-weight:bold; margin-bottom:3px;">${slotLabels[slot]}</div>
+                    <div style="color:#fff;">${equippedItem.icon} ${equippedItem.name}</div>
+                `;
+            } else {
+                itemDiv.innerHTML = `
+                    <div style="color:#888; font-style:italic;">${slotLabels[slot]}<br>(vazio)</div>
+                `;
+            }
+            mobileEquippedPanel.appendChild(itemDiv);
+        });
+    }
+    
     // Atualiza loja mobile
     const mobileShopGrid = document.getElementById('mobileShopGrid');
     if (mobileShopGrid) {
@@ -3765,9 +3802,9 @@ function toggleV(){
         renderSkillTree();
         renderActiveSkillTree();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
-    // Fecha menu mobile se estiver aberto
-    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 // ======== QUICK SWAP PANEL ========
@@ -4306,9 +4343,9 @@ function toggleShop(){
         renderShopBuyFilterBar();
         updateShopBuyPanel();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
-    // Fecha menu mobile se estiver aberto
-    if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
 }
 
 // Função para fechar todos os menus (usada pela tecla ESC)
@@ -5089,6 +5126,14 @@ pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18
 document.body.appendChild(pauseOverlay);
 
 function togglePause() {
+    // Não permite pausar se já houver um modal aberto
+    if (statusWindow.style.display === 'block' || 
+        shopWindow.style.display === 'block' || 
+        evolutionWindow.style.display === 'block' ||
+        quickInvOpen) {
+        return;
+    }
+    
     gamePaused = !gamePaused;
     pauseOverlay.style.display = gamePaused ? 'flex' : 'none';
     if(gamePaused) {
@@ -5841,10 +5886,15 @@ menuOverlay.addEventListener('click', () => {
 
 // Fechar menu mobile ao clicar no overlay também
 if (mobileMenuPanel) {
-    menuOverlay.addEventListener('click', () => {
+    // Remove listener duplicado se existir
+    const oldListener = menuOverlay.cloneNode(false);
+    menuOverlay.parentNode.replaceChild(oldListener, menuOverlay);
+    
+    oldListener.addEventListener('click', () => {
         if (mobileMenuPanel.classList.contains('active')) {
             mobileMenuPanel.classList.remove('active');
         }
+        closeAllMenus();
     });
 }
 
