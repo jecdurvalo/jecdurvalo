@@ -3577,7 +3577,76 @@ function renderShopSellFilterBar() {
 }
 function setShopSellFilter(key) {
     shopSellFilter = key;
-    updatePanels();
+    updateShopSellPanel();
+}
+
+function updateShopSellPanel() {
+    let sellItemsPanel = document.getElementById('shopInventoryPanel');
+    if(!sellItemsPanel) return;
+    
+    sellItemsPanel.innerHTML="";
+    let visibleSellCount = 0;
+    inventory.forEach((it,i)=> {
+        // Aplica filtro de venda
+        let slot = it.slot || '';
+        let matchFilter =
+            shopSellFilter === 'all' ||
+            (shopSellFilter === 'weapon'     && slot === 'weapon') ||
+            (shopSellFilter === 'defense'    && ['shield','cape','boots'].includes(slot)) ||
+            (shopSellFilter === 'ring'       && slot === 'ring') ||
+            (shopSellFilter === 'consumable' && slot === 'consumable');
+        if(!matchFilter) return;
+        visibleSellCount++;
+
+        let icon = it.icon || '📦';
+        let isEquipped = false;
+        for(let k in equipped) { if(equipped[k] === it){ isEquipped = true; break; } }
+        let rarColor = it.rarityData ? it.rarityData.color : '#aaaaaa';
+        let rarityName = it.rarityData ? it.rarityData.name : 'Comum';
+        let slotLabel = {
+            weapon:'Arma', shield:'Escudo', cape:'Capa', boots:'Botas', ring:'Anel', consumable:'Consumível'
+        }[slot] || slot || 'Item';
+        let qtyText = (it.quantity > 1) ? `<span class="sell-pill" style="color:#fff;">x${it.quantity}</span>` : '';
+        let sellBtn = isEquipped ? '<span class="sell-pill" style="color:#aaa; flex-shrink:0;">Equipado</span>' : `<button class='sell-btn' onclick='openSellModal(${i})'>Vender</button>`;
+        let lvlInfo = it.minLevel ? `<span class="sell-pill" style="color:#5ab9ff; border-color:rgba(90,185,255,0.35);">Lv.${it.minLevel}</span>` : '';
+        let rarTag = `<span class="sell-pill" style="color:${rarColor}; border-color:${rarColor}; background:rgba(255,255,255,0.06);">${rarityName}</span>`;
+        let valueTag = `<span class="sell-pill" style="color:gold; border-color:rgba(255,215,0,0.25);">${it.value || 0} gold</span>`;
+
+        // Stats do item para venda, em chips separados para ficar claro o ganho de cada atributo
+        let statsInfo = [];
+        if(it.atk)   statsInfo.push(`<span class="sell-stat-chip" style="color:#ff8844;">⚔ +${it.atk} ATK</span>`);
+        if(it.def)   statsInfo.push(`<span class="sell-stat-chip" style="color:#66aaff;">🛡 +${it.def} DEF</span>`);
+        if(it.hp)    statsInfo.push(`<span class="sell-stat-chip" style="color:#ff6666;">❤ +${it.hp} HP</span>`);
+        if(it.sp)    statsInfo.push(`<span class="sell-stat-chip" style="color:#6699ff;">💧 +${it.sp} SP</span>`);
+        if(it.speed) statsInfo.push(`<span class="sell-stat-chip" style="color:#ffff66;">⚡ Velocidade</span>`);
+        if(it.heal)  statsInfo.push(`<span class="sell-stat-chip" style="color:#44ff88;">💊 Cura ${it.heal} HP</span>`);
+        let statsLine = statsInfo.length ? `<div class="sell-stats-line">${statsInfo.join('')}</div>` : `<div class="sell-stats-line"><span class="sell-stat-chip" style="color:#aaa;">Sem atributo de combate</span></div>`;
+        let descLine = it.desc ? `<div class="sell-item-desc">${it.desc}</div>` : '';
+
+        sellItemsPanel.innerHTML+=`<div class='item sell-item-card' style="opacity:${isEquipped?0.5:1}; border-left:4px solid ${rarColor};">
+            <div class="sell-item-header">
+                <div class="sell-item-main">
+                    <span class="sell-item-icon">${icon}</span>
+                    <div style="min-width:0; flex:1;">
+                        <div class="sell-item-title" style="color:${rarColor};" title="${it.name}">${it.name}</div>
+                        <div class="sell-item-meta">${rarTag}<span class="sell-pill">${slotLabel}</span>${lvlInfo}${qtyText}${valueTag}</div>
+                    </div>
+                </div>
+                ${sellBtn}
+            </div>
+            ${statsLine}
+            ${descLine}
+        </div>`;
+
+    });
+    if(visibleSellCount === 0) {
+        sellItemsPanel.innerHTML = `<p style="color:#666; font-size:13px; text-align:center; padding:20px 0; grid-column:1/-1;">Nenhum item nesta categoria.</p>`;
+    }
+    
+    // Atualiza scrollbar estilizada se necessario
+    if(sellItemsPanel.scrollHeight > sellItemsPanel.clientHeight) {
+        sellItemsPanel.style.overflowY = 'auto';
+    }
 }
 
 function setShopTab(tab) {
