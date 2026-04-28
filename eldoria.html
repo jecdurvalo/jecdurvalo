@@ -152,6 +152,27 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5000; color:white;
     box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
 }
+/* Responsividade para modais em telas menores */
+@media (max-width: 600px) {
+    #statusWindow, #shopWindow, #evolutionWindow {
+        width: 95%;
+        max-height: 85vh;
+        padding: 15px;
+        border-radius: 15px;
+    }
+    #statusWindow h2, #shopWindow h2, #evolutionWindow h2 {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+    .inventory-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .item {
+        padding: 10px;
+        font-size: 12px;
+    }
+}
 /* Botão de fechar estilo Apple - discreto e posicionado no topo do modal */
 .close-btn {
     position: absolute;
@@ -190,6 +211,21 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     max-height: 400px;
     overflow-y: auto;
     padding: 10px;
+}
+/* Scrollbar estilizada para inventory-grid */
+.inventory-grid::-webkit-scrollbar {
+    width: 8px;
+}
+.inventory-grid::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+.inventory-grid::-webkit-scrollbar-thumb {
+    background: rgba(90,185,255,0.3);
+    border-radius: 4px;
+}
+.inventory-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(90,185,255,0.5);
 }
 .nameplate{ position:fixed; pointer-events:none; text-align:center; font-weight:bold; z-index:3000; text-shadow:0 0 6px black; }
 .guild{ display:block; color:#6fd7ff; font-size:12px; text-shadow: 0 0 5px rgba(111, 215, 255, 0.5); }
@@ -352,11 +388,12 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 #quickInvPanel h4 { margin: 0 0 10px 0; font-size: 15px; color: #ffd700; display: flex; justify-content: space-between; align-items: center; }
 .qi-filter-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .qi-filter-btn {
-    padding: 4px 9px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-size: 12px;
-    transition: background 0.15s;
+    padding: 5px 11px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05); color: #aaa; cursor: pointer; font-size: 12px;
+    transition: all 0.15s;
 }
-.qi-filter-btn.active { background: rgba(90,185,255,0.25); border-color: rgba(90,185,255,0.6); color: white; font-weight: bold; }
+.qi-filter-btn:hover { background: rgba(90,185,255,0.1); border-color: rgba(90,185,255,0.3); }
+.qi-filter-btn.active { background: rgba(90,185,255,0.22); border-color: rgba(90,185,255,0.7); color: white; font-weight: bold; box-shadow: 0 0 10px rgba(90,185,255,0.3); }
 .qi-equipped-box {
     background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.35);
     border-radius: 10px; padding: 8px 10px; margin-bottom: 8px;
@@ -452,7 +489,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <button onclick="setShopTab('buy')" id="shopTabBuy" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.5); background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,215,0,0.1)); color:white; cursor:pointer; font-weight:bold; font-size:15px;">🛒 Comprar</button>
         <button onclick="setShopTab('sell')" id="shopTabSell" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-weight:bold; font-size:15px;">💰 Vender</button>
     </div>
-    <div id="shopBuyPanel"></div>
+    <div id="shopBuyPanel">
+        <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
+    </div>
     <div id="shopSellPanel" style="display:none;">
         <div class="qi-filter-bar" id="shopFilterBar" style="margin-bottom:12px;"></div>
         <div id="shopInventoryPanel" class="inventory-grid"></div>
@@ -1549,6 +1588,7 @@ function toggleEvolution() {
         win.style.display = 'none';
         gamePaused = false;
     } else {
+        closeQuickInv();
         win.style.display = 'block';
         updateEvolutionUI();
         gamePaused = true;
@@ -2705,6 +2745,16 @@ function updatePanels(){
     if(buyPanel) {
         let html = `<p style="color:#aaa; font-size:13px; margin:0 0 12px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p><div class="inventory-grid">`;
         shopCatalog.forEach((item, i) => {
+            // Aplica filtro de compra
+            let slot = item.slot || '';
+            let matchFilter =
+                shopBuyFilter === 'all' ||
+                (shopBuyFilter === 'weapon'     && slot === 'weapon') ||
+                (shopBuyFilter === 'defense'    && ['shield','cape','boots'].includes(slot)) ||
+                (shopBuyFilter === 'ring'       && slot === 'ring') ||
+                (shopBuyFilter === 'consumable' && slot === 'consumable');
+            if(!matchFilter) return;
+            
             let canBuy = player.gold >= item.buyPrice;
             let canLevel = !item.reqLevel || player.level >= item.reqLevel;
             let disabled = !canBuy || !canLevel;
@@ -2740,6 +2790,12 @@ function updatePanels(){
             </div>`;
         });
         html += '</div>';
+        if(html.includes('<div class="inventory-grid">')) {
+            let gridContent = html.match(/<div class="inventory-grid">([\s\S]*)<\/div>/);
+            if(gridContent && gridContent[1].trim() === '') {
+                html = `<p style="color:#aaa; font-size:13px; margin:0 0 12px 0;">💰 Gold: <b style="color:gold">${player.gold}</b></p><p style="color:#666; font-size:13px; text-align:center; padding:20px 0;">Nenhum item nesta categoria.</p>`;
+            }
+        }
         buyPanel.innerHTML = html;
     }
 
@@ -2787,23 +2843,28 @@ function updatePanels(){
     if(visibleSellCount === 0) {
         shopInventoryPanel.innerHTML = `<p style="color:#666; font-size:13px; text-align:center; padding:20px 0; grid-column:1/-1;">Nenhum item nesta categoria.</p>`;
     }
+    
+    // Atualiza scrollbar estilizada se necessario
+    if(shopInventoryPanel.scrollHeight > shopInventoryPanel.clientHeight) {
+        shopInventoryPanel.style.overflowY = 'auto';
+    }
 }
 // Modal de venda com seleção de quantidade
 let sellModal = document.createElement('div');
 sellModal.id = 'sellModal';
-sellModal.style.cssText = 'display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#222; padding:25px; border-radius:12px; border:2px solid gold; z-index:10000; min-width:300px; box-shadow:0 0 30px rgba(0,0,0,0.8);';
+sellModal.style.cssText = 'display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#222; padding:25px; border-radius:12px; border:2px solid gold; z-index:10000; min-width:300px; box-shadow:0 0 30px rgba(0,0,0,0.8); width:90%; max-width:400px;';
 sellModal.innerHTML = `
-    <h3 style="margin:0 0 15px 0; color:#fff;">Vender Item</h3>
+    <h3 style="margin:0 0 15px 0; color:#fff; font-size:18px;">Vender Item</h3>
     <div id="sellModalContent" style="color:#ccc; margin-bottom:15px;"></div>
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-        <label style="color:#fff;">Quantidade:</label>
+        <label style="color:#fff; font-size:14px;">Quantidade:</label>
         <input type="number" id="sellQuantity" min="1" value="1" style="width:80px; padding:8px; border-radius:6px; border:1px solid #444; background:#333; color:#fff; font-size:16px; text-align:center;">
-        <span id="sellMaxQty" style="color:#aaa;"></span>
+        <span id="sellMaxQty" style="color:#aaa; font-size:14px;"></span>
     </div>
     <div style="margin-bottom:20px; color:gold; font-size:18px;">Total: <span id="sellTotal">0</span> Gold</div>
     <div style="display:flex; gap:10px; justify-content:flex-end;">
-        <button onclick="closeSellModal()" style="padding:10px 20px; border-radius:6px; border:none; background:#666; color:#fff; cursor:pointer;">Cancelar</button>
-        <button onclick="confirmSell()" style="padding:10px 20px; border-radius:6px; border:none; background:#4CAF50; color:#fff; cursor:pointer;">Vender</button>
+        <button onclick="closeSellModal()" style="padding:10px 20px; border-radius:6px; border:none; background:#666; color:#fff; cursor:pointer; font-size:14px;">Cancelar</button>
+        <button onclick="confirmSell()" style="padding:10px 20px; border-radius:6px; border:none; background:#4CAF50; color:#fff; cursor:pointer; font-size:14px;">Vender</button>
     </div>
 `;
 document.body.appendChild(sellModal);
@@ -2980,6 +3041,7 @@ function toggleV(){
     } else {
         closeQuickInv();
         win.style.display = 'block';
+        renderInvFilterBar();
         updatePanels();
         gamePaused = true;
     }
@@ -3321,6 +3383,7 @@ function drawFullMap() {
 
 let currentShopTab = 'buy';
 let shopSellFilter = 'all'; // filtro ativo da venda
+let shopBuyFilter = 'all';  // filtro ativo da compra
 
 const SHOP_SELL_FILTERS = [
     { key:'all',        label:'🗂 Todos'      },
@@ -3329,6 +3392,33 @@ const SHOP_SELL_FILTERS = [
     { key:'ring',       label:'💍 Acessórios'  },
     { key:'consumable', label:'🧪 Consumíveis' },
 ];
+
+const SHOP_BUY_FILTERS = [
+    { key:'all',        label:'🗂 Todos'      },
+    { key:'weapon',     label:'⚔️ Armas'       },
+    { key:'defense',    label:'🛡 Defesa'      },
+    { key:'ring',       label:'💍 Acessórios'  },
+    { key:'consumable', label:'🧪 Consumíveis' },
+];
+
+function renderShopBuyFilterBar() {
+    let bar = document.getElementById('shopBuyFilterBar');
+    if(!bar) return;
+    bar.innerHTML = SHOP_BUY_FILTERS.map(f => {
+        let active = shopBuyFilter === f.key;
+        return `<button onclick="setShopBuyFilter('${f.key}')" style="
+            padding:5px 11px; border-radius:8px; font-size:12px; cursor:pointer;
+            border:1px solid ${active ? 'rgba(90,185,255,0.7)' : 'rgba(255,255,255,0.12)'};
+            background:${active ? 'rgba(90,185,255,0.22)' : 'rgba(255,255,255,0.05)'};
+            color:${active ? '#fff' : '#aaa'}; font-weight:${active ? 'bold' : 'normal'};
+            transition:all .15s;">${f.label}</button>`;
+    }).join('');
+}
+
+function setShopBuyFilter(key) {
+    shopBuyFilter = key;
+    updatePanels();
+}
 
 function renderShopSellFilterBar() {
     let bar = document.getElementById('shopFilterBar');
@@ -3355,7 +3445,9 @@ function setShopTab(tab) {
     document.getElementById('shopSellPanel').style.display = tab === 'sell' ? 'block' : 'none';
     document.getElementById('shopTabBuy').style.background = tab === 'buy' ? 'linear-gradient(135deg,rgba(255,215,0,0.4),rgba(255,215,0,0.2))' : 'rgba(255,255,255,0.05)';
     document.getElementById('shopTabSell').style.background = tab === 'sell' ? 'linear-gradient(135deg,rgba(255,215,0,0.4),rgba(255,215,0,0.2))' : 'rgba(255,255,255,0.05)';
-    if(tab === 'sell') {
+    if(tab === 'buy') {
+        renderShopBuyFilterBar();
+    } else if(tab === 'sell') {
         renderShopSellFilterBar();
     }
     updatePanels();
