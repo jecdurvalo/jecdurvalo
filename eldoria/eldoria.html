@@ -5170,9 +5170,11 @@ pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18
 document.body.appendChild(pauseOverlay);
 
 function togglePause() {
-    // No mobile, o botão de pause também fecha o menu unificado se ele estiver aberto.
-    if (mobileMenuPanel && mobileMenuPanel.classList.contains('active')) {
-        closeMobileMenu();
+    gamePaused = !gamePaused;
+    pauseOverlay.style.display = gamePaused ? 'flex' : 'none';
+    if(gamePaused) {
+        log("<span style='color:yellow'>Jogo pausado</span>");
+    } else {
         log("<span style='color:cyan'>Jogo continuado</span>");
         return;
     }
@@ -5926,9 +5928,16 @@ setControlMode('wasd');
 
 // Overlay para menus (fundo escuro estilo pause) — usa o elemento HTML já existente no CSS
 const menuOverlay = document.getElementById('menuOverlay');
-if (menuOverlay) {
+menuOverlay.addEventListener('click', () => {
+    closeAllMenus();
+});
+
+// Fechar menu mobile ao clicar no overlay também
+if (mobileMenuPanel) {
     menuOverlay.addEventListener('click', () => {
-        closeAllMenus();
+        if (mobileMenuPanel.classList.contains('active')) {
+            mobileMenuPanel.classList.remove('active');
+        }
     });
 }
 
