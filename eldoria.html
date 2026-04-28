@@ -535,6 +535,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <div id="combatLog"></div>
 
+<!-- Overlay de fundo para menus (pausa visual) -->
+<div id="menuOverlay"></div>
+
 <div id="statusWindow">
     <button onclick="toggleV()" class="close-btn">×</button>
     <h2>🎒 Inventário</h2>
@@ -3924,6 +3927,11 @@ function animate(time){
         camera.position.set(hero.position.x, 14, hero.position.z+14);
         camera.lookAt(hero.position);
         renderer.render(scene, camera);
+        // Mantém HUD atualizado mesmo pausado (garante que SP/HP/XP apareçam corretamente)
+        hp.style.width=(player.hp/player.maxHp*100)+"%";
+        sp.style.width=(player.sp/player.maxSp*100)+"%";
+        xp.style.width=(player.xp/player.next*100)+"%";
+        goldDisplay.innerText = "Gold: " + player.gold;
         return;
     }
 
