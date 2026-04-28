@@ -630,7 +630,8 @@ let keys={};
 let floatTexts=[];
 let fireballs=[];
 let aoes=[]; // Habilidades de área (AOE)
-let visuals=[];
+let visuals=[];   // visuais de equipamento (filhos do hero)
+let particles=[]; // partículas de efeito (filhos da scene)
 let lastDir = null; // Será inicializado após THREE.js carregar
 let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
 let isAttacking = false;
@@ -820,7 +821,10 @@ const shopCatalog = [
     { name:"Health Potion",  slot:"consumable", heal:50,  desc:"Recupera 50 HP.",  icon:"🧪", stackable:true, value:20,  buyPrice:35  },
     { name:"Super Potion",   slot:"consumable", heal:100, desc:"Recupera 100 HP.", icon:"🧪", stackable:true, value:40,  buyPrice:65  },
     { name:"Ultra Potion",   slot:"consumable", heal:200, desc:"Recupera 200 HP.", icon:"🧪", stackable:true, value:75,  buyPrice:110 },
-    { name:"Elixir",         slot:"consumable", heal:500, desc:"Recupera 500 HP.", icon:"💧", stackable:true, value:150, buyPrice:220 },
+    { name:"Elixir",              slot:"consumable", heal:500,           desc:"Recupera 500 HP.",               icon:"💧", stackable:true, value:150, buyPrice:220 },
+    { name:"Poção de Energia",    slot:"consumable", restoreSp:50,       desc:"Restaura 50 SP. Artigo valioso.", icon:"💙", stackable:true, value:30,  buyPrice:60,  shopOnly:true },
+    { name:"Elixir de Mana",      slot:"consumable", restoreSp:120,      desc:"Restaura 120 SP.",               icon:"🔵", stackable:true, value:70,  buyPrice:140, shopOnly:true, reqLevel:8 },
+    { name:"Elixir Supremo de SP",slot:"consumable", restoreSp:300,      desc:"Restaura 300 SP.",               icon:"🌀", stackable:true, value:150, buyPrice:300, shopOnly:true, reqLevel:20 },
     { name:"Iron Sword",     slot:"weapon",  atk:7,  desc:"Lâmina de aço.",       icon:"🗡️", stackable:true, value:25,  buyPrice:60,  reqLevel:1  },
     { name:"Knight Blade",   slot:"weapon",  atk:18, desc:"Lâmina de cavaleiro.", icon:"⚔️", stackable:true, value:80,  buyPrice:180, reqLevel:8  },
     { name:"Dragon Slayer",  slot:"weapon",  atk:25, desc:"Espada lendária.",     icon:"🐉", stackable:true, value:150, buyPrice:350, reqLevel:15 },
@@ -931,7 +935,7 @@ let evolutionData = {
         { id: 'epic_defense', name: 'Defesa Épica', desc: '+40% de defesa', icon: '🛡️', cost: 7, maxLevel: 1, level: 0, effect: () => { player.baseDef = Math.floor(player.baseDef * 1.4); }, reqLevel: 40, requires: ['legendary_defense'] },
         { id: 'divine_power', name: 'Poder Divino', desc: '+50% de dano e defesa', icon: '👼', cost: 10, maxLevel: 1, level: 0, effect: () => { player.baseAtk = Math.floor(player.baseAtk * 1.5); player.baseDef = Math.floor(player.baseDef * 1.5); }, reqLevel: 60, requires: ['epic_strength', 'epic_defense'] },
         { id: 'immortal_vitality', name: 'Vitalidade Imortal', desc: '+100% de HP e SP máximos', icon: '☄️', cost: 8, maxLevel: 1, level: 0, effect: () => { player.maxHp = Math.floor(player.maxHp * 2); player.maxSp = Math.floor(player.maxSp * 2); player.hp = player.maxHp; player.sp = player.maxSp; }, reqLevel: 75 },
-        { id: 'god_mode', name: 'Modo Deus', desc: '+100% de dano, defesa e velocidade', icon: '🌟', cost: 15, maxLevel: 1, level: 0, effect: () => { player.baseAtk *= 2; player.baseDef *= 2; moveSpeed *= 1.5; }, reqLevel: 100, requires: ['divine_power', 'immortal_vitality'] },
+        { id: 'god_mode', name: 'Modo Deus', desc: '+100% de dano, defesa e velocidade', icon: '🌟', cost: 15, maxLevel: 1, level: 0, effect: () => { player.baseAtk *= 2; player.baseDef *= 2; player.speedBonus = (player.speedBonus || 0) + 0.175; }, reqLevel: 100, requires: ['divine_power', 'immortal_vitality'] },
         { id: 'dash_unlock', name: 'Passo Sombrio', desc: 'Desbloqueia Dash. Esquiva rápida com cooldown de 3s.', icon: '💨', cost: 3, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 10 },
         { id: 'shield_unlock', name: 'Escudo Místico', desc: 'Desbloqueia Escudo: 2s de invencibilidade, cooldown 15s.', icon: '🔮', cost: 4, maxLevel: 1, level: 0, effect: ()=>{}, reqLevel: 15 }
     ],
@@ -1355,9 +1359,10 @@ function showEvolutionTab(tabName) {
     document.getElementById('tabContentQuests').style.display = 'none';
     document.getElementById('tabContentAchievements').style.display = 'none';
     document.getElementById('tabContentSkilltree').style.display = 'none';
-    
+    document.getElementById('tabContentActiveskills').style.display = 'none';
+
     // Reseta estilos dos botões
-    ['quests', 'achievements', 'skilltree'].forEach(t => {
+    ['quests', 'achievements', 'skilltree', 'activeskills'].forEach(t => {
         let btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         if(btn) btn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))';
     });
@@ -1451,6 +1456,7 @@ function buySkill(skillId) {
 
     updateEvolutionUI();
     renderSkillTree();
+    renderActiveSkillTree(); // FIX: garante que habilidades ativas dependentes também desbloqueiam imediatamente
 }
 
 // -------- ÁRVORE DE HABILIDADES ATIVAS --------
@@ -1528,6 +1534,7 @@ function buyActiveSkill(skillId) {
     log(`<span style='color:orange'>⚡ Habilidade ativa desbloqueada: ${skill.name}!</span>`);
     updateEvolutionUI();
     renderActiveSkillTree();
+    renderSkillTree(); // FIX: garante que habilidades passivas dependentes também desbloqueiam imediatamente
 }
 
 function updateEvolutionUI() {
@@ -2286,7 +2293,7 @@ function createDeathParticles(pos, color, count){
             life: 60
         };
         scene.add(particle);
-        visuals.push(particle);
+        particles.push(particle);
     }
 }
 
@@ -2477,7 +2484,7 @@ function castDash() {
         p.position.copy(hero.position);
         p.position.x+=(Math.random()-0.5)*2; p.position.z+=(Math.random()-0.5)*2; p.position.y+=Math.random()*1.5;
         p.userData={velocity:new THREE.Vector3((Math.random()-0.5)*0.2,Math.random()*0.15,(Math.random()-0.5)*0.2),life:20};
-        scene.add(p); visuals.push(p);
+        scene.add(p); particles.push(p);
     }
     floatingText("💨 Dash!", hero.position, "cyan");
 }
@@ -2494,11 +2501,11 @@ function castShield() {
     lastShieldTime = now; shieldActive = true;
     playSound('shield');
     floatingText("🔮 Escudo!", hero.position, "purple");
-    // Visual de escudo
+    // Visual de escudo — adicionado ao hero para que acompanhe o personagem
     let shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(1.8,16,16), new THREE.MeshBasicMaterial({color:0x9933ff,transparent:true,opacity:0.3,wireframe:false}));
-    shieldMesh.position.copy(hero.position); shieldMesh.position.y=1;
-    scene.add(shieldMesh);
-    setTimeout(()=>{ shieldActive=false; scene.remove(shieldMesh); floatingText("Escudo acabou", hero.position, "gray"); }, SHIELD_DURATION);
+    shieldMesh.position.set(0, 1, 0); // relativo ao hero
+    hero.add(shieldMesh);
+    setTimeout(()=>{ shieldActive=false; hero.remove(shieldMesh); floatingText("Escudo acabou", hero.position, "gray"); }, SHIELD_DURATION);
 }
 
 function attack(){
@@ -2524,7 +2531,7 @@ function attack(){
         
         // Detecta hit no meio da animação (quando t ~ PI/2)
         if (t >= Math.PI / 2 && t < Math.PI / 2 + animSpeed) {
-            monsters.forEach(m => {
+            [...monsters].forEach(m => {
                 if(hero.position.distanceTo(m.position) < 4.5){
                     let dmg = player.atk + Math.floor(Math.random()*5);
                     
@@ -2783,8 +2790,10 @@ function updatePanels(){
     // Renderiza barras de filtro do mercado se existirem
     if(currentShopTab === 'buy') {
         renderShopBuyFilterBar();
+        updateShopBuyPanel();
     } else if(currentShopTab === 'sell') {
         renderShopSellFilterBar();
+        updateShopSellPanel(); // FIX: garante que painel de venda sempre reflita o inventário atual
     }
     
     equippedPanel.innerHTML="";
@@ -2971,6 +2980,7 @@ sellModal.innerHTML = `
 document.body.appendChild(sellModal);
 
 let currentSellIndex = -1;
+let pausedBeforeSellModal = false; // Salva estado de pausa antes de abrir modal de venda
 
 function openSellModal(i) {
     let it = inventory[i];
@@ -3008,14 +3018,15 @@ function openSellModal(i) {
         document.getElementById('sellTotal').textContent = qty * basePrice;
     };
     
-    sellModal.style.display = 'block';
+    pausedBeforeSellModal = gamePaused; // FIX: salva estado antes de pausar
     gamePaused = true;
+    sellModal.style.display = 'block';
 }
 
 function closeSellModal() {
     sellModal.style.display = 'none';
     currentSellIndex = -1;
-    gamePaused = false;
+    gamePaused = pausedBeforeSellModal; // FIX: restaura estado anterior (não força unpause)
 }
 
 function confirmSell() {
@@ -3042,6 +3053,7 @@ function confirmSell() {
     log(`<span style='color:gold'>Vendeu ${qtyToSell}x ${it.name} por ${totalGold} Gold!</span>`);
     checkAchievements(); // Verifica conquistas após ganhar gold
     updatePanels();
+    updateShopSellPanel(); // FIX: atualiza o painel de venda imediatamente após vender
     closeSellModal();
 }
 
@@ -3062,18 +3074,39 @@ function equip(i){
 
     // Consumíveis não são equipados — são usados diretamente ao clicar
     if(s === 'consumable') {
-        if(player.hp >= player.maxHp) { log("<span style='color:orange'>HP já está cheio!</span>"); return; }
-        player.hp = Math.min(player.maxHp, player.hp + (it.heal || 0));
-        floatingText("🧪 +" + it.heal + " HP", hero.position, "lime");
-        log("<span style='color:cyan'>Poção usada! +" + it.heal + " HP</span>");
+        let used = false;
+        if(it.heal && player.hp < player.maxHp) {
+            player.hp = Math.min(player.maxHp, player.hp + it.heal);
+            floatingText("🧪 +" + it.heal + " HP", hero.position, "lime");
+            log("<span style='color:cyan'>Poção usada! +" + it.heal + " HP</span>");
+            used = true;
+        }
+        if(it.restoreSp && player.sp < player.maxSp) {
+            player.sp = Math.min(player.maxSp, player.sp + it.restoreSp);
+            floatingText("💙 +" + it.restoreSp + " SP", hero.position, "cyan");
+            log("<span style='color:cyan'>Elixir usado! +" + it.restoreSp + " SP</span>");
+            used = true;
+        }
+        if(!used) {
+            if(it.heal) log("<span style='color:orange'>HP já está cheio!</span>");
+            else log("<span style='color:orange'>SP já está cheio!</span>");
+            return;
+        }
         it.quantity = (it.quantity || 1) - 1;
         if(it.quantity <= 0) inventory.splice(i, 1);
         updatePanels();
         return;
     }
 
-    // Se for anel, escolhe ring1 ou ring2
-    if(s === "ring") s = !equipped.ring1 ? "ring1" : "ring2";
+    // Se for anel, escolhe ring1 ou ring2 (com aviso se ambos estiverem ocupados)
+    if(s === "ring") {
+        if(!equipped.ring1) s = "ring1";
+        else if(!equipped.ring2) s = "ring2";
+        else {
+            s = "ring2"; // substitui ring2 por padrão
+            log("<span style='color:orange'>⚠️ Ambos os slots de anel estavam ocupados — Anel 2 substituído.</span>");
+        }
+    }
     
     // Se já houver um item equipado neste slot, desequipa primeiro (devolve ao inventário)
     if(equipped[s]) {
@@ -3112,24 +3145,8 @@ function unequip(k){
 function unequipInternal(k){
     let item = equipped[k];
     if(item) {
-        // Adiciona o item de volta ao inventário (como stackable se for equipamento comum)
-        let baseItem = {
-            name: item.name,
-            slot: item.slot,
-            icon: item.icon,
-            desc: item.desc,
-            atk: item.atk,
-            def: item.def,
-            hp: item.hp,
-            sp: item.sp,
-            speed: item.speed,
-            stackable: true  // Agora equipamentos são stackables quando estão na mochila
-        };
-        // Preserva durabilidade restante se existir
-        if(item.durability !== undefined) {
-            baseItem.durability = item.durability;
-            baseItem.maxDurability = item.maxDurability;
-        }
+        // Copia todos os metadados do item, garantindo que nada se perca (rarity, value, minLevel, heal, etc.)
+        let baseItem = { ...item, stackable: true };
         addItemToInventory(baseItem);
         equipped[k] = null;
     }
@@ -3544,12 +3561,13 @@ function updateShopBuyPanel() {
         let lockInfo = !canLevel ? `<span style="color:#888; font-size:11px;"> 🔒 Lv.${item.reqLevel}</span>` : '';
         // Stats display similar to inventory
         let statsInfo = [];
-        if(item.atk)   statsInfo.push(`<span style="color:#ff8844">⚔ +${item.atk} ATK</span>`);
-        if(item.def)   statsInfo.push(`<span style="color:#4488ff">🛡 +${item.def} DEF</span>`);
-        if(item.hp)    statsInfo.push(`<span style="color:#ff5555">❤ +${item.hp} HP</span>`);
-        if(item.sp)    statsInfo.push(`<span style="color:#5599ff">💧 +${item.sp} SP</span>`);
-        if(item.heal)  statsInfo.push(`<span style="color:#44ff88">💊 +${item.heal} HP</span>`);
-        if(item.speed) statsInfo.push(`<span style="color:#ffff44">⚡ +VEL</span>`);
+        if(item.atk)       statsInfo.push(`<span style="color:#ff8844">⚔ +${item.atk} ATK</span>`);
+        if(item.def)       statsInfo.push(`<span style="color:#4488ff">🛡 +${item.def} DEF</span>`);
+        if(item.hp)        statsInfo.push(`<span style="color:#ff5555">❤ +${item.hp} HP</span>`);
+        if(item.sp)        statsInfo.push(`<span style="color:#5599ff">💧 +${item.sp} SP</span>`);
+        if(item.heal)      statsInfo.push(`<span style="color:#44ff88">💊 +${item.heal} HP</span>`);
+        if(item.restoreSp) statsInfo.push(`<span style="color:#44aaff">💙 +${item.restoreSp} SP</span>`);
+        if(item.speed)     statsInfo.push(`<span style="color:#ffff44">⚡ +VEL</span>`);
         let statsLine = statsInfo.length ? `<div style="font-size:11px; margin-top:3px; display:flex; gap:5px; flex-wrap:wrap;">${statsInfo.join('')}</div>` : '';
         // Comparison with currently equipped
         let compLine = '';
@@ -3671,6 +3689,7 @@ function setShopTab(tab) {
         updateShopBuyPanel();
     } else if(tab === 'sell') {
         renderShopSellFilterBar();
+        updateShopSellPanel(); // FIX: renderiza os itens do inventário ao abrir aba de venda
     }
     updatePanels();
 }
@@ -3917,7 +3936,7 @@ function animate(time){
     if(isJoyactive){ move.x = joyStickVector.x; move.z = joyStickVector.y; }
 
     if(move.length() > 0.05){
-        let speed = (0.35 + (equipped.boots ? equipped.boots.speed : 0)) * (safeDeltaTime / 16.67);
+        let speed = (0.35 + (equipped.boots ? equipped.boots.speed : 0) + (player.speedBonus || 0)) * (safeDeltaTime / 16.67);
         move.normalize().multiplyScalar(speed);
         hero.position.add(move);
         if(lastDir) lastDir.copy(move);
@@ -3966,7 +3985,7 @@ function animate(time){
     updateBiome();
     
     // Regeneração de SP (usa player.maxSp que já inclui bônus via recalcStats)
-    player.sp = Math.min(player.maxSp, player.sp+0.1);
+    player.sp = Math.min(player.maxSp, player.sp + 0.1 * (safeDeltaTime / 16.67));
 
     // Coletar itens do chão
     for(let i = droppedItems.length - 1; i >= 0; i--) {
@@ -4004,8 +4023,8 @@ function animate(time){
             continue;
         }
         
-        // Remover item após tempo limite
-        drop.life--;
+        // Remover item após tempo limite (independente de framerate)
+        drop.life -= safeDeltaTime / 16.67;
         if(drop.life <= 0) {
             scene.remove(drop.mesh);
             droppedItems.splice(i, 1);
@@ -4019,7 +4038,7 @@ function animate(time){
         f.life--;
         let fb_ab = f.activeBonus || { fireballDmg: 0, fireballRadius: 0 };
         let fbRadius = 3.5 + (fb_ab.fireballRadius || 0);
-        monsters.forEach(m=>{
+        [...monsters].forEach(m=>{
             if(f.mesh.position.distanceTo(m.position) < fbRadius){
                 let baseDmg = 40 + (fb_ab.fireballDmg || 0);
                 // Aplica bônus percentual da skill tree passiva
@@ -4323,9 +4342,9 @@ function animate(time){
         } else { m.visible = false; m.userData.ui.bar.style.display = "none"; m.userData.label.style.display = "none"; }
     });
     
-    // Atualizar partículas
-    for(let i=visuals.length-1; i>=0; i--){
-        let p = visuals[i];
+    // Atualizar partículas de efeito (separadas dos visuais de equipamento)
+    for(let i=particles.length-1; i>=0; i--){
+        let p = particles[i];
         if(p.userData.velocity){
             p.position.add(p.userData.velocity);
             p.userData.velocity.y -= 0.015; // gravidade
@@ -4334,7 +4353,7 @@ function animate(time){
             p.rotation.z += 0.1;
             if(p.userData.life <= 0){
                 scene.remove(p);
-                visuals.splice(i, 1);
+                particles.splice(i, 1);
             }
         }
     }
@@ -4802,7 +4821,7 @@ gameOverOverlay.innerHTML = `
     <div id="gameOverStats" style="font-size:24px; margin-bottom:30px; color:#aaa;"></div>
     <div id="reviveOptions" style="display:flex; gap:20px;">
         <button id="btnRevive" onclick="revivePlayer()" style="background:linear-gradient(135deg, #4CAF50, #45a049); border:none; color:white; padding:15px 40px; font-size:20px; border-radius:10px; cursor:pointer; font-weight:bold;">✨ Reviver (50% Gold)</button>
-        <button onclick="resetGame()" style="background:linear-gradient(135deg, #f44336, #da1e1e); border:none; color:white; padding:15px 40px; font-size:20px; border-radius:10px; cursor:pointer; font-weight:bold;">🔄 Reiniciar</button>
+        <button onclick="confirmRestartGame()" style="background:linear-gradient(135deg, #f44336, #da1e1e); border:none; color:white; padding:15px 40px; font-size:20px; border-radius:10px; cursor:pointer; font-weight:bold;">🔄 Reiniciar</button>
     </div>
 `;
 document.body.appendChild(gameOverOverlay);
@@ -4862,6 +4881,25 @@ function revivePlayer() {
     }
 }
 
+// FIX: Modal de confirmação de reinício para evitar reset acidental
+let restartConfirmModal = document.createElement('div');
+restartConfirmModal.id = 'restartConfirmModal';
+restartConfirmModal.style.cssText = 'display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1a1a1a; padding:32px; border-radius:14px; border:2px solid #f44336; z-index:20000; min-width:320px; box-shadow:0 0 40px rgba(244,67,54,0.5); text-align:center; width:90%; max-width:420px;';
+restartConfirmModal.innerHTML = `
+    <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
+    <div style="color:#fff; font-size:22px; font-weight:bold; margin-bottom:10px;">Tem certeza?</div>
+    <div style="color:#ccc; font-size:15px; margin-bottom:24px;">Todo o progresso será perdido permanentemente. Essa ação não pode ser desfeita.</div>
+    <div style="display:flex; gap:14px; justify-content:center;">
+        <button onclick="document.getElementById('restartConfirmModal').style.display='none'" style="padding:12px 28px; border-radius:8px; border:none; background:#555; color:#fff; cursor:pointer; font-size:16px; font-weight:bold;">❌ Cancelar</button>
+        <button onclick="document.getElementById('restartConfirmModal').style.display='none'; resetGame();" style="padding:12px 28px; border-radius:8px; border:none; background:linear-gradient(135deg,#f44336,#c62828); color:#fff; cursor:pointer; font-size:16px; font-weight:bold;">🔄 Sim, reiniciar</button>
+    </div>
+`;
+document.body.appendChild(restartConfirmModal);
+
+function confirmRestartGame() {
+    restartConfirmModal.style.display = 'block';
+}
+
 function resetGame() {
     // 1. Limpar cena ANTES de zerar os arrays (era o bug principal)
     monsters.forEach(m => {
@@ -4905,7 +4943,8 @@ function resetGame() {
     evolutionData.achievements.forEach(a => a.unlocked = false);
     evolutionData.quests.forEach(q => { q.progress = 0; q.completed = false; });
     evolutionData.skillTree.forEach(s => s.level = 0);
-    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0 };
+    evolutionData.activeSkillTree.forEach(s => s.level = 0);
+    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0, mysticKills:0, crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0 };
 
     // 6. Resetar posição e recriar decorações
     hero.position.set(0, 0, 0);
@@ -5153,13 +5192,11 @@ renderStartScreen();
 // Inicializa modo de controle e lista de teclas
 setControlMode('wasd');
 
-// Overlay para menus (fundo escuro estilo pause)
-const menuOverlay = document.createElement('div');
-menuOverlay.id = 'menuOverlay';
+// Overlay para menus (fundo escuro estilo pause) — usa o elemento HTML já existente no CSS
+const menuOverlay = document.getElementById('menuOverlay');
 menuOverlay.addEventListener('click', () => {
     closeAllMenus();
 });
-document.body.appendChild(menuOverlay);
 </script>
 </body>
 </html>
