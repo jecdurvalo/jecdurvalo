@@ -441,6 +441,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <h3>⚔️ Equipamento</h3>
     <div id="equippedPanel"></div>
     <h3>🎒 Mochila</h3>
+    <div id="invFilterBar" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;"></div>
     <div id="inventoryPanel" class="inventory-grid"></div>
 </div>
 
@@ -2503,20 +2504,33 @@ function updatePanels(){
             ${durabDonut}
         </div>`;
     }
+    // Renderiza barra de filtro
+    renderInvFilterBar();
+
     inventoryPanel.innerHTML="";
+    let visibleCount = 0;
     inventory.forEach((it,i)=> {
+        // Aplica filtro da mochila
+        let slot = it.slot || '';
+        let matchFilter =
+            currentInvFilter === 'all' ||
+            (currentInvFilter === 'weapon'     && slot === 'weapon') ||
+            (currentInvFilter === 'defense'    && ['shield','cape','boots'].includes(slot)) ||
+            (currentInvFilter === 'ring'       && slot === 'ring') ||
+            (currentInvFilter === 'consumable' && slot === 'consumable');
+        if(!matchFilter) return;
+        visibleCount++;
+
         let icon = it.icon || '📦';
         let isEquipped = false;
         for(let k in equipped) { if(equipped[k] === it){ isEquipped = true; break; } }
         let equipInfo = isEquipped ? '<span style="color:gold; font-size:11px;"> [EQUIPADO]</span>' : '';
         let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
-        // Raridade
         let rarColor = it.rarityData ? it.rarityData.color : '#aaaaaa';
         let rarTag = it.rarity && it.rarity !== 'common' ? `<span style="color:${rarColor}; font-size:10px; font-weight:bold; margin-left:4px;">[${it.rarityData.name.toUpperCase()}]</span>` : '';
-        // Comparação de stats com equipado
         let comparison = '';
-        if(it.slot && it.slot !== 'consumable' && !isEquipped) {
-            let slotKey = it.slot === 'ring' ? (equipped.ring1 ? 'ring2' : 'ring1') : it.slot;
+        if(slot && slot !== 'consumable' && !isEquipped) {
+            let slotKey = slot === 'ring' ? (equipped.ring1 ? 'ring2' : 'ring1') : slot;
             let cur = equipped[slotKey];
             if(cur) {
                 let diff = [];
@@ -2527,8 +2541,11 @@ function updatePanels(){
                 if(diff.length) comparison = `<div style="font-size:11px; margin-top:2px;">${diff.join(' ')}</div>`;
             }
         }
-        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped?0.7:1}; border-left:3px solid ${rarColor};">${icon}${qtyText} <div><b style="color:${rarColor}">${it.name}</b>${rarTag}${equipInfo}<br><small style="color:#aaa;">[${it.slot}] ${it.desc||''}</small>${comparison}</div></div>`;
+        inventoryPanel.innerHTML+=`<div class='item' onclick='equip(${i})' style="min-height:55px; opacity:${isEquipped?0.7:1}; border-left:3px solid ${rarColor};">${icon}${qtyText} <div><b style="color:${rarColor}">${it.name}</b>${rarTag}${equipInfo}<br><small style="color:#aaa;">[${slot}] ${it.desc||''}</small>${comparison}</div></div>`;
     });
+    if(visibleCount === 0) {
+        inventoryPanel.innerHTML = `<p style="color:#666; font-size:13px; text-align:center; padding:20px 0; grid-column:1/-1;">Nenhum item nesta categoria.</p>`;
+    }
 
     // Shop buy panel
     let buyPanel = document.getElementById('shopBuyPanel');
@@ -2777,6 +2794,31 @@ function toggleV(){
 
 // ======== QUICK SWAP PANEL ========
 let quickInvOpen = false;
+let currentInvFilter = 'all'; // filtro ativo da mochila
+const INV_FILTERS = [
+    { key:'all',        label:'🗂 Todos'      },
+    { key:'weapon',     label:'⚔️ Armas'       },
+    { key:'defense',    label:'🛡 Defesa'      },
+    { key:'ring',       label:'💍 Acessórios'  },
+    { key:'consumable', label:'🧪 Consumíveis' },
+];
+function renderInvFilterBar() {
+    let bar = document.getElementById('invFilterBar');
+    if(!bar) return;
+    bar.innerHTML = INV_FILTERS.map(f => {
+        let active = currentInvFilter === f.key;
+        return `<button onclick="setInvFilter('${f.key}')" style="
+            padding:5px 11px; border-radius:8px; font-size:12px; cursor:pointer;
+            border:1px solid ${active ? 'rgba(90,185,255,0.7)' : 'rgba(255,255,255,0.12)'};
+            background:${active ? 'rgba(90,185,255,0.22)' : 'rgba(255,255,255,0.05)'};
+            color:${active ? '#fff' : '#aaa'}; font-weight:${active ? 'bold' : 'normal'};
+            transition:all .15s;">${f.label}</button>`;
+    }).join('');
+}
+function setInvFilter(key) {
+    currentInvFilter = key;
+    updatePanels();
+}
 let quickInvFilter = 'weapon';
 
 const QI_FILTERS = [
