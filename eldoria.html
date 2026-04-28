@@ -127,12 +127,23 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     border: 1px solid rgba(255,255,255,0.15);
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
+@keyframes logSlideIn {
+    from { opacity:0; transform:translateY(-5px); }
+    to   { opacity:1; transform:translateY(0); }
+}
 #combatLog{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:18px;
-    width:400px; height:100px; overflow:auto; background:linear-gradient(180deg, rgba(0,0,0,.75), rgba(10,10,30,.75));
-    border:1px solid rgba(90,185,255,.3); border-radius:14px; padding:12px;
-    color:#d8e7ff; font-size:13px; z-index:1200; pointer-events: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    position:fixed; left:50%; transform:translateX(-50%); bottom:20px;
+    width:400px; max-height:82px; overflow:hidden;
+    background: rgba(4,10,28,0.78);
+    border-top: 1px solid rgba(90,185,255,.45);
+    border-left: 1px solid rgba(90,185,255,.2);
+    border-right: 1px solid rgba(90,185,255,.2);
+    border-bottom: 1px solid rgba(10,20,60,.6);
+    border-radius: 16px; padding: 9px 16px 10px;
+    color:#d8e7ff; font-size:12.5px; line-height:1.6; z-index:1200; pointer-events:none;
+    box-shadow: 0 8px 32px rgba(0,0,10,0.55), inset 0 1px 0 rgba(90,185,255,.12), 0 0 0 1px rgba(0,0,0,.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 #statusWindow, #shopWindow, #evolutionWindow{
     display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -288,6 +299,81 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 /* Esconde controles desktop no mobile e vice-versa */
 @media (max-width: 800px) { #controls-btn, #controls-tooltip { display: none; } }
 @media (min-width: 801px) { #mobileControls { display: none; } }
+
+/* ---- BARRA DE EQUIPAMENTO RÁPIDO ---- */
+#equipBar {
+    position: fixed;
+    top: 230px;   /* fallback estático; posicionado via JS com base no HUD real */
+    left: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    z-index: 1001;
+}
+.equip-slot-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, rgba(5,15,35,.92), rgba(15,25,50,.9));
+    border: 2px solid rgba(90,185,255,0.25);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; cursor: pointer; position: relative;
+    transition: border-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.equip-slot-icon:hover { border-color: rgba(90,185,255,0.7); transform: scale(1.08); }
+.equip-slot-icon.empty { opacity: 0.35; }
+.equip-slot-icon .slot-label {
+    position: absolute; bottom: 1px; right: 2px;
+    font-size: 7px; color: rgba(255,255,255,0.45); line-height: 1;
+}
+
+/* ---- PAINEL QUICK SWAP ---- */
+#quickInvPanel {
+    position: fixed;
+    right: -320px;
+    top: 80px;
+    transform: none;
+    width: 290px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    background: linear-gradient(135deg, rgba(5,15,35,.97), rgba(15,28,55,.96));
+    border: 2px solid rgba(90,185,255,0.45);
+    border-radius: 18px;
+    padding: 16px;
+    z-index: 5500;
+    color: white;
+    transition: right 0.22s cubic-bezier(.4,0,.2,1);
+    box-shadow: -6px 0 32px rgba(0,0,0,0.7), inset 0 0 20px rgba(90,185,255,0.06);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(90,185,255,0.3) transparent;
+}
+#quickInvPanel.open { right: 20px; }
+#quickInvPanel h4 { margin: 0 0 10px 0; font-size: 15px; color: #ffd700; display: flex; justify-content: space-between; align-items: center; }
+.qi-filter-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.qi-filter-btn {
+    padding: 4px 9px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-size: 12px;
+    transition: background 0.15s;
+}
+.qi-filter-btn.active { background: rgba(90,185,255,0.25); border-color: rgba(90,185,255,0.6); color: white; font-weight: bold; }
+.qi-equipped-box {
+    background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.35);
+    border-radius: 10px; padding: 8px 10px; margin-bottom: 8px;
+    font-size: 12px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer;
+}
+.qi-equipped-box:hover { background: rgba(255,215,0,0.18); }
+.qi-item {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px; padding: 7px 9px; margin-bottom: 5px;
+    font-size: 12px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.qi-item:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.4); }
+.qi-item.equipped-in-slot { opacity: 0.45; cursor: default; }
+.qi-section-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
+@media (max-width: 800px) { #equipBar { display: none; } #quickInvPanel { width: 92vw; right: -100vw; top: 10px; max-height: calc(100vh - 20px); } #quickInvPanel.open { right: 4vw; } }
 </style>
 </head>
 <body>
@@ -299,6 +385,17 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     SP <div class="bar"><div id="sp" class="fill sp"></div></div>
     XP <div class="bar"><div id="xp" class="fill xp"></div></div>
     <div id="skillCooldowns" style="margin-top:8px; font-size:11px; color:#aaa; display:flex; gap:8px; flex-wrap:wrap;"></div>
+</div>
+
+<!-- Barra de equipamento rápido (persistente) -->
+<div id="equipBar"></div>
+
+<!-- Painel Quick Swap (TAB) -->
+<div id="quickInvPanel">
+    <h4>⚡ Quick Swap <button onclick="closeQuickInv()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button></h4>
+    <div class="qi-filter-bar" id="qiFilterBar"></div>
+    <div id="qiContent"></div>
+    <div style="font-size:10px; color:rgba(255,255,255,0.3); text-align:center; margin-top:10px;">TAB para abrir/fechar</div>
 </div>
 
 <div id="mobileControls">
@@ -940,7 +1037,18 @@ const biomes = [
     { name: "Eternal Void", groundColor: 0x1a0a2a, skyColor: 0x3a1a5a, fogColor: 0x2a0a3a, level: 100 }
 ];
 
-function log(m){ combatLog.innerHTML = `<div>${m}</div>` + combatLog.innerHTML; }
+function log(m){
+    let entry = document.createElement('div');
+    entry.style.cssText = 'white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; animation:logSlideIn .25s ease;';
+    entry.innerHTML = m;
+    combatLog.insertBefore(entry, combatLog.firstChild);
+    // Atualiza opacidade: mais novo = 1, vai escurecendo
+    Array.from(combatLog.children).forEach((el, idx) => {
+        el.style.opacity = Math.max(0.18, 1 - idx * 0.3);
+        el.style.transition = 'opacity .3s';
+    });
+    while(combatLog.children.length > 5) combatLog.removeChild(combatLog.lastChild);
+}
 
 // Funções do Sistema de Evolução
 function showEvolutionTab(tabName) {
@@ -2497,7 +2605,6 @@ function equip(i){
 
     // Consumíveis não são equipados — são usados diretamente ao clicar
     if(s === 'consumable') {
-        if(gamePaused) return;
         if(player.hp >= player.maxHp) { log("<span style='color:orange'>HP já está cheio!</span>"); return; }
         player.hp = Math.min(player.maxHp, player.hp + (it.heal || 0));
         floatingText("🧪 +" + it.heal + " HP", hero.position, "lime");
@@ -2534,12 +2641,14 @@ function equip(i){
     recalcStats();
     applyEquipVisual();
     updatePanels();
+    updateEquipBar();
 }
 function unequip(k){
     unequipInternal(k);
     recalcStats();
     applyEquipVisual();
     updatePanels();
+    updateEquipBar();
 }
 
 // Função interna para desequipar sem atualizar stats/UI (usada ao trocar equipamentos)
@@ -2568,16 +2677,185 @@ function unequipInternal(k){
         equipped[k] = null;
     }
 }
-function toggleV(){ 
+function toggleV(){
     let win = document.getElementById('statusWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
         gamePaused = false;
     } else {
+        closeQuickInv();
         win.style.display = 'block';
         updatePanels();
         gamePaused = true;
     }
+}
+
+// ======== QUICK SWAP PANEL ========
+let quickInvOpen = false;
+let quickInvFilter = 'weapon';
+
+const QI_FILTERS = [
+    { key: 'weapon',  label: '⚔️ Armas'   },
+    { key: 'shield',  label: '🛡️ Escudos' },
+    { key: 'cape',    label: '🧥 Capas'   },
+    { key: 'boots',   label: '👢 Botas'   },
+    { key: 'ring',    label: '💍 Anéis'   },
+    { key: 'consumable', label: '🧪 Poções' },
+];
+
+const SLOT_ICONS_DEFAULT = {
+    weapon: '⚔️', shield: '🛡️', cape: '🧥', boots: '👢', ring1: '💍', ring2: '💍'
+};
+const SLOT_LABELS = {
+    weapon: 'ARMA', shield: 'ESCUDO', cape: 'CAPA', boots: 'BOTAS', ring1: 'ANEL1', ring2: 'ANEL2'
+};
+
+function toggleQuickInv() {
+    if(quickInvOpen) closeQuickInv();
+    else openQuickInv();
+}
+
+function openQuickInv() {
+    // Fecha outros menus
+    document.getElementById('statusWindow').style.display = 'none';
+    document.getElementById('shopWindow').style.display = 'none';
+    quickInvOpen = true;
+    gamePaused = true;
+    renderQuickInv();
+    document.getElementById('quickInvPanel').classList.add('open');
+}
+
+function closeQuickInv() {
+    quickInvOpen = false;
+    gamePaused = false;
+    document.getElementById('quickInvPanel').classList.remove('open');
+}
+
+function renderQuickInv() {
+    // Filtros
+    let filterBar = document.getElementById('qiFilterBar');
+    filterBar.innerHTML = QI_FILTERS.map(f =>
+        `<button class="qi-filter-btn${quickInvFilter === f.key ? ' active' : ''}" onclick="setQiFilter('${f.key}')">${f.label}</button>`
+    ).join('');
+
+    let content = document.getElementById('qiContent');
+    let html = '';
+
+    // Slot equipado atualmente (para filtro atual)
+    let equippedSlotKey = quickInvFilter === 'ring' ? null : quickInvFilter;
+    let equippedItems = [];
+
+    if(quickInvFilter === 'ring') {
+        if(equipped.ring1) equippedItems.push({ key: 'ring1', item: equipped.ring1 });
+        if(equipped.ring2) equippedItems.push({ key: 'ring2', item: equipped.ring2 });
+    } else if(equippedSlotKey && equipped[equippedSlotKey]) {
+        equippedItems.push({ key: equippedSlotKey, item: equipped[equippedSlotKey] });
+    }
+
+    if(equippedItems.length > 0) {
+        html += `<div class="qi-section-label">📌 Equipado</div>`;
+        equippedItems.forEach(({ key, item }) => {
+            let stats = buildStatLine(item);
+            html += `<div class="qi-equipped-box" onclick="unequip('${key}'); renderQuickInv(); updateEquipBar();">
+                <span style="font-size:22px;">${item.icon || '📦'}</span>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-weight:bold; color:gold; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
+                    <div style="color:#aaa; font-size:11px;">${stats}</div>
+                </div>
+                <span style="font-size:10px; color:#ff6666; flex-shrink:0;">DESeq.</span>
+            </div>`;
+        });
+    } else {
+        let slotName = QI_FILTERS.find(f => f.key === quickInvFilter)?.label || '';
+        html += `<div style="background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.15); border-radius:8px; padding:10px; text-align:center; color:#666; font-size:12px; margin-bottom:8px;">${slotName} vazio</div>`;
+    }
+
+    // Itens no inventário que correspondem ao filtro
+    let slotFilter = quickInvFilter; // 'ring' matches ring slot items
+    let matchItems = inventory
+        .map((it, idx) => ({ it, idx }))
+        .filter(({ it }) => it.slot === slotFilter || (slotFilter === 'ring' && it.slot === 'ring'));
+
+    if(matchItems.length > 0) {
+        html += `<div class="qi-section-label">🎒 Na mochila (${matchItems.length})</div>`;
+        matchItems.forEach(({ it, idx }) => {
+            let isEq = Object.values(equipped).some(e => e === it);
+            let stats = buildStatLine(it);
+            let rarColor = it.rarity === 'legendary' ? '#ff8c00' : it.rarity === 'epic' ? '#cc44ff' : it.rarity === 'rare' ? '#4488ff' : it.rarity === 'uncommon' ? '#44cc44' : '#aaa';
+            let qtyBadge = (it.quantity && it.quantity > 1) ? `<span style="background:rgba(255,255,255,0.15);border-radius:4px;padding:1px 5px;font-size:10px;margin-left:4px;">×${it.quantity}</span>` : '';
+            html += `<div class="qi-item${isEq ? ' equipped-in-slot' : ''}" onclick="${isEq ? '' : 'quickEquipByIndex(' + idx + ')'}">
+                <span style="font-size:22px; flex-shrink:0;">${it.icon || '📦'}</span>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-weight:bold; color:${rarColor}; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.name}${qtyBadge}</div>
+                    <div style="color:#bbb; font-size:11px;">${stats}</div>
+                </div>
+                ${isEq ? '' : '<span style="font-size:18px; color:#5ab9ff; flex-shrink:0;">➕</span>'}
+            </div>`;
+        });
+    } else {
+        html += `<div style="color:#555; font-size:12px; text-align:center; margin-top:8px;">Nenhum item deste tipo na mochila</div>`;
+    }
+
+    content.innerHTML = html;
+}
+
+function buildStatLine(item) {
+    let parts = [];
+    if(item.atk)   parts.push(`+${item.atk} ATK`);
+    if(item.def)   parts.push(`+${item.def} DEF`);
+    if(item.hp)    parts.push(`+${item.hp} HP`);
+    if(item.sp)    parts.push(`+${item.sp} SP`);
+    if(item.speed) parts.push(`+${Math.round(item.speed*100)}% SPD`);
+    if(item.heal)  parts.push(`+${item.heal} HP`);
+    if(item.durability !== undefined) parts.push(`⚙️${Math.round(item.durability)}%`);
+    return parts.join(' · ') || item.desc || '';
+}
+
+function setQiFilter(key) {
+    quickInvFilter = key;
+    renderQuickInv();
+}
+
+function quickEquipByIndex(i) {
+    equip(i);
+    renderQuickInv();
+    updateEquipBar();
+}
+
+// Posiciona a barra de equip logo abaixo do HUD (lê bounds reais)
+function positionEquipBar() {
+    let hud = document.getElementById('hud');
+    let bar = document.getElementById('equipBar');
+    if(!hud || !bar) return;
+    let r = hud.getBoundingClientRect();
+    bar.style.top   = (r.bottom + 8) + 'px';
+    bar.style.left  = r.left + 'px';
+    bar.style.width = r.width + 'px';
+}
+
+// Barra de equip persistente
+function updateEquipBar() {
+    let bar = document.getElementById('equipBar');
+    if(!bar) return;
+    positionEquipBar();
+    let slots = ['weapon','shield','cape','boots','ring1','ring2'];
+    bar.innerHTML = slots.map(k => {
+        let item = equipped[k];
+        let icon = item ? (item.icon || '📦') : SLOT_ICONS_DEFAULT[k];
+        let isEmpty = !item;
+        let title = item ? item.name : SLOT_LABELS[k];
+        return `<div class="equip-slot-icon${isEmpty ? ' empty' : ''}" onclick="openQuickInvAt('${k}')" title="${title}">
+            ${icon}
+            <span class="slot-label">${SLOT_LABELS[k].slice(0,2)}</span>
+        </div>`;
+    }).join('');
+}
+
+function openQuickInvAt(slotKey) {
+    // Mapeia slot key para filtro
+    let filterKey = slotKey === 'ring1' || slotKey === 'ring2' ? 'ring' : slotKey;
+    quickInvFilter = filterKey;
+    openQuickInv();
 }
 
 // Mapa Expandido (Tecla M)
@@ -2745,7 +3023,10 @@ function toggleShop(){
 // Função para fechar todos os menus (usada pela tecla ESC)
 function closeAllMenus() {
     let closed = false;
-    
+
+    // Fechar quick swap
+    if(quickInvOpen) { closeQuickInv(); closed = true; }
+
     // Fechar inventário/status
     let statusWin = document.getElementById('statusWindow');
     if(statusWin && statusWin.style.display === 'block') {
@@ -2845,7 +3126,8 @@ function saveGame() {
                 stats: evolutionData.stats,
                 achievements: evolutionData.achievements.map(a => ({ id: a.id, unlocked: a.unlocked })),
                 quests: evolutionData.quests.map(q => ({ id: q.id, progress: q.progress, completed: q.completed })),
-                skillTree: evolutionData.skillTree.map(s => ({ id: s.id, level: s.level }))
+                skillTree: evolutionData.skillTree.map(s => ({ id: s.id, level: s.level })),
+                activeSkillTree: evolutionData.activeSkillTree.map(s => ({ id: s.id, level: s.level }))
             }
         };
         localStorage.setItem(getSaveKey(), JSON.stringify(saveData));
@@ -2880,6 +3162,10 @@ function loadGame() {
             });
             (save.evolutionData.skillTree || []).forEach(saved => {
                 let s = evolutionData.skillTree.find(s => s.id === saved.id);
+                if(s) s.level = saved.level;
+            });
+            (save.evolutionData.activeSkillTree || []).forEach(saved => {
+                let s = evolutionData.activeSkillTree.find(s => s.id === saved.id);
                 if(s) s.level = saved.level;
             });
         }
@@ -3410,7 +3696,8 @@ function updateControlsList() {
         <li><span class="key">${isWasd ? 'U' : 'R'}</span><span class="desc">Escudo (requer skill)</span></li>
         <li><span class="key">${isWasd ? 'H' : 'Q'}</span><span class="desc">Usar Poção</span></li>
         <li><span class="key">E</span><span class="desc">Loja (NPC)</span></li>
-        <li><span class="key">V</span><span class="desc">Inventário</span></li>
+        <li><span class="key highlight">TAB</span><span class="desc highlight">Quick Swap</span></li>
+        <li><span class="key">V</span><span class="desc">Inventário Completo</span></li>
         <li><span class="key highlight">ESC</span><span class="desc highlight">Evolução / Fechar</span></li>
         <li><span class="key">F</span><span class="desc">Fullscreen</span></li>
         <li><span class="key highlight">P</span><span class="desc highlight">Pausar Jogo</span></li>
@@ -3421,6 +3708,8 @@ function updateControlsList() {
 window.onkeydown=e=>{
     let k = e.key.toLowerCase();
     keys[k] = true;
+    // Ignora atalhos de jogo enquanto a tela inicial estiver visível
+    if(startOverlay && startOverlay.style.display !== 'none') return;
     // Movimento — setas sempre funcionam; WASD só se modo wasd
     // (apenas registrado via keys[], o loop de movimento decide)
 
@@ -3443,6 +3732,7 @@ window.onkeydown=e=>{
     }
     // Atalhos comuns a ambos os modos
     if(k==="v") toggleV();
+    if(k==="tab") { e.preventDefault(); toggleQuickInv(); }
     if(k==="e") toggleShop();
     if(k==="f") document.documentElement.requestFullscreen();
     if(k==="p") togglePause();
@@ -3458,6 +3748,7 @@ window.addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
+    positionEquipBar();
 });
 
 // Adicionar árvores/rochas para decorar biomas (decorações simples)
@@ -3822,6 +4113,8 @@ function launchGame(loadSave) {
     startOverlay.style.display = 'none';
     if(loadSave) loadGame(); // Só carrega se foi pedido (herói existente)
     animate();
+    updateEquipBar();
+    setTimeout(positionEquipBar, 100); // garante posição após render inicial
     log("Eldoria Mobile Restaurado!");
     log("<span style='color:gold'>🎮 Bem-vindo, " + playerName + "! Derrote inimigos, colete itens e explore os biomas!</span>");
 }
