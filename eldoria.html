@@ -1647,13 +1647,14 @@ function updateQuestProgress(type, amount) {
 }
 
 function toggleEvolution() {
+    // Fecha todos os outros menus antes de abrir evolução
+    closeAllMenus();
     let win = document.getElementById('evolutionWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
         menuOverlay.style.display = 'none';
         gamePaused = false;
     } else {
-        closeQuickInv();
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         updateEvolutionUI();
@@ -2078,7 +2079,10 @@ function killMonster(m){
         // Boss já tem XP ampliado no spawn, mas garantimos mínimo significativo
         let minXp = Math.floor(player.next * 0.4); // Mínimo 40% do XP necessário pro próximo nível
         if(xpGain < minXp) xpGain = minXp;
-        floatingText("👹 BOSS KILL! +" + xpGain + " XP!", m.position, "gold");
+        floatingText("👹 BOSS KILL!", m.position, "gold");
+        setTimeout(() => {
+            floatingText("+" + xpGain + " XP!", m.position, "lime");
+        }, 300);
         log(`<span style="color:gold; font-weight:bold;">👹 ${monsterName} (Lv.${monsterLevel}) derrotado! +${xpGain} XP</span>`);
     } else {
         // Monstros normais: mostra XP no log
@@ -2087,7 +2091,9 @@ function killMonster(m){
     
     player.xp += xpGain;
     evolutionData.totalXP += xpGain; // Adiciona XP total para evolução
-    floatingText("+"+xpGain+" XP", m.position, "lime");
+    if(!m.userData.isBoss) {
+        floatingText("+"+xpGain+" XP", m.position, "lime");
+    }
     
     // Atualiza estatísticas de kills
     evolutionData.stats.kills++;
@@ -2166,7 +2172,9 @@ function killMonster(m){
     let goldDrop = Math.floor(m.userData.level * 2 + Math.random() * 5);
     if(m.userData.isBoss) goldDrop *= 3; // Boss dropa 3x mais gold
     player.gold += goldDrop;
-    floatingText("+"+goldDrop+" Gold", m.position, "gold");
+    setTimeout(() => {
+        floatingText("+"+goldDrop+" Gold", m.position, "gold");
+    }, m.userData.isBoss ? 600 : 0);
     checkAchievements(); // Verifica conquistas após kill + gold
     
     // Drop de itens no chão (randomico)
@@ -3126,13 +3134,14 @@ function unequipInternal(k){
     }
 }
 function toggleV(){
+    // Fecha todos os outros menus antes de abrir status
+    closeAllMenus();
     let win = document.getElementById('statusWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
         menuOverlay.style.display = 'none';
         gamePaused = false;
     } else {
-        closeQuickInv();
         win.style.display = 'block';
         menuOverlay.style.display = 'block';
         renderInvFilterBar();
@@ -3192,9 +3201,8 @@ function toggleQuickInv() {
 }
 
 function openQuickInv() {
-    // Fecha outros menus
-    document.getElementById('statusWindow').style.display = 'none';
-    document.getElementById('shopWindow').style.display = 'none';
+    // Fecha todos os outros menus antes de abrir quick swap
+    closeAllMenus();
     quickInvOpen = true;
     gamePaused = true;
     menuOverlay.style.display = 'block';
@@ -3343,6 +3351,8 @@ function toggleFullMap() {
         isFullMapOpen = false;
         gamePaused = false;
     } else {
+        // Fecha todos os outros menus antes de abrir mapa
+        closeAllMenus();
         fullMapModal.style.display = 'block';
         isFullMapOpen = true;
         gamePaused = false; // Não pausa o jogo, apenas mostra o mapa
@@ -3664,6 +3674,8 @@ function setShopTab(tab) {
     updatePanels();
 }
 function toggleShop(){
+    // Fecha todos os outros menus antes de abrir loja
+    closeAllMenus();
     let win = document.getElementById('shopWindow');
     if(win.style.display === 'block') {
         win.style.display = 'none';
@@ -3746,7 +3758,10 @@ function usePotion() {
 
 function floatingText(txt,pos,color){
     let d=document.createElement("div"); d.style.position="fixed"; d.style.color=color; d.style.fontWeight="bold"; d.style.zIndex="6000";
-    document.body.appendChild(d); floatTexts.push({div:d, pos:pos.clone(), life:60, txt});
+    // Adiciona um offset aleatório horizontal para evitar sobreposição completa
+    let offsetX = (Math.random() - 0.5) * 60;
+    d.dataset.offsetX = offsetX;
+    document.body.appendChild(d); floatTexts.push({div:d, pos:pos.clone(), life:60, txt, offsetY: 0});
 }
 
 /* -------- SAVE / LOAD -------- */
@@ -4315,7 +4330,11 @@ function animate(time){
     for(let i=floatTexts.length-1; i>=0; i--){
         let f=floatTexts[i];
         f.pos.y+=.05; let v=f.pos.clone().project(camera);
-        f.div.style.left=(v.x*.5+.5)*innerWidth+"px"; f.div.style.top=(-v.y*.5+.5)*innerHeight+"px";
+        // Aplica offset horizontal aleatório e offset vertical baseado no índice para evitar sobreposição
+        let offsetX = f.div.dataset.offsetX || 0;
+        let offsetY = (floatTexts.length - 1 - i) * 20; // Cada texto sobe um pouco mais
+        f.div.style.left=((v.x*.5+.5)*innerWidth + parseFloat(offsetX))+"px"; 
+        f.div.style.top=((-v.y*.5+.5)*innerHeight - offsetY)+"px";
         f.div.innerHTML=f.txt; if(--f.life<=0){ f.div.remove(); floatTexts.splice(i,1); }
     }
 
