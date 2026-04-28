@@ -2,7 +2,7 @@
 
 # 🕹️ ARCADE LAB
 
-### 🎮 Desenvolvimento de Jogos Web com IA
+### 🎮 Web Game Development with AI
 
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)]()
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)]()
@@ -18,41 +18,41 @@
 
 ---
 
-## 🧠 Sobre o Projeto
+## 🧠 About This Project
 
 <div align="center">
 
-**Um laboratório experimental de desenvolvimento de jogos web**  
-*Explorando o potencial da Inteligência Artificial como co-piloto criativo*
+**An experimental web game development laboratory**  
+*Exploring the potential of Artificial Intelligence as a creative co-pilot*
 
 </div>
 
-Este repositório é um **objeto de estudo pessoal** focado em explorar diferentes modelos de IA generativa para desenvolvimento de jogos utilizando **tecnologias web nativas** (HTML, CSS, JavaScript).
+This repository is a **personal study project** focused on exploring different generative AI models for game development using **native web technologies** (HTML, CSS, JavaScript).
 
-### 🤖 Modelos de IA Utilizados
+### 🤖 AI Models Used
 
-| IA | Provedor | Papel no Projeto |
-|:--:|:--------:|------------------|
-| 🟠 **Claude** | Anthropic | Arquitetura de código, refatoração e boas práticas |
-| 🔵 **GPT-4 / Codex** | OpenAI | Geração de lógica de jogos e debugging |
-| 🟣 **Qwen** | Alibaba | Experimentação com novas abordagens e features |
+| AI | Provider | Role in Project |
+|:--:|:--------:|-----------------|
+| 🟠 **Claude** | Anthropic | Code architecture, refactoring & best practices |
+| 🔵 **GPT-4 / Codex** | OpenAI | Game logic generation & debugging |
+| 🟣 **Qwen** | Alibaba | Experimentation with new approaches & features |
 
-> 💡 **Objetivo:** Comparar e aprender com diferentes abordagens de IA para criação de jogos, mantendo o foco em soluções leves e baseadas em web standards.
+> 💡 **Goal:** Compare and learn from different AI approaches to game creation, focusing on lightweight solutions based on web standards.
 
 ---
 
-## 🎯 Projetos
+## 🎯 Projects
 
 <div align="center">
 
-| 📁 Projeto | 🎮 Tipo | 📊 Status |
+| 📁 Project | 🎮 Type | 📊 Status |
 |:----------:|:-------:|:---------:|
-| [**Arcade Hub**](./index.html) | Portal Central | ✅ Pronto |
-| [**Eldoria**](./eldoria/) | RPG 3D (Three.js) | ✅ Pronto |
-| [**Flappy Bird**](./flappy-bird/) | Endless Runner | ✅ Pronto |
-| [**Ozzy Mario**](./ozzy-mario/) | Platformer | ✅ Pronto |
-| [**Ozzy Clean**](./ozzy-game-clean/) | Refatoração Modular | ✅ Pronto |
-| [**Landing Page**](./consorcio-landing/) | Institucional (React) | ✅ Pronto |
+| [**Arcade Hub**](./index.html) | Central Portal | ✅ Ready |
+| [**Eldoria**](./eldoria/) | 3D RPG (Three.js) | ✅ Ready |
+| [**Flappy Bird**](./flappy-bird/) | Endless Runner | ✅ Ready |
+| [**Ozzy Mario**](./ozzy-mario/) | Platformer | ✅ Ready |
+| [**Ozzy Clean**](./ozzy-game-clean/) | Modular Refactoring | ✅ Ready |
+| [**Landing Page**](./consorcio-landing/) | Institutional (React) | ✅ Ready |
 
 </div>
 
@@ -87,16 +87,16 @@ Este repositório é um **objeto de estudo pessoal** focado em explorar diferent
 ## 🚀 Quick Start
 
 ```bash
-# 📥 Clone o repositório
+# 📥 Clone the repository
 git clone https://github.com/jecdurvalo/jecdurvalo.git
 
-# 📂 Navegue até o projeto
+# 📂 Navigate to the project
 cd jecdurvalo
 
-# ▶️ Inicie um servidor local
+# ▶️ Start a local server
 npx serve .
 
-# 🌐 Ou abra diretamente o index.html no seu navegador
+# 🌐 Or open index.html directly in your browser
 ```
 
 ---
@@ -105,26 +105,26 @@ npx serve .
 
 <div align="center">
 
-### [🎮 JOGAR AGORA →](https://jecdurvalo.vercel.app/)
+### [🎮 PLAY NOW →](https://jecdurvalo.vercel.app/)
 
-_Hospedado na Vercel com deploy contínuo_
+_Hosted on Vercel with continuous deployment_
 
 </div>
 
 ---
 
-## 📚 Aprendizados & Insights
+## 📚 Learnings & Insights
 
-Este projeto tem como foco principal o **aprendizado experimental**. Cada interação com as diferentes IAs gera insights sobre:
+This project focuses primarily on **experimental learning**. Each interaction with different AIs generates insights about:
 
-- ✨ Padrões de código e arquitetura
-- 🎯 Abordagens diferentes para o mesmo problema
-- 🔧 Técnicas de prompt engineering para desenvolvimento
-- 📈 Evolução da qualidade do código gerado
+- ✨ Code patterns and architecture
+- 🎯 Different approaches to the same problem
+- 🔧 Prompt engineering techniques for development
+- 📈 Evolution of generated code quality
 
 ---
 
-## 📬 Conecte-se
+## 📬 Connect
 
 <div align="center">
 
@@ -137,8 +137,8 @@ Este projeto tem como foco principal o **aprendizado experimental**. Cada intera
 
 <div align="center">
 
-**Feito com** 💜 **e muita experimentação com IA**
+**Made with** 💜 **and lots of AI experimentation**
 
-*© 2024 - Projeto de Estudo & Portfolio*
+*© 2024 - Study Project & Portfolio*
 
 </div>
