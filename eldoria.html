@@ -585,7 +585,7 @@ let floatTexts=[];
 let fireballs=[];
 let aoes=[]; // Habilidades de área (AOE)
 let visuals=[];
-let lastDir = new THREE.Vector3(0,0,1);
+let lastDir = null; // Será inicializado após THREE.js carregar
 let equipped={ weapon:null, shield:null, cape:null, boots:null, ring1:null, ring2:null };
 let isAttacking = false;
 let lastSpawnTime = 0;
@@ -1625,6 +1625,9 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.domElement.id = "gameCanvas";
 document.body.appendChild(renderer.domElement);
 
+// Inicializa lastDir após THREE.js estar pronto
+lastDir = new THREE.Vector3(0,0,1);
+
 scene.add(new THREE.AmbientLight(0xffffff, .7));
 let sun=new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(20,30,20);
@@ -2314,7 +2317,7 @@ function castFireball(){
     let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
     fb.position.copy(hero.position); fb.position.y = 1.2;
     scene.add(fb);
-    fireballs.push({ mesh: fb, dir: lastDir.clone().normalize(), life: 80, activeBonus: ab });
+    fireballs.push({ mesh: fb, dir: lastDir ? lastDir.clone().normalize() : new THREE.Vector3(0,0,1), life: 80, activeBonus: ab });
 }
 
 // Habilidade AOE (Area of Effect) - desbloqueada no nível 12
@@ -2412,7 +2415,7 @@ function castDash() {
     lastDashTime = now;
     playSound('dash');
     // Empurrão na direção atual
-    let dashVec = lastDir.clone().normalize().multiplyScalar(6);
+    let dashVec = lastDir ? lastDir.clone().normalize().multiplyScalar(6) : new THREE.Vector3(0,0,1).multiplyScalar(6);
     hero.position.add(dashVec);
     // Partículas de dash
     for(let i=0;i<8;i++) {
@@ -3777,7 +3780,8 @@ function animate(time){
     if(move.length() > 0.05){
         let speed = 0.35 + (equipped.boots ? equipped.boots.speed : 0);
         move.normalize().multiplyScalar(speed);
-        hero.position.add(move); lastDir.copy(move);
+        hero.position.add(move);
+        if(lastDir) lastDir.copy(move);
         hero.rotation.y = Math.atan2(move.x, move.z);
     }
 
