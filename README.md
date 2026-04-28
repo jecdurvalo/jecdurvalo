@@ -48,11 +48,11 @@ This repository is a **personal study project** focused on exploring different g
 | 📁 Project | 🎮 Type | 📊 Status |
 |:----------:|:-------:|:---------:|
 | [**Arcade Hub**](./index.html) | Central Portal | ✅ Ready |
-| [**Eldoria**](./eldoria/) | 3D RPG (Three.js) | ✅ Ready |
+| [**Eldoria**](./eldoria/) | 3D RPG (Three.js) | 🔄 Continuous Improvements |
 | [**Flappy Bird**](./flappy-bird/) | Endless Runner | ✅ Ready |
 | [**Ozzy Mario**](./ozzy-mario/) | Platformer | ✅ Ready |
 | [**Ozzy Clean**](./ozzy-game-clean/) | Modular Refactoring | ✅ Ready |
-| [**Landing Page**](./consorcio-landing/) | Institutional (React) | ✅ Ready |
+| [**Landing Page**](./consorcio-landing/) | Institutional (React) | ⏳ Not Started |
 
 </div>
 
@@ -139,6 +139,6 @@ This project focuses primarily on **experimental learning**. Each interaction wi
 
 **Made with** 💜 **and lots of AI experimentation**
 
-*© 2024 - Study Project & Portfolio*
+*© 2026 - Study Project & Portfolio*
 
 </div>
