@@ -249,6 +249,51 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 .sell-btn:hover { background: linear-gradient(135deg, #f08e33, #d97b2a); transform: scale(1.05); }
 .sell-btn:active { transform: scale(0.95); }
 
+.buy-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg,#f0a500,#c07800);
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(240, 165, 0, 0.35);
+    transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+}
+.buy-btn:hover {
+    background: linear-gradient(135deg,#ffbd24,#d68a00);
+    transform: scale(1.05);
+    box-shadow: 0 3px 14px rgba(240, 165, 0, 0.55);
+}
+.buy-btn:active { transform: scale(0.95); }
+.buy-btn.disabled,
+.buy-btn.disabled:hover {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.sell-item-card {
+    min-height: 76px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 11px 12px;
+}
+.sell-item-header { width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.sell-item-main { min-width: 0; flex: 1; display: flex; gap: 9px; align-items: flex-start; }
+.sell-item-icon { font-size: 22px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+.sell-item-title { font-weight: 800; font-size: 13px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.sell-item-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.sell-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10px; line-height: 1.2; font-weight: 700; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); }
+.sell-stats-line { display: flex; gap: 6px; flex-wrap: wrap; padding-left: 31px; }
+.sell-stat-chip { font-size: 11px; padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.08); font-weight: 700; }
+.sell-item-desc { color: #9aa7b8; font-size: 11px; line-height: 1.25; padding-left: 31px; }
+
 #controls-btn {
     position: fixed; top: 20px; right: 20px;
     width: 50px; height: 50px;
@@ -401,11 +446,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background: rgba(255,255,255,0.08); color: #aaa; cursor: pointer; font-size: 12px;
     transition: all 0.15s;
 }
-.qi-filter-btn:hover { 
-    background: rgba(90,185,255,0.15); 
-    border-color: rgba(90,185,255,0.4);
-    transform: translateY(-1px);
-}
+.qi-filter-btn:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.4); }
 .qi-filter-btn.active { 
     background: linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.15)); 
     border-color: rgba(90,185,255,0.9); 
@@ -510,7 +551,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
         <button onclick="setShopTab('sell')" id="shopTabSell" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; cursor:pointer; font-weight:bold; font-size:15px;">💰 Vender</button>
     </div>
     <div id="shopBuyPanel">
-        <p style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold" id="shopGoldDisplay">0</b></p>
+        <p id="shopBuyGoldDisplay" style="color:#aaa; font-size:13px; margin:0 0 8px 0;">💰 Gold: <b style="color:gold">0</b></p>
         <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
         <div id="shopBuyItemsPanel" class="inventory-grid"></div>
     </div>
@@ -578,7 +619,6 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-// Aguardar THREE.js carregar completamente antes de iniciar
 /* -------- ESTADO E MECÂNICAS ORIGINAIS RESTAURADAS -------- */
 let playerName = "Aventureiro"; // Nome do jogador (definido na tela inicial)
 let player={ level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
@@ -1035,17 +1075,14 @@ function addItemToInventory(baseItem) {
     return false; // Item foi adicionado como novo
 }
 
-// Mapa Expandido (Tecla M) - Inicializado após DOM estar pronto
-let miniMapCanvas, ctxM, fullMapModal, fullMapCanvas, ctxFullMap;
-let isFullMapOpen = false;
+const miniMapCanvas = document.getElementById('minimapCanvas');
+const ctxM = miniMapCanvas.getContext('2d');
 
-function initMapCanvases() {
-    miniMapCanvas = document.getElementById('minimapCanvas');
-    ctxM = miniMapCanvas.getContext('2d');
-    fullMapModal = document.getElementById('fullMapModal');
-    fullMapCanvas = document.getElementById('fullMapCanvas');
-    ctxFullMap = fullMapCanvas.getContext('2d');
-}
+// Mapa Expandido (Tecla M)
+const fullMapModal = document.getElementById('fullMapModal');
+const fullMapCanvas = document.getElementById('fullMapCanvas');
+const ctxFullMap = fullMapCanvas.getContext('2d');
+let isFullMapOpen = false;
 
 // lootTable organizada em 5 tiers de nível.
 // minLevel controla quando o item começa a dropar.
@@ -1625,10 +1662,6 @@ function toggleEvolution() {
 }
 
 /* -------- ENGINE 3D -------- */
-// Só inicializa a engine 3D após THREE.js estar disponível
-if (typeof THREE === 'undefined') {
-    console.error("THREE.js não carregou ainda!");
-} else {
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x87ceeb);
 const camera=new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
@@ -1651,7 +1684,6 @@ scene.fog = new THREE.Fog(biomes[0].fogColor, 50, 150);
 let ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000), new THREE.MeshStandardMaterial({color:biomes[0].groundColor}));
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
-} // fecha if THREE
 
 // Função para mudar bioma baseado no nível
 function updateBiome() {
@@ -1709,24 +1741,15 @@ function updateBiome() {
 }
 
 /* -------- PERSONAGEM E VISUAIS -------- */
-let hero = null;
-let heroBody = null;
-let hair = null;
-let hand = null;
-
-function initHero() {
-if(!hero) {
-hero=new THREE.Group();
-heroBody=new THREE.Mesh(new THREE.BoxGeometry(1,1.8,.8), new THREE.MeshStandardMaterial({color:0x3f7cff}));
+let hero=new THREE.Group();
+let heroBody=new THREE.Mesh(new THREE.BoxGeometry(1,1.8,.8), new THREE.MeshStandardMaterial({color:0x3f7cff}));
 heroBody.position.y=1; hero.add(heroBody);
-hair=new THREE.Mesh(new THREE.BoxGeometry(.9,.2,.8), new THREE.MeshStandardMaterial({color:0x2d160d}));
+let hair=new THREE.Mesh(new THREE.BoxGeometry(.9,.2,.8), new THREE.MeshStandardMaterial({color:0x2d160d}));
 hair.position.y=1.95; hero.add(hair);
-hand=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshStandardMaterial({color:0xffdbac}));
+let hand=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshStandardMaterial({color:0xffdbac}));
 hand.position.set(0.6,1,0.4); hand.visible=true;
 hero.add(hand);
 scene.add(hero);
-}
-}
 
 // heroLabel será criado em launchGame() para evitar erro de playerName indefinido
 let heroLabel = null;
@@ -2070,64 +2093,64 @@ function killMonster(m){
     evolutionData.stats.kills++;
     
     // Contabilizar kills por tipo de monstro para missões
-    let monsterName = m.userData.name.toLowerCase();
-    if(monsterName.includes('wolf')) {
+    let monsterKey = m.userData.name.toLowerCase();
+    if(monsterKey.includes('wolf')) {
         evolutionData.stats.wolfKills++;
         updateQuestProgress('wolf_kills', 1);
     }
-    if(monsterName.includes('slime')) {
+    if(monsterKey.includes('slime')) {
         evolutionData.stats.slimeKills++;
         updateQuestProgress('slime_kills', 1);
     }
-    if(monsterName.includes('spider')) {
+    if(monsterKey.includes('spider')) {
         evolutionData.stats.spiderKills++;
         updateQuestProgress('spider_kills', 1);
     }
-    if(monsterName.includes('orc')) {
+    if(monsterKey.includes('orc')) {
         evolutionData.stats.orcKills++;
         updateQuestProgress('orc_kills', 1);
     }
-    if(monsterName.includes('dragon')) {
+    if(monsterKey.includes('dragon')) {
         evolutionData.stats.dragonKills++;
         updateQuestProgress('dragon_kills', 1);
     }
-    if(monsterName.includes('goblin')) {
+    if(monsterKey.includes('goblin')) {
         evolutionData.stats.goblinKills++;
         updateQuestProgress('goblin_kills', 1);
     }
-    if(monsterName.includes('treant')) {
+    if(monsterKey.includes('treant')) {
         evolutionData.stats.treantKills++;
         updateQuestProgress('treant_kills', 1);
     }
-    if(monsterName.includes('bandit') || monsterName.includes('scorpion') || monsterName.includes('worm') || monsterName.includes('mummy')) {
+    if(monsterKey.includes('bandit') || monsterKey.includes('scorpion') || monsterKey.includes('worm') || monsterKey.includes('mummy')) {
         evolutionData.stats.desertKills++;
         updateQuestProgress('desert_kills', 1);
     }
-    if(monsterName.includes('ice') || monsterName.includes('yeti') || monsterName.includes('frost') || monsterName.includes('snow')) {
+    if(monsterKey.includes('ice') || monsterKey.includes('yeti') || monsterKey.includes('frost') || monsterKey.includes('snow')) {
         evolutionData.stats.iceKills++;
         updateQuestProgress('ice_kills', 1);
     }
-    if(monsterName.includes('fire') || monsterName.includes('lava') || monsterName.includes('obsidian') || monsterName.includes('imp')) {
+    if(monsterKey.includes('fire') || monsterKey.includes('lava') || monsterKey.includes('obsidian') || monsterKey.includes('imp')) {
         evolutionData.stats.fireKills++;
         updateQuestProgress('fire_kills', 1);
     }
-    if(monsterName.includes('mystic') || monsterName.includes('highland') || monsterName.includes('arcane') || monsterName.includes('spirit')) {
+    if(monsterKey.includes('mystic') || monsterKey.includes('highland') || monsterKey.includes('arcane') || monsterKey.includes('spirit')) {
         evolutionData.stats.mysticKills++;
         updateQuestProgress('mystic_kills', 1);
     }
-    if(monsterName.includes('crystal') || monsterName.includes('cave') || monsterName.includes('gem') || monsterName.includes('mineral')) {
+    if(monsterKey.includes('crystal') || monsterKey.includes('cave') || monsterKey.includes('gem') || monsterKey.includes('mineral')) {
         evolutionData.stats.crystalKills++;
         updateQuestProgress('crystal_kills', 1);
     }
-    if(monsterName.includes('shadow') || monsterName.includes('dark') || monsterName.includes('wraith') || monsterName.includes('phantom')) {
+    if(monsterKey.includes('shadow') || monsterKey.includes('dark') || monsterKey.includes('wraith') || monsterKey.includes('phantom')) {
         evolutionData.stats.shadowKills++;
         updateQuestProgress('shadow_kills', 1);
     }
-    if(monsterName.includes('celestial') || monsterName.includes('peak') || monsterName.includes('angel') || monsterName.includes('divine')) {
+    if(monsterKey.includes('celestial') || monsterKey.includes('peak') || monsterKey.includes('angel') || monsterKey.includes('divine')) {
         evolutionData.stats.celestialKills++;
         updateQuestProgress('celestial_kills', 1);
     }
-    if(monsterName.includes('void') || monsterName.includes('eternal') || monsterName.includes('abyss') || monsterName.includes('null')) {
+    if(monsterKey.includes('void') || monsterKey.includes('eternal') || monsterKey.includes('abyss') || monsterKey.includes('null')) {
         evolutionData.stats.voidKills++;
         updateQuestProgress('void_kills', 1);
     }
@@ -2872,26 +2895,40 @@ function updatePanels(){
         let isEquipped = false;
         for(let k in equipped) { if(equipped[k] === it){ isEquipped = true; break; } }
         let rarColor = it.rarityData ? it.rarityData.color : '#aaaaaa';
-        let qtyText = (it.quantity > 1) ? `<span style="background:rgba(0,0,0,0.6); padding:3px 10px; border-radius:12px; font-size:13px; margin-left:8px; font-weight:bold; color:#fff;">x${it.quantity}</span>` : '';
-        let sellBtn = isEquipped ? '<span style="color:#888; font-size:11px;">[Equipado]</span>' : `<button class='sell-btn' onclick='openSellModal(${i})'>Vender</button>`;
-        let lvlInfo = it.minLevel ? `<span style="background:rgba(90,185,255,0.3); padding:2px 8px; border-radius:6px; font-size:11px; margin-left:6px; color:#5ab9ff; font-weight:bold;">Lv.${it.minLevel}</span>` : '';
-        let rarTag = it.rarity && it.rarity !== 'common' ? `<span style="color:${rarColor}; font-size:10px; font-weight:bold; margin-left:4px;">[${it.rarityData.name.toUpperCase()}]</span>` : '';
-        
-        // Stats do item para venda (igual ao comprar)
+        let rarityName = it.rarityData ? it.rarityData.name : 'Comum';
+        let slotLabel = {
+            weapon:'Arma', shield:'Escudo', cape:'Capa', boots:'Botas', ring:'Anel', consumable:'Consumível'
+        }[slot] || slot || 'Item';
+        let qtyText = (it.quantity > 1) ? `<span class="sell-pill" style="color:#fff;">x${it.quantity}</span>` : '';
+        let sellBtn = isEquipped ? '<span class="sell-pill" style="color:#aaa; flex-shrink:0;">Equipado</span>' : `<button class='sell-btn' onclick='openSellModal(${i})'>Vender</button>`;
+        let lvlInfo = it.minLevel ? `<span class="sell-pill" style="color:#5ab9ff; border-color:rgba(90,185,255,0.35);">Lv.${it.minLevel}</span>` : '';
+        let rarTag = `<span class="sell-pill" style="color:${rarColor}; border-color:${rarColor}; background:rgba(255,255,255,0.06);">${rarityName}</span>`;
+        let valueTag = `<span class="sell-pill" style="color:gold; border-color:rgba(255,215,0,0.25);">${it.value || 0} gold</span>`;
+
+        // Stats do item para venda, em chips separados para ficar claro o ganho de cada atributo
         let statsInfo = [];
-        if(it.atk)   statsInfo.push(`<span style="color:#ff8844; font-size:11px;">⚔ +${it.atk} ATK</span>`);
-        if(it.def)   statsInfo.push(`<span style="color:#4488ff; font-size:11px;">🛡 +${it.def} DEF</span>`);
-        if(it.hp)    statsInfo.push(`<span style="color:#ff5555; font-size:11px;">❤ +${it.hp} HP</span>`);
-        if(it.sp)    statsInfo.push(`<span style="color:#5599ff; font-size:11px;">💧 +${it.sp} SP</span>`);
-        if(it.speed) statsInfo.push(`<span style="color:#ffff44; font-size:11px;">⚡ +VEL</span>`);
-        let statsLine = statsInfo.length ? `<div style="font-size:10px; margin-top:3px; display:flex; gap:4px; flex-wrap:wrap;">${statsInfo.join('')}</div>` : '';
-        
-        shopInventoryPanel.innerHTML+=`<div class='item' style="min-height:60px; opacity:${isEquipped?0.5:1}; border-left:3px solid ${rarColor}; display:flex; align-items:center; justify-content:space-between; flex-direction:column; align-items:flex-start; gap:6px;">
-            <div style="width:100%; display:flex; align-items:center; justify-content:space-between;">
-                <div>${icon}${qtyText} <b style="color:${rarColor}">${it.name}</b>${lvlInfo}${rarTag}</div>
+        if(it.atk)   statsInfo.push(`<span class="sell-stat-chip" style="color:#ff8844;">⚔ +${it.atk} ATK</span>`);
+        if(it.def)   statsInfo.push(`<span class="sell-stat-chip" style="color:#66aaff;">🛡 +${it.def} DEF</span>`);
+        if(it.hp)    statsInfo.push(`<span class="sell-stat-chip" style="color:#ff6666;">❤ +${it.hp} HP</span>`);
+        if(it.sp)    statsInfo.push(`<span class="sell-stat-chip" style="color:#6699ff;">💧 +${it.sp} SP</span>`);
+        if(it.speed) statsInfo.push(`<span class="sell-stat-chip" style="color:#ffff66;">⚡ Velocidade</span>`);
+        if(it.heal)  statsInfo.push(`<span class="sell-stat-chip" style="color:#44ff88;">💊 Cura ${it.heal} HP</span>`);
+        let statsLine = statsInfo.length ? `<div class="sell-stats-line">${statsInfo.join('')}</div>` : `<div class="sell-stats-line"><span class="sell-stat-chip" style="color:#aaa;">Sem atributo de combate</span></div>`;
+        let descLine = it.desc ? `<div class="sell-item-desc">${it.desc}</div>` : '';
+
+        shopInventoryPanel.innerHTML+=`<div class='item sell-item-card' style="opacity:${isEquipped?0.5:1}; border-left:4px solid ${rarColor};">
+            <div class="sell-item-header">
+                <div class="sell-item-main">
+                    <span class="sell-item-icon">${icon}</span>
+                    <div style="min-width:0; flex:1;">
+                        <div class="sell-item-title" style="color:${rarColor};" title="${it.name}">${it.name}</div>
+                        <div class="sell-item-meta">${rarTag}<span class="sell-pill">${slotLabel}</span>${lvlInfo}${qtyText}${valueTag}</div>
+                    </div>
+                </div>
                 ${sellBtn}
             </div>
             ${statsLine}
+            ${descLine}
         </div>`;
 
     });
@@ -3463,18 +3500,10 @@ const SHOP_BUY_FILTERS = [
 function renderShopBuyFilterBar() {
     let bar = document.getElementById('shopBuyFilterBar');
     if(!bar) return;
-    bar.innerHTML = SHOP_BUY_FILTERS.map(f => {
-        let active = shopBuyFilter === f.key;
-        return `<button onclick="setShopBuyFilter('${f.key}')" style="
-            padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;
-            border:1px solid ${active ? 'rgba(90,185,255,0.9)' : 'rgba(255,255,255,0.15)'};
-            background:${active ? 'linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.15))' : 'rgba(255,255,255,0.08)'};
-            color:${active ? '#fff' : '#aaa'}; font-weight:${active ? 'bold' : 'normal'};
-            box-shadow:${active ? '0 0 12px rgba(90,185,255,0.4), inset 0 0 8px rgba(90,185,255,0.1)' : 'none'};
-            transition:all .15s; text-shadow:${active ? '0 0 8px rgba(90,185,255,0.8)' : 'none'};">${f.label}</button>`;
-    }).join('');
+    bar.innerHTML = SHOP_BUY_FILTERS.map(f =>
+        `<button class="qi-filter-btn${shopBuyFilter === f.key ? ' active' : ''}" onclick="setShopBuyFilter('${f.key}')">${f.label}</button>`
+    ).join('');
 }
-
 function setShopBuyFilter(key) {
     shopBuyFilter = key;
     updateShopBuyPanel();
@@ -3482,8 +3511,8 @@ function setShopBuyFilter(key) {
 
 function updateShopBuyPanel() {
     let buyItemsPanel = document.getElementById('shopBuyItemsPanel');
-    let goldDisplay = document.getElementById('shopGoldDisplay');
-    if(goldDisplay) goldDisplay.innerText = player.gold;
+    let goldDisplay = document.getElementById('shopBuyGoldDisplay');
+    if(goldDisplay) goldDisplay.innerHTML = `💰 Gold: <b style="color:gold">${player.gold}</b>`;
     if(!buyItemsPanel) return;
     
     let html = '';
@@ -3527,7 +3556,7 @@ function updateShopBuyPanel() {
         }
         html += `<div class='item' style="min-height:65px; opacity:${disabled?0.45:1}; display:flex; align-items:center; justify-content:space-between; gap:8px;">
             <div style="flex:1; min-width:0;">${item.icon} <b>${item.name}</b>${lockInfo}<br><small style="color:#aaa;">${item.desc}</small>${statsLine}${compLine}</div>
-            <button onclick="buyItem(shopCatalog[${i}])" style="padding:8px 14px; border-radius:8px; border:none; background:${canBuy&&canLevel?'linear-gradient(135deg,#f0a500,#c07800)':'#444'}; color:${canBuy&&canLevel?'#fff':'#888'}; cursor:${disabled?'not-allowed':'pointer'}; font-weight:bold; white-space:nowrap; flex-shrink:0;">
+            <button class="buy-btn${disabled ? ' disabled' : ''}" ${disabled ? '' : `onclick="buyItem(shopCatalog[${i}])"`}>
                 ${item.buyPrice}💰
             </button>
         </div>`;
@@ -3542,18 +3571,10 @@ function updateShopBuyPanel() {
 function renderShopSellFilterBar() {
     let bar = document.getElementById('shopSellFilterBar');
     if(!bar) return;
-    bar.innerHTML = SHOP_SELL_FILTERS.map(f => {
-        let active = shopSellFilter === f.key;
-        return `<button onclick="setShopSellFilter('${f.key}')" style="
-            padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;
-            border:1px solid ${active ? 'rgba(90,185,255,0.9)' : 'rgba(255,255,255,0.15)'};
-            background:${active ? 'linear-gradient(135deg, rgba(90,185,255,0.3), rgba(90,185,255,0.15))' : 'rgba(255,255,255,0.08)'};
-            color:${active ? '#fff' : '#aaa'}; font-weight:${active ? 'bold' : 'normal'};
-            box-shadow:${active ? '0 0 12px rgba(90,185,255,0.4), inset 0 0 8px rgba(90,185,255,0.1)' : 'none'};
-            transition:all .15s; text-shadow:${active ? '0 0 8px rgba(90,185,255,0.8)' : 'none'};">${f.label}</button>`;
-    }).join('');
+    bar.innerHTML = SHOP_SELL_FILTERS.map(f =>
+        `<button class="qi-filter-btn${shopSellFilter === f.key ? ' active' : ''}" onclick="setShopSellFilter('${f.key}')">${f.label}</button>`
+    ).join('');
 }
-
 function setShopSellFilter(key) {
     shopSellFilter = key;
     updatePanels();
@@ -5009,9 +5030,6 @@ function launchNewGame() {
 }
 
 function launchGame(loadSave) {
-    // Inicializa o herói e a engine 3D se ainda não foram inicializados
-    if(!hero) initHero();
-    
     // Cria o heroLabel se ainda não existir
     if(!heroLabel) {
         heroLabel = document.createElement("div");
@@ -5030,10 +5048,6 @@ function launchGame(loadSave) {
     log("<span style='color:gold'>🎮 Bem-vindo, " + playerName + "! Derrote inimigos, colete itens e explore os biomas!</span>");
 }
 
-// Inicializa o jogo após THREE.js carregar
-window.addEventListener('load', function() {
-    // Pequeno delay para garantir que THREE.js está completamente carregado
-    setTimeout(function() {
 renderStartScreen();
 
 // Inicializa modo de controle e lista de teclas
@@ -5046,8 +5060,6 @@ menuOverlay.addEventListener('click', () => {
     closeAllMenus();
 });
 document.body.appendChild(menuOverlay);
-    }, 100);
-});
 </script>
 </body>
 </html>
