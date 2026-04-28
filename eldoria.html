@@ -1849,10 +1849,39 @@ function spawnMonster(elite=false, mobMode=false, emergencySpawn=false){
     monsterGroup.position.set(sX, 0, sZ);
     
     // Stats baseados no tipo de monstro e nível
+    // Fórmula de XP revisada para escalar melhor até o level 100
+    // XP base aumenta exponencialmente com o nível do jogador
+    let baseXpFormula = Math.floor(monsterType.baseXp * (1 + lv * 0.15));
+    
+    // Multiplicador baseado na dificuldade do monstro
+    // Monstros mais difíceis (menos comuns, mais fortes) dão mais XP
+    let difficultyMultiplier = 1.0;
+    if (monsterType.name.includes('Dragon') || monsterType.name.includes('Lord') || monsterType.name.includes('Abomination') || monsterType.name.includes('Horror')) {
+        difficultyMultiplier = 2.5; // Monstros muito difíceis
+    } else if (monsterType.name.includes('Guardian') || monsterType.name.includes('Knight') || monsterType.name.includes('Phantom') || monsterType.name.includes('Warden')) {
+        difficultyMultiplier = 2.0; // Monstros difíceis
+    } else if (monsterType.name.includes('Elemental') || monsterType.name.includes('Golem') || monsterType.name.includes('Beast') || monsterType.name.includes('Stalker')) {
+        difficultyMultiplier = 1.7; // Monstros medianos-difíceis
+    } else if (monsterType.name.includes('Spirit') || monsterType.name.includes('Wraith') || monsterType.name.includes('Construct')) {
+        difficultyMultiplier = 1.5; // Monstros medianos
+    } else if (monsterType.name.includes('Wolf') || monsterType.name.includes('Orc') || monsterType.name.includes('Bandit')) {
+        difficultyMultiplier = 1.2; // Monstros comuns-medianos
+    }
+    // Slimes, Goblins e outros básicos mantêm 1.0
+    
     let hpMult = elite ? 20 : (mobMode ? 0.7 : 1);
     let hp = elite ? 1200 + (player.level * 100) : Math.floor((monsterType.baseHp + (lv * 10)) * hpMult);
     let name = elite ? "BOSS Demon" : monsterType.name;
-    let xpGain = elite ? 500+(player.level*50) : Math.floor((monsterType.baseXp + (lv*5)) * (mobMode ? 0.5 : 1));
+    
+    // XP scaling: aumenta com nível do jogador e do monstro, com multiplicador de dificuldade
+    let xpGain = elite 
+        ? Math.floor((500 + player.level * 80) * 2.5) // Elite/Boss base XP - muito maior
+        : Math.floor(baseXpFormula * difficultyMultiplier * (mobMode ? 0.6 : 1.0));
+    
+    // Garante XP mínimo escalando com o nível
+    let minXP = Math.floor(20 + player.level * 8);
+    if (xpGain < minXP) xpGain = minXP;
+    
     let atkGain = elite ? 25+(player.level*3) : Math.floor((monsterType.baseAtk + (lv*2)) * (mobMode ? 0.8 : 1));
     
     monsterGroup.userData={ 
@@ -1957,12 +1986,14 @@ function spawnBossWithScaling() {
     let bossAtkMult = 1 + lvAboveBase * 0.09; // +9%  ATK por nível (lv5=1x, lv15=1.9x, lv25=2.8x)
     let baseHp  = Math.floor((1200 + player.level * 120) * bossHpMult);
     let baseAtk = Math.floor((25   + player.level * 4)   * bossAtkMult);
-    let baseXp  = 500 + (player.level * 60);
+    // XP do Boss escalado para ser significativo (quase um level up)
+    let xpNeededForNextLevel = 50 * Math.pow(1.25, player.level) + ((player.level + 1) * 20);
+    let baseXp  = Math.floor(xpNeededForNextLevel * 0.7); // Boss dá ~70% do XP necessário para o próximo nível
     
     // Aplicar multiplicador nos stats
     let hp = Math.floor(baseHp * bossMultiplier);
     let atk = Math.floor(baseAtk * bossMultiplier);
-    let xpGain = Math.floor(baseXp * bossMultiplier); // XP também escala
+    let xpGain = Math.floor(baseXp * bossMultiplier * 1.5); // Boss dá XP extra (multiplicador 1.5x)
     
     let bossName = bv.name;
     monsterGroup.userData={
@@ -1992,13 +2023,20 @@ function spawnBossWithScaling() {
 }
 
 function killMonster(m){
-    // Recompensa por matar Boss: 2x XP base, garantido mínimo de 40% do XP do nível atual
+    // Recompensa por matar Boss: XP já vem calculado com bônus, garantido mínimo de 40% do XP do nível atual
     let xpGain = m.userData.xp;
+    let monsterName = m.userData.name;
+    let monsterLevel = m.userData.level || player.level;
+    
     if(m.userData.isBoss) {
-        xpGain = m.userData.xp * 2;
+        // Boss já tem XP ampliado no spawn, mas garantimos mínimo significativo
         let minXp = Math.floor(player.next * 0.4); // Mínimo 40% do XP necessário pro próximo nível
         if(xpGain < minXp) xpGain = minXp;
         floatingText("👹 BOSS KILL! +" + xpGain + " XP!", m.position, "gold");
+        log(`<span style="color:gold; font-weight:bold;">👹 ${monsterName} (Lv.${monsterLevel}) derrotado! +${xpGain} XP</span>`);
+    } else {
+        // Monstros normais: mostra XP no log
+        log(`<span style="color:#88ff88;">⚔️ ${monsterName} (Lv.${monsterLevel}) derrotado! +${xpGain} XP</span>`);
     }
     
     player.xp += xpGain;
@@ -2214,13 +2252,34 @@ function checkLevel(){
     while(player.xp >= player.next){
         player.level++; 
         player.xp -= player.next; // Subtrai o XP necessário em vez de zerar
-        player.next = Math.floor(player.next * 1.5);
+        // Fórmula de XP revisada para escalar melhor até o level 100
+        // Em vez de multiplicar por 1.5, usamos uma progressão mais suave
+        let xpNeeded = Math.floor(50 * Math.pow(1.25, player.level - 1) + (player.level * 20));
+        player.next = xpNeeded;
+        // Bônus de level up escalonáveis - aumentam conforme o nível
         let bonus = "";
         let r = Math.random();
-        if(r < 0.25) { player.baseAtk += 5; bonus = "+5 ATK"; }
-        else if(r < 0.5) { player.baseDef += 4; bonus = "+4 DEF"; }
-        else if(r < 0.75) { player.maxHp += 40; bonus = "+40 HP"; }
-        else { player.maxSp += 30; bonus = "+30 SP"; }
+        let levelScale = 1 + (player.level * 0.1); // Escala 10% por nível
+        if(r < 0.25) { 
+            let atkBonus = Math.floor(5 * levelScale);
+            player.baseAtk += atkBonus; 
+            bonus = "+" + atkBonus + " ATK"; 
+        }
+        else if(r < 0.5) { 
+            let defBonus = Math.floor(4 * levelScale);
+            player.baseDef += defBonus; 
+            bonus = "+" + defBonus + " DEF"; 
+        }
+        else if(r < 0.75) { 
+            let hpBonus = Math.floor(40 * levelScale);
+            player.maxHp += hpBonus; 
+            bonus = "+" + hpBonus + " HP"; 
+        }
+        else { 
+            let spBonus = Math.floor(30 * levelScale);
+            player.maxSp += spBonus; 
+            bonus = "+" + spBonus + " SP"; 
+        }
         player.hp = player.maxHp; player.sp = player.maxSp;
         heroLabel.querySelector(".playerName").innerHTML=playerName+" Lv."+player.level;
         playSound('levelup');
@@ -2619,9 +2678,10 @@ function recalcStats(){
     // Calcula bônus das habilidades
     let skillBonuses = getSkillBonuses();
     
-    // Stats base do jogador (sem equipamentos e sem skills)
-    let baseAtk = 10 + Math.floor(player.level * 2);
-    let baseDef = 5 + Math.floor(player.level * 1.5);
+    // Stats base do jogador - escalam melhor com o nível até 100
+    // Fórmula revisada para progressão mais consistente
+    let baseAtk = Math.floor(10 + (player.level * 3.5) + (player.level * player.level * 0.02));
+    let baseDef = Math.floor(5 + (player.level * 2.5) + (player.level * player.level * 0.015));
     
     // Aplica porcentagens das habilidades
     let finalAtk = Math.floor(baseAtk * (1 + skillBonuses.atkPercent / 100));
@@ -2632,9 +2692,9 @@ function recalcStats(){
     player.atk = finalAtk + bAtk;
     player.def = finalDef + bDef;
     
-    // HP e SP com bônus percentual das habilidades
-    let baseMaxHp = 100 + Math.floor(player.level * 10);
-    let baseMaxSp = 100 + Math.floor(player.level * 5);
+    // HP e SP com bônus percentual das habilidades - escalam melhor
+    let baseMaxHp = Math.floor(100 + (player.level * 18) + (player.level * player.level * 0.3));
+    let baseMaxSp = Math.floor(100 + (player.level * 8) + (player.level * player.level * 0.1));
     
     let finalMaxHp = Math.floor(baseMaxHp * (1 + skillBonuses.hpPercent / 100));
     let finalMaxSp = Math.floor(baseMaxSp * (1 + skillBonuses.spPercent / 100));
