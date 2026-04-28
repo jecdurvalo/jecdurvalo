@@ -666,15 +666,38 @@ const RARITIES = {
     epic:      { name:'Épico',    color:'#cc44ff', hex:0xcc44ff, glowHex:0x9900cc, mult:1.65 },
     legendary: { name:'Lendário', color:'#ff9900', hex:0xff9900, glowHex:0xff6600, mult:2.2  }
 };
-function rollRarity(biome) {
-    // Biomas mais avançados têm mais chance de raros
-    let w = {common: Math.max(38,60-biome*5), rare: Math.min(36,25+biome*3), epic: Math.min(18,12+biome*2), legendary: Math.min(8,3+biome)};
+function rollRarity(biome, playerLevel) {
+    // Chance de raridade baseada no bioma E nível do jogador
+    // Níveis baixos têm chance MUITO menor de itens raros
+    let levelFactor = Math.min(1.0, playerLevel / 50); // Fator que vai de 0 a 1 conforme level 1-50
+    
+    // Pesos base ajustados por bioma
+    let baseWeights = {
+        common: Math.max(38, 60 - biome * 5),
+        rare: Math.min(36, 25 + biome * 3),
+        epic: Math.min(18, 12 + biome * 2),
+        legendary: Math.min(8, 3 + biome)
+    };
+    
+    // Aplicar penalidade de nível para raridades altas
+    // Level 1: 90% menos chance de raro+, Level 20: sem penalidade
+    let rarePenalty = Math.max(0.1, 1.0 - (playerLevel - 1) / 20);
+    let epicPenalty = Math.max(0.05, 1.0 - (playerLevel - 1) / 15);
+    let legendaryPenalty = Math.max(0.02, 1.0 - (playerLevel - 1) / 10);
+    
+    let w = {
+        common: baseWeights.common,
+        rare: baseWeights.rare * rarePenalty,
+        epic: baseWeights.epic * epicPenalty,
+        legendary: baseWeights.legendary * legendaryPenalty
+    };
+    
     let total = Object.values(w).reduce((a,b)=>a+b,0), roll = Math.random()*total, cum = 0;
     for(let [k,v] of Object.entries(w)){ cum+=v; if(roll<cum) return k; }
     return 'common';
 }
-function applyRarity(item, biome) {
-    let rk = rollRarity(biome);
+function applyRarity(item, biome, playerLevel) {
+    let rk = rollRarity(biome, playerLevel);
     let r = RARITIES[rk];
     item.rarity = rk; item.rarityData = r;
     if(rk !== 'common') {
@@ -1029,6 +1052,23 @@ const lootTable=[
     { name:"Anel Eterno",          slot:"ring",    atk:16, hp:55, sp:28,desc:"Poder que não acaba.",          icon:"♾️", value:225, minLevel:35 },
     { name:"Anel das Sombras",     slot:"ring",    atk:14, sp:40,       desc:"Feito de trevas condensadas.",   icon:"🌑", value:210, minLevel:35 },
     { name:"Elixir Supremo",       slot:"consumable", heal:600,         desc:"Restaura quase toda a vida.",    icon:"🌟", stackable:true, value:200, minLevel:35 },
+
+    // ══════════════════════════════════════════════
+    // TIER 6 — Lv 50+  (Endgame - Shadow Realm / Celestial / Void)
+    // ══════════════════════════════════════════════
+    { name:"Lâmina do Abismo",     slot:"weapon",  atk:45, sp:25, hp:-20, desc:"Forjada nas profundezas do vazio.", icon:"🌑", value:350, minLevel:50 },
+    { name:"Espada da Aurora",     slot:"weapon",  atk:42, hp:50, sp:15, desc:"Luz pura materializada.", icon:"🌅", value:380, minLevel:50 },
+    { name:"Cajado Cósmico",       slot:"weapon",  atk:35, sp:70, desc:"Poder das estrelas nas mãos.", icon:"🌌", value:400, minLevel:50 },
+    { name:"Glaive Eterno",        slot:"weapon",  atk:48, speed:0.05, desc:"Gira sem parar.", icon:"⚔️", value:360, minLevel:50 },
+    { name:"Baluarte Divino",      slot:"shield",  def:32, hp:80, sp:20, desc:"Proteção dos deuses.", icon:"🛡️", value:320, minLevel:50 },
+    { name:"Escudo Singularidade", slot:"shield",  def:35, sp:60, desc:"Distorce o espaço-tempo.", icon:"🌀", value:340, minLevel:50 },
+    { name:"Asas da Eternidade",   slot:"cape",    def:18, sp:70, hp:35, speed:0.08, desc:"Transcende o tempo.", icon:"✨", value:380, minLevel:50 },
+    { name:"Manto Dimensional",    slot:"cape",    def:20, sp:60, hp:25, desc:"Tecido entre dimensões.", icon:"🌐", value:360, minLevel:50 },
+    { name:"Botas do Vazio",       slot:"boots",   def:12, speed:0.28, sp:25, desc:"Passos na escuridão.", icon:"👣", value:300, minLevel:50 },
+    { name:"Sandálias Celestiais", slot:"boots",   def:16, speed:0.20, hp:55, sp:20, desc:"Toque divino.", icon:"☁️", value:320, minLevel:50 },
+    { name:"Anel Primordial",      slot:"ring",    atk:22, hp:70, sp:35, desc:"Essência da criação.", icon:"💍", value:400, minLevel:50 },
+    { name:"Anel do Fênix",        slot:"ring",    atk:18, hp:90, sp:25, desc:"Renasce com você.", icon:"🔥", value:380, minLevel:50 },
+    { name:"Orbe Suprema",         slot:"consumable", heal:1000, desc:"Restauração completa.", icon:"💎", stackable:true, value:350, minLevel:50 },
 ];
 
 // Adicionar durabilidade aos itens e quantidade para stackables
@@ -1914,16 +1954,22 @@ function killMonster(m){
     
     // Drop de itens no chão (randomico)
     let dropCount = m.userData.isBoss ? 5 : Math.floor(Math.random() * 3); // Boss dropa mais itens
+    
+    // Filtrar lootTable baseado no nível do jogador
+    let availableLoot = lootTable.filter(item => item.minLevel <= player.level);
+    if(availableLoot.length === 0) availableLoot = lootTable.filter(item => item.minLevel <= 1); // Fallback para level 1
+    
     for(let i = 0; i < dropCount; i++) {
         if(Math.random() > 0.4) { // 60% chance de dropar cada item
-            let randomItem = lootTable[Math.floor(Math.random() * lootTable.length)];
+            // Escolher item apenas dos disponíveis para o nível atual
+            let randomItem = availableLoot[Math.floor(Math.random() * availableLoot.length)];
             let itemCopy = createItem(randomItem);
             // Aplicar raridade baseada no bioma (boss sempre tem melhor chance)
             if(m.userData.isBoss) {
                 // Boss força bioma +2 para raridade (mínimo raro)
-                itemCopy = applyRarity(itemCopy, Math.min(4, currentBiome + 2));
+                itemCopy = applyRarity(itemCopy, Math.min(4, currentBiome + 2), player.level);
             } else {
-                itemCopy = applyRarity(itemCopy, currentBiome);
+                itemCopy = applyRarity(itemCopy, currentBiome, player.level);
             }
 
             // Adicionar quantidade se for stackable
@@ -2725,6 +2771,13 @@ function sellItem(i){
 function equip(i){
     let it = inventory[i];
     let s = it.slot;
+
+    // Verificar nível necessário para equipar (minLevel)
+    if(it.minLevel && player.level < it.minLevel) {
+        log(`<span style='color:red'>🔒 Nível ${it.minLevel} necessário para equipar!</span>`);
+        floatingText("Nível " + it.minLevel + " necessário!", hero.position, "red");
+        return;
+    }
 
     // Consumíveis não são equipados — são usados diretamente ao clicar
     if(s === 'consumable') {
