@@ -5,7 +5,7 @@
 <title>Eldoria</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <style>
-html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black; font-family:'Segoe UI', Arial, sans-serif; touch-action: none; }
+html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:black; font-family:'Segoe UI', Arial, sans-serif; touch-action: none; -webkit-text-size-adjust: 100%; }
 
 #gameCanvas { position:fixed; inset:0; display:block; width:100vw!important; height:100vh!important; z-index: 1; }
 
@@ -88,18 +88,65 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 /* --- CONTROLES MOBILE --- */
 #mobileControls { position: fixed; inset: 0; pointer-events: none; z-index: 4000; }
+
+/* Botão de Pausa Mobile */
+#pauseBtnMobile {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    color: white;
+    font-size: 22px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5000;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s, background 0.2s;
+}
+#pauseBtnMobile:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+
 .mobile-btn { 
     pointer-events: auto; position: absolute; 
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)); 
-    border: 2px solid rgba(255,255,255,0.4);
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08)); 
+    border: 2px solid rgba(255,255,255,0.35);
     border-radius: 50%; color: white; font-weight: bold;
     display: flex; align-items: center; justify-content: center;
     user-select: none; -webkit-tap-highlight-color: transparent;
     backdrop-filter: blur(5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.35);
     transition: transform 0.1s, background 0.2s;
+    /* Garante que botões mobile fiquem abaixo de menus modais */
+    z-index: 1;
 }
-.mobile-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
+.mobile-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.25); }
+
+/* Botão de Attack Principal - Maior e em destaque */
+#btnAtk {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #ff3333, #cc0000);
+    border: 3px solid #fff;
+    font-size: 16px;
+    box-shadow: 0 4px 25px rgba(255, 51, 51, 0.6);
+    z-index: 2;
+}
+
+/* Botões de skill menores */
+#btnSkill, #btnAOE, #btnDash {
+    width: 58px;
+    height: 58px;
+    font-size: 14px;
+}
+
 #joystickArea { 
     position: absolute; bottom: 40px; left: 40px; 
     width: 140px; height: 140px; background: rgba(255,255,255,0.08); 
@@ -111,14 +158,15 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3)); border-radius: 50%;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-#btnAtk { bottom: 60px; right: 180px; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(211, 51, 51, 0.5), rgba(150, 30, 30, 0.5)); font-size: 18px; }
-#btnSkill { bottom: 160px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(45, 127, 255, 0.5), rgba(30, 80, 180, 0.5)); }
-#btnAOE { bottom: 230px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(153, 51, 255, 0.5), rgba(100, 30, 180, 0.5)); font-weight: bold; }
-#btnDash { bottom: 300px; right: 140px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(51, 255, 153, 0.5), rgba(30, 180, 100, 0.5)); font-weight: bold; }
-#btnInv { bottom: 160px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(100, 100, 100, 0.5), rgba(60, 60, 60, 0.5)); }
-#btnShop { bottom: 60px; right: 40px; width: 65px; height: 65px; background: linear-gradient(135deg, rgba(230, 126, 34, 0.5), rgba(180, 90, 20, 0.5)); }
-#btnEvo { bottom: 160px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(200, 150, 0, 0.5)); font-size: 24px; }
-#btnMap { bottom: 60px; right: 110px; width: 55px; height: 55px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.5), rgba(0, 180, 80, 0.5)); font-size: 20px; font-weight: bold; }
+/* Layout desktop dos botões - cluster ergonômico */
+#btnAtk { bottom: 70px; right: 160px; }
+#btnSkill { bottom: 40px; right: 90px; }
+#btnAOE { bottom: 100px; right: 90px; }
+#btnDash { bottom: 70px; right: 50px; }
+#btnInv { bottom: 160px; right: 40px; }
+#btnShop { bottom: 60px; right: 40px; }
+#btnEvo { bottom: 120px; right: 40px; }
+#btnMap { bottom: 60px; right: 110px; }
 
 #controls{
     position:fixed; top:18px; right:18px; background:linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
@@ -150,6 +198,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     background:linear-gradient(135deg, #0a1930, #152545);
     border:3px solid #5ab9ff; padding:25px; border-radius:20px; z-index:5002; color:white;
     box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
+    /* Previne scroll indevido */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 /* Overlay de fundo para menus */
 #menuOverlay {
@@ -157,17 +208,27 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 }
-/* Responsividade para modais em telas menores */
-@media (max-width: 600px) {
+/* Responsividade para modais em telas menores - tela cheia no mobile */
+@media (max-width: 800px) {
     #statusWindow, #shopWindow, #evolutionWindow {
-        width: 95%;
-        max-height: 85vh;
-        padding: 15px;
-        border-radius: 15px;
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        top: 0;
+        left: 0;
+        transform: none;
+        padding: 60px 15px 15px 15px; /* Padding superior maior para não sobrepor botão de pausa */
+        border-radius: 0;
+        border: none;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     #statusWindow h2, #shopWindow h2, #evolutionWindow h2 {
         font-size: 18px;
         margin-bottom: 10px;
+        padding-right: 30px;
     }
     .item {
         padding: 10px;
@@ -389,7 +450,242 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 /* Esconde controles desktop no mobile e vice-versa */
 @media (max-width: 800px) { #controls-btn, #controls-tooltip { display: none; } }
-@media (min-width: 801px) { #mobileControls { display: none; } }
+@media (min-width: 801px) { 
+    #mobileControls, #pauseBtnMobile, #mobileMenuBtn, #mobileMenuPanel { display: none; } 
+}
+
+/* ============================================
+   OTIMIZAÇÕES PARA MOBILE
+   ============================================ */
+@media (max-width: 800px) {
+    /* HUD compacto - menor e mais discreto */
+    #hud {
+        top: 10px;
+        left: 10px;
+        width: 160px;
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 10px;
+    }
+    
+    /* Barras mais compactas */
+    .bar {
+        height: 12px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+    
+    /* Esconder SP e XP por padrão no mobile */
+    #spBarContainer, #xpBarContainer {
+        display: none;
+    }
+    
+    /* Mostrar apenas HP */
+    #hpBarContainer {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Labels menores */
+    .bar-label, #hpBarContainer, #spBarContainer, #xpBarContainer {
+        font-size: 8px !important;
+    }
+    
+    /* REMOVER minimapa no mobile */
+    #minimapContainer {
+        display: none !important;
+    }
+    
+    /* Ocultar chat em mobile - mostra apenas notificações floating */
+    #combatLog {
+        display: none;
+    }
+    
+    /* Joystick menor e mais baixo */
+    #joystickArea {
+        bottom: 15px;
+        left: 15px;
+        width: 100px;
+        height: 100px;
+    }
+    
+    #joystickStick {
+        top: 30px;
+        left: 30px;
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* Botões de ação agrupados ergonomicamente na base direita - SEM SOBREPOSIÇÃO */
+    /* Botão de ATK principal - maior e em destaque no canto inferior direito */
+    #btnAtk {
+        bottom: 80px !important;
+        right: 30px !important;
+        width: 88px !important;
+        height: 88px !important;
+        font-size: 17px !important;
+        background: linear-gradient(135deg, #ff3333, #cc0000) !important;
+        border: 3px solid #fff !important;
+        box-shadow: 0 4px 25px rgba(255, 51, 51, 0.6) !important;
+    }
+    
+    /* Skill (Z) - abaixo e à esquerda do ataque */
+    #btnSkill {
+        bottom: 30px !important;
+        right: 130px !important;
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 13px !important;
+    }
+    
+    /* Dash (C) - acima e à esquerda do ataque */
+    #btnDash {
+        bottom: 115px !important;
+        right: 100px !important;
+        width: 52px !important;
+        height: 52px !important;
+        font-size: 12px !important;
+    }
+    
+    /* AOE (X) - acima do ataque */
+    #btnAOE {
+        bottom: 150px !important;
+        right: 45px !important;
+        width: 52px !important;
+        height: 52px !important;
+        font-size: 12px !important;
+    }
+    
+    /* ESCONDER botões individuais de menu no mobile - usar menu unificado */
+    #btnInv, #btnShop, #btnMap, #btnEvo {
+        display: none !important;
+    }
+    
+    /* BOTÃO DO MENU UNIFICADO NO TOPO */
+    #mobileMenuBtn {
+        display: flex !important;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, rgba(90,185,255,0.3), rgba(30,60,100,0.5));
+        border: 2px solid rgba(90,185,255,0.5);
+        border-radius: 10px;
+        color: white;
+        font-size: 20px;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 3000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        backdrop-filter: blur(5px);
+        transition: transform 0.2s, background 0.2s;
+    }
+    
+    #mobileMenuBtn:active {
+        transform: scale(0.9);
+        background: linear-gradient(135deg, rgba(90,185,255,0.5), rgba(30,60,100,0.7));
+    }
+    
+    /* PAINEL DO MENU UNIFICADO INFERIOR */
+    #mobileMenuPanel {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(180deg, rgba(10,25,50,0.98), rgba(5,15,35,0.99));
+        border-top: 3px solid rgba(90,185,255,0.5);
+        border-radius: 20px 20px 0 0;
+        z-index: 5000;
+        padding: 15px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    #mobileMenuPanel.active {
+        display: block;
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    
+    /* ABAS DO MENU MOBILE */
+    .mobile-menu-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid rgba(90,185,255,0.3);
+        padding-bottom: 10px;
+    }
+    
+    .mobile-menu-tab {
+        flex: 1;
+        padding: 10px;
+        background: rgba(90,185,255,0.1);
+        border: 1px solid rgba(90,185,255,0.3);
+        border-radius: 8px;
+        color: rgba(255,255,255,0.7);
+        font-size: 12px;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .mobile-menu-tab.active {
+        background: rgba(90,185,255,0.3);
+        border-color: rgba(90,185,255,0.6);
+        color: white;
+    }
+    
+    .mobile-menu-content {
+        display: none;
+    }
+    
+    .mobile-menu-content.active {
+        display: block;
+    }
+    
+    /* Equip bar menor no mobile */
+    #equipBar {
+        top: 120px !important;
+        left: 10px;
+    }
+    
+    .equip-slot-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+    }
+}
+
+/* Desktop não mostra elementos mobile */
+@media (min-width: 801px) {
+    #mobileMenuBtn, #mobileMenuPanel {
+        display: none !important;
+    }
+}
+
+/* Auto-hide do HUD em mobile - classe para esconder */
+.hud-hidden #hud {
+    transform: translateX(-250px);
+    transition: transform 0.3s ease-out;
+}
+
+.hud-hidden #minimapContainer {
+    transform: translateX(150px);
+    transition: transform 0.3s ease-out;
+}
+
+.hud-hidden #equipBar {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
 
 /* ---- BARRA DE EQUIPAMENTO RÁPIDO ---- */
 #equipBar {
@@ -474,6 +770,34 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 .qi-item.equipped-in-slot { opacity: 0.45; cursor: default; }
 .qi-section-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
 @media (max-width: 800px) { #equipBar { display: none; } #quickInvPanel { width: 92vw; right: -100vw; top: 10px; max-height: calc(100vh - 20px); } #quickInvPanel.open { right: 4vw; } }
+
+
+/* === FIX MOBILE 2026-04-28: layout, pause e menu === */
+@media (max-width: 800px) {
+    :root { --safe-bottom: env(safe-area-inset-bottom, 0px); --safe-top: env(safe-area-inset-top, 0px); }
+    #pauseBtnMobile { display: flex !important; top: calc(10px + var(--safe-top)); right: 10px; width: 44px; height: 44px; z-index: 6500; }
+    #mobileMenuBtn { top: calc(10px + var(--safe-top)) !important; right: 62px !important; width: 44px !important; height: 44px !important; z-index: 6400 !important; }
+    #mobileControls { z-index: 3500; }
+    #joystickArea { bottom: calc(22px + var(--safe-bottom)) !important; left: 18px !important; width: 112px !important; height: 112px !important; }
+    #joystickStick { top: 36px !important; left: 36px !important; width: 40px !important; height: 40px !important; }
+    #btnAtk { right: 18px !important; bottom: calc(38px + var(--safe-bottom)) !important; width: 82px !important; height: 82px !important; font-size: 16px !important; }
+    #btnSkill { right: 112px !important; bottom: calc(22px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+    #btnDash { right: 112px !important; bottom: calc(88px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+    #btnAOE { right: 46px !important; bottom: calc(132px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+    #mobileMenuPanel { z-index: 6200 !important; padding: 16px 14px calc(18px + var(--safe-bottom)) 14px !important; max-height: min(72vh, 560px) !important; box-sizing: border-box; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    body.mobile-menu-open #mobileControls { pointer-events: none; opacity: .35; }
+    .mobile-menu-tabs { position: sticky; top: 0; background: linear-gradient(180deg, rgba(10,25,50,1), rgba(10,25,50,.92)); z-index: 2; padding-top: 2px; }
+}
+@media (max-width: 380px) {
+    #hud { width: 145px !important; }
+    #btnAtk { width: 74px !important; height: 74px !important; right: 14px !important; }
+    #btnSkill { right: 100px !important; }
+    #btnDash { right: 100px !important; }
+    #btnAOE { right: 36px !important; }
+    #joystickArea { width: 100px !important; height: 100px !important; }
+    #joystickStick { top: 31px !important; left: 31px !important; width: 38px !important; height: 38px !important; }
+}
+
 </style>
 </head>
 <body>
@@ -481,9 +805,9 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 <div id="hud">
     <h2 style="margin:0; text-shadow: 0 0 10px rgba(255, 214, 107, 0.5);">⚔️ Eldoria</h2>
     <div id="goldDisplay" style="color:gold; font-weight:bold; margin-bottom:5px; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);">💰 Gold: 0</div>
-    <div id="hpBarContainer">HP <div class="bar"><div id="hp" class="fill hp"></div></div></div>
-    SP <div class="bar"><div id="sp" class="fill sp"></div></div>
-    XP <div class="bar"><div id="xp" class="fill xp"></div></div>
+    <div id="hpBarContainer" style="cursor: pointer;" title="Toque para expandir/ocultar barras">HP <div class="bar"><div id="hp" class="fill hp"></div></div></div>
+    <div id="spBarContainer">SP <div class="bar"><div id="sp" class="fill sp"></div></div></div>
+    <div id="xpBarContainer">XP <div class="bar"><div id="xp" class="fill xp"></div></div></div>
     <div id="skillCooldowns" style="margin-top:8px; font-size:11px; color:#aaa; display:flex; gap:8px; flex-wrap:wrap;"></div>
 </div>
 
@@ -498,17 +822,48 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
     <div style="font-size:10px; color:rgba(255,255,255,0.3); text-align:center; margin-top:10px;">TAB para abrir/fechar</div>
 </div>
 
+<!-- Botão do menu unificado (visível apenas no mobile) -->
+<div id="mobileMenuBtn">☰</div>
+
+<!-- Painel do menu unificado inferior (visível apenas no mobile) -->
+<div id="mobileMenuPanel">
+    <div class="mobile-menu-tabs">
+        <div class="mobile-menu-tab active" onclick="switchMobileTab('inventory', event)">🎒 Inventário</div>
+        <div class="mobile-menu-tab" onclick="switchMobileTab('shop', event)">🏪 Loja</div>
+        <div class="mobile-menu-tab" onclick="switchMobileTab('evolution', event)">🏆 Evolução</div>
+    </div>
+    
+    <!-- Conteúdo do Inventário -->
+    <div id="mobile-inventory-content" class="mobile-menu-content active">
+        <div id="mobileInventoryGrid" class="inventory-grid"></div>
+        <div style="margin-top:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
+            <h4 style="margin:0 0 10px 0; color:#ffd700; font-size:13px;">⚔️ Equipamento Atual</h4>
+            <div id="mobileEquippedPanel" style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;"></div>
+        </div>
+    </div>
+    
+    <!-- Conteúdo da Loja -->
+    <div id="mobile-shop-content" class="mobile-menu-content">
+        <div id="mobileShopGrid"></div>
+    </div>
+    
+    <!-- Conteúdo de Evolução -->
+    <div id="mobile-evolution-content" class="mobile-menu-content">
+        <div id="mobileEvolutionTree"></div>
+    </div>
+</div>
+
 <div id="mobileControls">
     <div id="joystickArea"><div id="joystickStick"></div></div>
     <div id="btnAtk" class="mobile-btn">ATK</div>
     <div id="btnSkill" class="mobile-btn">Z</div>
     <div id="btnAOE" class="mobile-btn">X</div>
     <div id="btnDash" class="mobile-btn">C</div>
-    <div id="btnInv" class="mobile-btn">V</div>
-    <div id="btnShop" class="mobile-btn">E</div>
-    <div id="btnEvo" class="mobile-btn">🏆</div>
-    <div id="btnMap" class="mobile-btn">M</div>
+    <!-- Botões de menu removidos - agora usam menu unificado -->
 </div>
+
+<!-- Botão de Pausa Mobile -->
+<div id="pauseBtnMobile" onclick="togglePause()">⏸️</div>
 
 <div id="controls-btn">🎮</div>
 <div id="controls-tooltip">
@@ -625,7 +980,7 @@ html,body{ margin:0; width:100%; height:100%; overflow:hidden; background:black;
 
 <script>
 /* -------- ESTADO E MECÂNICAS ORIGINAIS RESTAURADAS -------- */
-let playerName = "Aventureiro"; // Nome do jogador (definido na tela inicial)
+let playerName = "Aventureiro"; // Nome do jogador (definido na tela inicial))
 let player={ level:1, xp:0, next:50, gold:0, baseAtk:10, baseDef:3, atk:10, def:3, hp:100, maxHp:100, sp:100, maxSp:100 };
 let inventory=[];
 let monsters=[];
@@ -652,13 +1007,43 @@ const AUTO_SAVE_INTERVAL = 30000; // 30 segundos em milissegundos
 
 // -------- ÁUDIO CHIPTUNE (estilo 8-bit) --------
 let _audioCtx = null;
+let _audioInitialized = false;
+
+function initAudio() {
+    if (!_audioInitialized) {
+        try {
+            _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            _audioInitialized = true;
+            console.log('Audio context initialized');
+        } catch(e) {
+            console.warn('Failed to initialize audio context:', e);
+        }
+    }
+}
+
 function getAudioCtx() {
-    if(!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(!_audioCtx) {
+        // Tenta inicializar, mas pode falhar se não houver interação do usuário
+        try {
+            _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            _audioInitialized = true;
+        } catch(e) {
+            console.warn('Audio context not ready - needs user interaction');
+            return null;
+        }
+    }
     return _audioCtx;
 }
 function playSound(type) {
     try {
         let ctx = getAudioCtx();
+        if(!ctx) return; // Audio context não está pronto
+        
+        // Resume audio context se estiver suspenso (necessário para alguns browsers)
+        if(ctx.state === 'suspended') {
+            ctx.resume().catch(e => console.warn('Could not resume audio context:', e));
+        }
+        
         let t = ctx.currentTime;
         // Nota com square wave (chipy)
         function chip(freq, dur, vol, delay) {
@@ -1345,6 +1730,12 @@ const BOSS_BIOME_VISUALS = [
 let playerDots = []; // Efeitos de dano ao longo do tempo no player (ex: veneno)
 
 function log(m){
+    // Em mobile, não mostra no combatLog (oculto), apenas notificações floating
+    if (window.innerWidth <= 800) {
+        showFloatingNotification(m);
+        return;
+    }
+    
     let entry = document.createElement('div');
     entry.style.cssText = 'white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; animation:logSlideIn .25s ease;';
     entry.innerHTML = m;
@@ -1355,6 +1746,52 @@ function log(m){
         el.style.transition = 'opacity .3s';
     });
     while(combatLog.children.length > 5) combatLog.removeChild(combatLog.lastChild);
+}
+
+// Sistema de notificações floating para mobile
+let floatingNotifications = [];
+function showFloatingNotification(message, duration = 2500) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: ${100 + (floatingNotifications.length * 40)}px;
+        background: linear-gradient(135deg, rgba(5,15,35,0.95), rgba(15,25,45,0.9));
+        border: 1px solid rgba(90,185,255,0.4);
+        border-radius: 12px;
+        padding: 8px 16px;
+        color: #d8e7ff;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 9999;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        transition: opacity 0.3s ease, bottom 0.3s ease;
+        max-width: 90%;
+        text-align: center;
+    `;
+    notification.innerHTML = message;
+    document.body.appendChild(notification);
+    floatingNotifications.push(notification);
+    
+    // Fade in
+    setTimeout(() => { notification.style.opacity = '1'; }, 10);
+    
+    // Remove após duração
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.bottom = (parseInt(notification.style.bottom) - 20) + 'px';
+        setTimeout(() => {
+            if (notification.parentNode) notification.parentNode.removeChild(notification);
+            floatingNotifications = floatingNotifications.filter(n => n !== notification);
+            // Reposiciona notificações restantes
+            floatingNotifications.forEach((n, idx) => {
+                n.style.bottom = (100 + (idx * 40)) + 'px';
+            });
+        }, 300);
+    }, duration);
 }
 
 // Funções do Sistema de Evolução
@@ -1670,6 +2107,8 @@ function toggleEvolution() {
         renderSkillTree();
         renderActiveSkillTree();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
 }
 
@@ -2632,7 +3071,12 @@ function handleJoy(e) {
     joyStick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
 }
 
-joyArea.addEventListener('touchstart', e => { isJoyactive = true; handleJoy(e); });
+joyArea.addEventListener('touchstart', e => { 
+    isJoyactive = true; 
+    handleJoy(e); 
+    initAudio(); // Inicializa audio no primeiro toque
+    showHUD(); // Mostra HUD ao tocar
+});
 window.addEventListener('touchmove', e => { if(isJoyactive) { handleJoy(e); e.preventDefault(); } }, {passive: false});
 window.addEventListener('touchend', () => { 
     isJoyactive = false; 
@@ -2640,23 +3084,236 @@ window.addEventListener('touchend', () => {
     joyStick.style.transform = `translate(0,0)`;
 });
 
-/* Mobile Buttons */
-document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
-document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
-document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); castAOE(); });
-document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); castDash(); });
-document.getElementById('btnInv').addEventListener('touchstart', (e) => { e.preventDefault(); toggleV(); });
-document.getElementById('btnShop').addEventListener('touchstart', (e) => { e.preventDefault(); toggleShop(); });
-document.getElementById('btnEvo').addEventListener('touchstart', (e) => { e.preventDefault(); toggleEvolution(); });
+/* -------- AUTO-HIDE DO HUD EM MOBILE -------- */
+let hudTimeout;
+let hudVisible = true;
 
-// Adicionar eventos de click para desktop
-document.getElementById('btnAtk').addEventListener('click', () => { attack(); });
-document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
-document.getElementById('btnAOE').addEventListener('click', () => { castAOE(); });
-document.getElementById('btnDash').addEventListener('click', () => { castDash(); });
-document.getElementById('btnInv').addEventListener('click', () => { toggleV(); });
-document.getElementById('btnShop').addEventListener('click', () => { toggleShop(); });
-document.getElementById('btnEvo').addEventListener('click', () => { toggleEvolution(); });
+function hideHUD() {
+    if (window.innerWidth <= 800 && hudVisible) {
+        document.body.classList.add('hud-hidden');
+        hudVisible = false;
+    }
+}
+
+function showHUD() {
+    if (window.innerWidth <= 800 && !hudVisible) {
+        document.body.classList.remove('hud-hidden');
+        hudVisible = true;
+    }
+    // Reseta timer
+    clearTimeout(hudTimeout);
+    // Esconde após 3 segundos sem interação
+    hudTimeout = setTimeout(() => hideHUD(), 3000);
+}
+
+// Toggle para mostrar XP/SP no mobile
+let mobileBarsExpanded = false;
+function toggleMobileBars() {
+    if (window.innerWidth > 800) return;
+    
+    const spContainer = document.getElementById('spBarContainer');
+    const xpContainer = document.getElementById('xpBarContainer');
+    
+    if (!spContainer || !xpContainer) return;
+    
+    mobileBarsExpanded = !mobileBarsExpanded;
+    
+    if (mobileBarsExpanded) {
+        spContainer.style.display = 'block';
+        xpContainer.style.display = 'block';
+    } else {
+        spContainer.style.display = 'none';
+        xpContainer.style.display = 'none';
+    }
+}
+
+// Adicionar evento de toque no HP bar para expandir
+const hpBarContainer = document.getElementById('hpBarContainer');
+if (hpBarContainer) {
+    hpBarContainer.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        toggleMobileBars();
+    });
+}
+
+// Mostrar HUD ao interagir com botões mobile
+['btnAtk', 'btnSkill', 'btnAOE', 'btnDash', 'btnInv', 'btnShop', 'btnMap', 'btnEvo'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+        btn.addEventListener('touchstart', () => showHUD());
+        btn.addEventListener('click', () => showHUD());
+    }
+});
+
+// Iniciar timer de auto-hide
+if (window.innerWidth <= 800) {
+    hudTimeout = setTimeout(() => hideHUD(), 3000);
+}
+
+/* Botão do Menu Unificado Mobile */
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+if (mobileMenuBtn) {
+    // Usa pointerdown para evitar duplo toggle em celular (touchstart + click).
+    mobileMenuBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        initAudio();
+        toggleMobileMenu();
+    });
+}
+
+function setPauseState(paused, reason = 'manual') {
+    gamePaused = paused;
+    if (typeof pauseOverlay !== 'undefined' && pauseOverlay) {
+        pauseOverlay.style.display = paused && reason === 'manual' ? 'flex' : 'none';
+    }
+    const pauseBtn = document.getElementById('pauseBtnMobile');
+    if (pauseBtn) pauseBtn.innerHTML = paused ? '▶️' : '⏸️';
+}
+
+function openMobileMenu() {
+    if (!mobileMenuPanel) return;
+    if (statusWindow && statusWindow.style.display === 'block') statusWindow.style.display = 'none';
+    if (shopWindow && shopWindow.style.display === 'block') shopWindow.style.display = 'none';
+    if (evolutionWindow && evolutionWindow.style.display === 'block') evolutionWindow.style.display = 'none';
+    if (menuOverlay) menuOverlay.style.display = 'none';
+    if (typeof quickInvOpen !== 'undefined' && quickInvOpen) closeQuickInv();
+    mobileMenuPanel.classList.add('active');
+    document.body.classList.add('mobile-menu-open');
+    setPauseState(true, 'menu');
+    updateMobileMenuContent();
+}
+
+function closeMobileMenu() {
+    if (!mobileMenuPanel) return;
+    mobileMenuPanel.classList.remove('active');
+    document.body.classList.remove('mobile-menu-open');
+    setPauseState(false, 'menu');
+}
+
+function toggleMobileMenu() {
+    if (!mobileMenuPanel) return;
+    if (mobileMenuPanel.classList.contains('active')) closeMobileMenu();
+    else openMobileMenu();
+}
+
+function switchMobileTab(tabName, evt) {
+    document.querySelectorAll('.mobile-menu-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.mobile-menu-content').forEach(content => content.classList.remove('active'));
+    const tabEl = evt?.currentTarget || window.event?.target;
+    if (tabEl) tabEl.classList.add('active');
+    const contentEl = document.getElementById(`mobile-${tabName}-content`);
+    if (contentEl) contentEl.classList.add('active');
+    updateMobileMenuContent();
+}
+
+function updateMobileMenuContent() {
+    const activeTab = document.querySelector('.mobile-menu-tab.active');
+    if (!activeTab) return;
+    
+    // Atualiza inventário mobile
+    const mobileInvGrid = document.getElementById('mobileInventoryGrid');
+    if (mobileInvGrid && inventory.length > 0) {
+        mobileInvGrid.innerHTML = '';
+        inventory.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.innerHTML = `
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">${item.icon}</span>
+                    <div>
+                        <div style="font-weight:bold;color:#ffd700;">${item.name}</div>
+                        <div style="font-size:11px;color:#aaa;">${item.desc || ''}</div>
+                    </div>
+                </div>
+                ${item.sellValue ? `<button class="sell-btn" onclick="sellItem(${index})">Vender (${item.sellValue}g)</button>` : ''}
+            `;
+            mobileInvGrid.appendChild(itemDiv);
+        });
+    } else if (mobileInvGrid) {
+        mobileInvGrid.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Inventário vazio</div>';
+    }
+    
+    // Atualiza equipamento mobile
+    const mobileEquippedPanel = document.getElementById('mobileEquippedPanel');
+    if (mobileEquippedPanel) {
+        mobileEquippedPanel.innerHTML = '';
+        const slots = ['weapon', 'shield', 'cape', 'boots', 'ring1', 'ring2'];
+        const slotLabels = {
+            weapon: '⚔️ Arma',
+            shield: '🛡️ Escudo',
+            cape: '🧥 Capa',
+            boots: '👢 Botas',
+            ring1: '💍 Anel 1',
+            ring2: '💍 Anel 2'
+        };
+        
+        slots.forEach(slot => {
+            const equippedItem = equipped[slot];
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = 'background:rgba(255,255,255,0.08); padding:8px; border-radius:6px; font-size:11px;';
+            
+            if (equippedItem) {
+                itemDiv.innerHTML = `
+                    <div style="color:#ffd700; font-weight:bold; margin-bottom:3px;">${slotLabels[slot]}</div>
+                    <div style="color:#fff;">${equippedItem.icon} ${equippedItem.name}</div>
+                `;
+            } else {
+                itemDiv.innerHTML = `
+                    <div style="color:#888; font-style:italic;">${slotLabels[slot]}<br>(vazio)</div>
+                `;
+            }
+            mobileEquippedPanel.appendChild(itemDiv);
+        });
+    }
+    
+    // Atualiza loja mobile
+    const mobileShopGrid = document.getElementById('mobileShopGrid');
+    if (mobileShopGrid) {
+        mobileShopGrid.innerHTML = '';
+        shopItems.forEach((item, idx) => {
+            const canBuy = gold >= item.price;
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.innerHTML = `
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">${item.icon}</span>
+                    <div>
+                        <div style="font-weight:bold;color:#ffd700;">${item.name}</div>
+                        <div style="font-size:11px;color:#aaa;">${item.desc || ''}</div>
+                        <div style="font-size:12px;color:#ff9800;margin-top:4px;">${item.price}g</div>
+                    </div>
+                </div>
+                <button class="buy-btn ${canBuy ? '' : 'disabled'}" onclick="buyItem(${idx})">Comprar</button>
+            `;
+            mobileShopGrid.appendChild(itemDiv);
+        });
+    }
+    
+    // Atualiza evolução mobile - clona o conteúdo da árvore de habilidades
+    const mobileEvoTree = document.getElementById('mobileEvolutionTree');
+    if (mobileEvoTree && evolutionWindow) {
+        const skillTree = evolutionWindow.querySelector('.skill-tree');
+        if (skillTree) {
+            mobileEvoTree.innerHTML = skillTree.outerHTML;
+        } else {
+            mobileEvoTree.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Árvore de habilidades indisponível</div>';
+        }
+    }
+}
+
+/* Mobile Buttons - inicializa audio no primeiro toque */
+document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); attack(); });
+document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castFireball(); });
+document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castAOE(); });
+document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castDash(); });
+
+// Adicionar eventos de click para desktop - inicializa audio no primeiro click
+document.getElementById('btnAtk').addEventListener('click', () => { initAudio(); attack(); });
+document.getElementById('btnSkill').addEventListener('click', () => { initAudio(); castFireball(); });
+document.getElementById('btnAOE').addEventListener('click', () => { initAudio(); castAOE(); });
+document.getElementById('btnDash').addEventListener('click', () => { initAudio(); castDash(); });
 
 /* -------- UI E LOJA -------- */
 function getSkillBonuses() {
@@ -3189,6 +3846,8 @@ function toggleV(){
         renderSkillTree();
         renderActiveSkillTree();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
 }
 
@@ -3728,12 +4387,20 @@ function toggleShop(){
         renderShopBuyFilterBar();
         updateShopBuyPanel();
         gamePaused = true;
+        // Fecha menu mobile se estiver aberto
+        if (mobileMenuPanel) mobileMenuPanel.classList.remove('active');
     }
 }
 
 // Função para fechar todos os menus (usada pela tecla ESC)
 function closeAllMenus() {
     let closed = false;
+    
+    // Fechar menu mobile
+    if (mobileMenuPanel && mobileMenuPanel.classList.contains('active')) {
+        closeMobileMenu();
+        closed = true;
+    }
 
     // Fechar quick swap
     if(quickInvOpen) { closeQuickInv(); closed = true; }
@@ -3852,7 +4519,8 @@ function saveGame() {
         localStorage.setItem(getSaveKey(), JSON.stringify(saveData));
         log("<span style='color:#888'>💾 Jogo salvo.</span>");
     } catch(e) {
-        console.warn('Auto-save falhou:', e);
+        console.error('Auto-save falhou:', e);
+        log("<span style='color:red'>⚠️ Erro ao salvar jogo. Verifique o armazenamento do navegador.</span>");
     }
 }
 
@@ -3915,7 +4583,8 @@ function loadGame() {
         
         log("<span style='color:cyan'>💾 Progresso carregado! Bem-vindo de volta, " + playerName + "!</span>");
     } catch(e) {
-        console.warn('Falha ao carregar save:', e);
+        console.error('Falha ao carregar save:', e);
+        log("<span style='color:orange'>⚠️ Erro ao carregar progresso. Iniciando novo jogo.</span>");
     }
 }
 
@@ -3991,6 +4660,7 @@ function animate(time){
             let emergencySpawn = nearbyEnemies < 2;
             let isMobMode = !isElite && (Math.random() < mobChance) && currentBiome >= 1;
 
+            // Verifica novamente o limite antes de spawnar (race condition fix)
             if(isMobMode) {
                 // Tamanho do grupo cresce 1 a cada 5 níveis acima de 10 (lv10=3~6, lv15=4~7, lv20=5~8...)
                 let groupBonus = Math.floor(Math.max(0, player.level - 10) / 5);
@@ -3999,12 +4669,19 @@ function animate(time){
                 let mobCount = Math.floor(Math.random() * (mobMax - mobMin + 1)) + mobMin;
                 let available = maxMons - monsters.length;
                 mobCount = Math.min(mobCount, available);
-                for(let i = 0; i < mobCount; i++) {
+                
+                // Verifica se ainda há espaço antes de spawnar cada monstro
+                for(let i = 0; i < mobCount && monsters.length < maxMons; i++) {
                     setTimeout(() => { if(monsters.length < maxMons) spawnMonster(false, true, emergencySpawn); }, i * 120);
                 }
-                log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
+                if(mobCount > 0) {
+                    log("<span style='color:orange'>⚠️ Um grupo de monstros está se aproximando!</span>");
+                }
             } else {
-                spawnMonster(isElite, false, emergencySpawn);
+                // Verifica limite antes de spawnar monstro único
+                if(monsters.length < maxMons) {
+                    spawnMonster(isElite, false, emergencySpawn);
+                }
             }
         }
         lastSpawnTime = time;
@@ -4489,17 +5166,27 @@ function animate(time){
 // Overlay de pausa
 let pauseOverlay = document.createElement('div');
 pauseOverlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; color:white; font-size:48px; font-weight:bold; align-items:center; justify-content:center; flex-direction:column;';
-pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18px; margin-top:20px; color:#aaa;">Pressione P para continuar</div>';
+pauseOverlay.innerHTML = '<div>⏸️ JOGO PAUSADO</div><div style="font-size:18px; margin-top:20px; color:#aaa;">Toque em ▶️ ou pressione P para continuar</div>';
 document.body.appendChild(pauseOverlay);
 
 function togglePause() {
-    gamePaused = !gamePaused;
-    pauseOverlay.style.display = gamePaused ? 'flex' : 'none';
-    if(gamePaused) {
-        log("<span style='color:yellow'>Jogo pausado</span>");
-    } else {
+    // No mobile, o botão de pause também fecha o menu unificado se ele estiver aberto.
+    if (mobileMenuPanel && mobileMenuPanel.classList.contains('active')) {
+        closeMobileMenu();
         log("<span style='color:cyan'>Jogo continuado</span>");
+        return;
     }
+
+    // Não permite pausar manualmente se já houver um modal aberto.
+    if (statusWindow.style.display === 'block' || 
+        shopWindow.style.display === 'block' || 
+        evolutionWindow.style.display === 'block' ||
+        quickInvOpen) {
+        return;
+    }
+    setPauseState(!gamePaused, 'manual');
+    if(gamePaused) log("<span style='color:yellow'>Jogo pausado</span>");
+    else log("<span style='color:cyan'>Jogo continuado</span>");
 }
 
 // -------- SISTEMA DE MODO DE CONTROLE --------
@@ -4585,6 +5272,14 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
     positionEquipBar();
+    
+    // Ajusta visibilidade do HUD ao redimensionar
+    if (innerWidth <= 800) {
+        hudTimeout = setTimeout(() => hideHUD(), 3000);
+    } else {
+        document.body.classList.remove('hud-hidden');
+        hudVisible = true;
+    }
 });
 
 // Adicionar decorações ricas por bioma
@@ -4848,6 +5543,7 @@ addBiomeDecorations();
 const statusWindow = document.getElementById('statusWindow');
 const shopWindow = document.getElementById('shopWindow');
 const evolutionWindow = document.getElementById('evolutionWindow');
+const mobileMenuPanel = document.getElementById('mobileMenuPanel');
 
 // Overlay e tela de Game Over
 let gameOverOverlay = document.createElement('div');
@@ -5230,9 +5926,41 @@ setControlMode('wasd');
 
 // Overlay para menus (fundo escuro estilo pause) — usa o elemento HTML já existente no CSS
 const menuOverlay = document.getElementById('menuOverlay');
-menuOverlay.addEventListener('click', () => {
-    closeAllMenus();
+if (menuOverlay) {
+    menuOverlay.addEventListener('click', () => {
+        closeAllMenus();
+    });
+}
+
+// -------- CLEANUP DE EVENT LISTENERS E SAVE AO FECHAR --------
+// Salva jogo ao fechar/abandonar a página
+window.addEventListener('beforeunload', () => {
+    saveGame();
+});
+
+// Limpeza de event listeners ao descarregar a página (evita memory leak)
+window.addEventListener('unload', () => {
+    // Remove listeners do joystick
+    if(joyArea) {
+        joyArea.removeEventListener('touchstart', handleJoy);
+    }
+    window.removeEventListener('touchmove', handleJoy);
+    window.removeEventListener('touchend', handleJoy);
+    
+    // Fecha audio context se existir
+    if(_audioCtx && _audioCtx.state !== 'closed') {
+        _audioCtx.close().catch(e => console.warn('Error closing audio context:', e));
+    }
+    
+    // Salva uma última vez antes de fechar
+    saveGame();
 });
 </script>
 </body>
+
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/<unique-path>/script.js"></script>
+    
 </html>

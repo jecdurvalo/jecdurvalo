@@ -1,118 +1,144 @@
 <div align="center">
 
-# 🚀 Projeto de Estudo - Qwen com Vercel
+# 🕹️ ARCADE LAB
 
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+### 🎮 Web Game Development with AI
 
-*Explorando as capacidades da IA Qwen no desenvolvimento web*
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)]()
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)]()
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)]()
+[![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=three.js&logoColor=white)]()
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)]()
+
+[![Claude](https://img.shields.io/badge/Claude-CC785C?style=for-the-badge&logo=anthropic&logoColor=white)]()
+[![OpenAI](https://img.shields.io/badge/GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white)]()
+[![Qwen](https://img.shields.io/badge/Qwen-615EEE?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQTYuMDUgNi4wNSAwIDAgMCA2IDguMDRWNWMwIDEuMS0uOSAyLTIgMmgtMXY1YTIgMiAwIDAgMCAyIDJoMTRhMiAyIDAgMCAwIDItMnYtNWgtMWEyIDIgMCAwIDEtMi0ydi0uOTZBNi4wNSA2LjA1IDAgMCAwIDEyIDJaIi8+PC9zdmc+&logoColor=white)]()
 
 </div>
 
 ---
 
-## 📖 Sobre o Projeto
-
-Este repositório reúne uma coleção de **projetos experimentais** desenvolvidos para estudar e explorar as capacidades da **IA Qwen** na criação de aplicações web interativas, jogos e landing pages modernas.
-
-Todos os projetos são hospedados na plataforma **Vercel**, garantindo performance, escalabilidade e acesso rápido.
-
----
-
-## 📁 Estrutura do Repositório
-
-| Projeto | Descrição | Status |
-|---------|-----------|--------|
-| `index.html` | 🏠 Página principal do portfólio | ✅ Concluído |
-| `flappy-bird.html` | 🐦 Clássico jogo Flappy Bird | ✅ Concluído |
-| `eldoria.html` | ⚔️ RPG de aventura em 3D | ✅ Concluído |
-| `ozzy-mario.html` | 🎮 Jogo Ozzy Mario (padronizado) | ✅ Concluído |
-| `consorcio-landing/` | 💼 Landing page institucional (Vite) | ✅ Concluído |
-| `ozzy-game-clean/` | ✨ Versão otimizada do jogo Ozzy | ✅ Concluído |
-
----
-
-## 🛠️ Stack Tecnológica
+## 🧠 About This Project
 
 <div align="center">
 
-| Front-End | Ferramentas | Deploy |
-|-----------|-------------|--------|
-| ![HTML5](https://img.shields.io/badge/HTML5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white) | ![Canvas API](https://img.shields.io/badge/Canvas_API-%23000000.svg?style=for-the-badge&logo=html5&logoColor=white) | ![Vercel](https://img.shields.io/badge/Vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white) |
-| ![CSS3](https://img.shields.io/badge/CSS3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white) | ![Vite](https://img.shields.io/badge/Vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white) | |
-| ![JavaScript](https://img.shields.io/badge/JavaScript-%23F7DF1E.svg?style=for-the-badge&logo=javascript&logoColor=black) | ![React](https://img.shields.io/badge/React-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) | |
-| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) | | |
+**An experimental web game development laboratory**  
+*Exploring the potential of Artificial Intelligence as a creative co-pilot*
 
 </div>
 
-### Principais Tecnologias
+This repository is a **personal study project** focused on exploring different generative AI models for game development using **native web technologies** (HTML, CSS, JavaScript).
 
-- **HTML5** — Estruturação semântica e acessível
-- **CSS3** — Estilização moderna com animações fluidas
-- **JavaScript (ES6+)** — Lógica robusta e interatividade
-- **React 19** — Biblioteca UI componentizada
-- **Tailwind CSS 4** — Utilitários CSS modernos
-- **Canvas API** — Renderização performática de jogos 2D
-- **Vite 8** — Build tool ultrarrápido para otimização
-- **Vercel** — Deploy contínuo com CDN global
+### 🤖 AI Models Used
 
----
+| AI | Provider | Role in Project |
+|:--:|:--------:|-----------------|
+| 🟠 **Claude** | Anthropic | Code architecture, refactoring & best practices |
+| 🔵 **GPT-4 / Codex** | OpenAI | Game logic generation & debugging |
+| 🟣 **Qwen** | Alibaba | Experimentation with new approaches & features |
 
-## 🎯 Objetivos de Aprendizado
-
-- [x] Dominar a **Canvas API** para desenvolvimento de jogos
-- [x] Explorar integrações com **IA generativa** no fluxo de desenvolvimento
-- [x] Praticar **boas práticas** de código limpo e organização
-- [x] Implementar **deploy automatizado** com CI/CD
-- [x] Criar experiências web **responsivas e performáticas**
+> 💡 **Goal:** Compare and learn from different AI approaches to game creation, focusing on lightweight solutions based on web standards.
 
 ---
 
-## 🚀 Como Rodar Localmente
+## 🎯 Projects
 
-```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/seu-repositorio.git
+<div align="center">
 
-# Acesse a pasta do projeto
-cd seu-repositorio
+| 📁 Project | 🎮 Type | 📊 Status |
+|:----------:|:-------:|:---------:|
+| [**Arcade Hub**](./index.html) | Central Portal | ✅ Ready |
+| [**Eldoria**](./eldoria/) | 3D RPG (Three.js) | 🔄 Continuous Improvements |
+| [**Flappy Bird**](./flappy-bird/) | Endless Runner | ✅ Ready |
+| [**Ozzy Mario**](./ozzy-mario/) | Platformer | ✅ Ready |
+| [**Ozzy Clean**](./ozzy-game-clean/) | Modular Refactoring | ✅ Ready |
+| [**Landing Page**](./consorcio-landing/) | Institutional (React) | ⏳ Not Started |
 
-# Abra o index.html diretamente no navegador
-# Ou use um servidor local (opcional)
-npx serve .
+</div>
+
+---
+
+## 🛠️ Tech Stack
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    FRONTEND CORE                        │
+├─────────────────────────────────────────────────────────┤
+│  HTML5  │  CSS3  │  JavaScript ES6+  │  Three.js       │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   AI ASSISTANTS                         │
+├─────────────────────────────────────────────────────────┤
+│   Claude    │    GPT-4/Codex    │      Qwen           │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   DEPLOY & TOOLS                        │
+├─────────────────────────────────────────────────────────┤
+│     Vercel     │    VS Code     │    Git/GitHub        │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🌐 Links de Demo
+## 🚀 Quick Start
 
-<div align="center">
+```bash
+# 📥 Clone the repository
+git clone https://github.com/jecdurvalo/jecdurvalo.git
 
-🎮 **[Testar Projetos em Produção](https://jecdurvalo.vercel.app/)**
+# 📂 Navigate to the project
+cd jecdurvalo
 
-</div>
+# ▶️ Start a local server
+npx serve .
 
-> Acesse o portfólio completo com todos os jogos e aplicações deployadas na Vercel.
-
----
-
-## 📬 Contato
-
-<div align="center">
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/seu-perfil)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/seu-usuario)
-
-</div>
+# 🌐 Or open index.html directly in your browser
+```
 
 ---
 
+## 🌐 Live Demo
+
 <div align="center">
 
-⭐ **Se este projeto te ajudou, deixe uma star!** ⭐
+### [🎮 PLAY NOW →](https://jecdurvalo.vercel.app/)
 
-*Desenvolvido com 💜 e muito café*
+_Hosted on Vercel with continuous deployment_
+
+</div>
+
+---
+
+## 📚 Learnings & Insights
+
+This project focuses primarily on **experimental learning**. Each interaction with different AIs generates insights about:
+
+- ✨ Code patterns and architecture
+- 🎯 Different approaches to the same problem
+- 🔧 Prompt engineering techniques for development
+- 📈 Evolution of generated code quality
+
+---
+
+## 📬 Connect
+
+<div align="center">
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0A66C2)](https://www.linkedin.com/in/jdurvalo/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white&labelColor=181717)](https://github.com/jecdurvalo)
+
+</div>
+
+---
+
+<div align="center">
+
+**Made with** 💜 **and lots of AI experimentation**
+
+*© 2026 - Study Project & Portfolio*
 
 </div>

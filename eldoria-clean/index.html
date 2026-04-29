@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eldoria</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+
+<!-- CSS modular -->
+<link rel="stylesheet" href="src/css/main.css">
+<link rel="stylesheet" href="src/css/hud.css">
+<link rel="stylesheet" href="src/css/ui.css">
+<link rel="stylesheet" href="src/css/mobile.css">
+<link rel="stylesheet" href="src/css/effects.css">
+
+</head>
+<body>
+
+<!-- ── HUD PRINCIPAL ── -->
+<div id="hud">
+  <h2 style="margin:0;text-shadow:0 0 10px rgba(255,214,107,0.5);">⚔️ Eldoria</h2>
+  <div id="goldDisplay" style="color:gold;font-weight:bold;margin-bottom:5px;text-shadow:0 0 8px rgba(255,215,0,0.6);">💰 Gold: 0</div>
+  <div id="hudPlayerName" style="color:#aaa;font-size:12px;margin-bottom:8px;"></div>
+  <div id="hpBarContainer" style="cursor:pointer;" title="Toque para expandir">HP <div class="bar"><div id="hp" class="fill hp"></div></div></div>
+  <div id="spBarContainer">SP <div class="bar"><div id="sp" class="fill sp"></div></div></div>
+  <div id="xpBarContainer">XP <div class="bar"><div id="xp" class="fill xp"></div></div></div>
+  <div id="skillCooldowns" style="margin-top:8px;font-size:11px;color:#aaa;display:flex;gap:8px;flex-wrap:wrap;"></div>
+</div>
+
+<!-- Barra de equipamento rápido -->
+<div id="equipBar"></div>
+
+<!-- Painel Quick Swap (TAB) -->
+<div id="quickInvPanel">
+  <h4>⚡ Quick Swap <button onclick="document.getElementById('quickInvPanel').classList.remove('open')" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button></h4>
+  <div class="qi-filter-bar" id="qiFilterBar"></div>
+  <div id="qiContent"></div>
+</div>
+
+<!-- Menu unificado mobile -->
+<div id="mobileMenuBtn" onclick="toggleMobileMenu()">☰</div>
+<div id="mobileMenuPanel">
+  <div class="mobile-menu-tabs">
+    <div class="mobile-menu-tab active"  data-tab="inventory" onclick="switchMobileTab('inventory', event)">🎒 Inventário</div>
+    <div class="mobile-menu-tab"         data-tab="shop"      onclick="switchMobileTab('shop', event)">🏪 Loja</div>
+    <div class="mobile-menu-tab"         data-tab="evolution" onclick="switchMobileTab('evolution', event)">🏆 Evolução</div>
+  </div>
+  <div id="mobile-inventory-content" class="mobile-menu-content active">
+    <div id="mobileInventoryGrid" class="inventory-grid"></div>
+  </div>
+  <div id="mobile-shop-content" class="mobile-menu-content">
+    <div id="mobileShopGrid" class="inventory-grid"></div>
+  </div>
+  <div id="mobile-evolution-content" class="mobile-menu-content">
+    <div id="mobileEvolutionTree"></div>
+  </div>
+</div>
+
+<!-- Controles mobile -->
+<div id="mobileControls">
+  <div id="joystickArea"><div id="joystickStick"></div></div>
+  <div id="btnAtk"   class="mobile-btn" ontouchstart="basicAttack()"  onclick="basicAttack()">ATK</div>
+  <div id="btnSkill" class="mobile-btn" ontouchstart="castFireball()" onclick="castFireball()">Z</div>
+  <div id="btnAOE"   class="mobile-btn" ontouchstart="castAOE()"      onclick="castAOE()">X</div>
+  <div id="btnDash"  class="mobile-btn" ontouchstart="doDash()"       onclick="doDash()">C</div>
+</div>
+
+<!-- Botão de pausa mobile -->
+<div id="pauseBtnMobile" onclick="togglePause()">⏸️</div>
+
+<!-- Botão de controles desktop -->
+<div id="controls-btn" onclick="document.getElementById('controls-tooltip').style.display=document.getElementById('controls-tooltip').style.display==='block'?'none':'block'">🎮</div>
+<div id="controls-tooltip">
+  <h4 style="margin:0 0 10px 0;">🎮 Controles</h4>
+  <ul>
+    <li>WASD / Setas — Mover</li>
+    <li>Espaço — Atacar</li>
+    <li>Z — Fireball</li>
+    <li>X — AOE</li>
+    <li>C — Dash</li>
+    <li>F — Escudo</li>
+    <li>V / I — Inventário</li>
+    <li>B — Loja</li>
+    <li>N — Evolução</li>
+    <li>M — Mapa</li>
+    <li>P — Pausa</li>
+    <li>ESC — Fechar menu</li>
+  </ul>
+</div>
+
+<!-- Minimap -->
+<div id="minimapContainer">
+  <canvas id="minimapCanvas" width="180" height="180"></canvas>
+</div>
+
+<!-- Mapa expandido -->
+<div id="fullMapModal">
+  <span class="map-title">🗺️ Mapa de Eldoria</span>
+  <button onclick="import('./src/js/ui/Minimap.js').then(m=>m.toggleFullMap())" class="map-close">×</button>
+  <canvas id="fullMapCanvas" width="600" height="600"></canvas>
+</div>
+
+<!-- Combat log -->
+<div id="combatLog"></div>
+
+<!-- Overlay de fundo para modais -->
+<div id="menuOverlay" onclick="closeAllMenus()"></div>
+
+<!-- Inventário -->
+<div id="statusWindow" style="position:relative;">
+  <button onclick="toggleInventory()" class="close-btn">×</button>
+  <h2>🎒 Inventário</h2>
+  <div id="statsPanel" style="background:rgba(255,255,255,0.1);padding:10px;border-radius:8px;margin-bottom:10px;"></div>
+  <h3>⚔️ Equipamento</h3>
+  <div id="equippedPanel"></div>
+  <h3>🎒 Mochila</h3>
+  <div id="invFilterBar" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;"></div>
+  <div id="inventoryPanel" class="inventory-grid"></div>
+</div>
+
+<!-- Loja -->
+<div id="shopWindow" style="position:relative;">
+  <button onclick="toggleShop()" class="close-btn">×</button>
+  <h2>💰 Mercado de Eldoria</h2>
+  <div style="display:flex;gap:10px;margin-bottom:15px;">
+    <button onclick="document.getElementById('shopBuyPanel').style.display='block';document.getElementById('shopSellPanel').style.display='none';"
+      style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,215,0,0.5);background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,215,0,0.1));color:white;cursor:pointer;font-weight:bold;font-size:15px;">🛒 Comprar</button>
+    <button onclick="document.getElementById('shopSellPanel').style.display='block';document.getElementById('shopBuyPanel').style.display='none';"
+      style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:white;cursor:pointer;font-weight:bold;font-size:15px;">💰 Vender</button>
+  </div>
+  <div id="shopBuyPanel">
+    <div class="qi-filter-bar" id="shopBuyFilterBar" style="margin-bottom:12px;"></div>
+    <div id="shopBuyItemsPanel" class="inventory-grid"></div>
+  </div>
+  <div id="shopSellPanel" style="display:none;">
+    <div id="shopInventoryPanel" class="inventory-grid"></div>
+  </div>
+</div>
+
+<!-- Evolução -->
+<div id="evolutionWindow" style="position:relative;">
+  <button onclick="toggleEvolution()" class="close-btn">×</button>
+  <h2>🏆 Evolução & Conquistas</h2>
+  <div style="display:flex;gap:15px;margin-bottom:15px;">
+    <div style="flex:1;background:rgba(255,255,255,0.1);padding:15px;border-radius:10px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:5px;">💎 Skill Points</div>
+      <div id="playerSkillPoints" style="font-size:32px;color:#ff69b4;font-weight:bold;">0</div>
+    </div>
+    <div style="flex:1;background:rgba(255,255,255,0.1);padding:15px;border-radius:10px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:5px;">🎯 XP Total</div>
+      <div id="playerXPPoints" style="font-size:32px;color:cyan;font-weight:bold;">0</div>
+    </div>
+  </div>
+  <div id="achievementsPanel"></div>
+  <div id="activeQuestsPanel"></div>
+</div>
+
+<!-- Three.js via CDN — disponível como window.THREE para todos os módulos -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<!-- Entrada principal como ES Module -->
+<script type="module" src="src/js/main.js"></script>
+
+</body>
+</html>
