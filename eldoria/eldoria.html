@@ -2904,81 +2904,16 @@ function spendSP(cost) {
     return true;
 }
 
-function getFireballAimDirection() {
-    // Direção explícita da skill: teclado/joystick > última direção > rotação do herói.
-    // Isso evita gastar SP sem projetil quando lastDir fica zerado ou inconsistente.
-    let dir = new THREE.Vector3(0, 0, 0);
-
-    if(controlMode === 'wasd') {
-        if(keys.w) dir.z -= 1;
-        if(keys.s) dir.z += 1;
-        if(keys.a) dir.x -= 1;
-        if(keys.d) dir.x += 1;
-    } else {
-        if(keys.arrowup) dir.z -= 1;
-        if(keys.arrowdown) dir.z += 1;
-        if(keys.arrowleft) dir.x -= 1;
-        if(keys.arrowright) dir.x += 1;
-    }
-
-    if(isJoyactive && joyStickVector && Math.hypot(joyStickVector.x, joyStickVector.y) > 0.05) {
-        dir.set(joyStickVector.x, 0, joyStickVector.y);
-    }
-
-    if(dir.lengthSq() < 0.0001 && lastDir && lastDir.lengthSq && lastDir.lengthSq() > 0.0001) {
-        dir.copy(lastDir);
-    }
-
-    if(dir.lengthSq() < 0.0001 && hero) {
-        dir.set(Math.sin(hero.rotation.y), 0, Math.cos(hero.rotation.y));
-    }
-
-    if(dir.lengthSq() < 0.0001) dir.set(0, 0, 1);
-    return dir.normalize();
-}
-
 function castFireball(){
-    if(!hero || !scene) return;
-    if(gamePaused || (startOverlay && startOverlay.style.display !== 'none')) return;
-
     let ab = getActiveSkillBonuses();
     let spCost = Math.max(5, 25 + ab.fireballSpCost);
-    if(!spendSP(spCost)) return;
-
-    let dir = getFireballAimDirection();
-    lastDir.copy(dir);
-    hero.rotation.y = Math.atan2(dir.x, dir.z);
-
+    if(player.sp < spCost){ log("SP insuficiente!"); return; }
     playSound('fireball');
-
-    let fb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.6, 16, 16),
-        new THREE.MeshStandardMaterial({
-            color: 0xff5500,
-            emissive: 0xff2200,
-            emissiveIntensity: 1.7,
-            roughness: 0.35,
-            metalness: 0.05
-        })
-    );
-
-    // Nasce um pouco à frente do herói para ficar visível e não “morrer” dentro do player.
-    fb.position.copy(hero.position).add(dir.clone().multiplyScalar(2.0));
-    fb.position.y = 1.35;
+    player.sp -= spCost;
+    let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
+    fb.position.copy(hero.position); fb.position.y = 1.2;
     scene.add(fb);
-
-    let fbLight = new THREE.PointLight(0xff5500, 1.4, 10);
-    fbLight.position.copy(fb.position);
-    scene.add(fbLight);
-
-    fireballs.push({
-        mesh: fb,
-        light: fbLight,
-        dir,
-        life: 95,
-        speed: 1.05,
-        activeBonus: ab
-    });
+    fireballs.push({ mesh: fb, dir: lastDir ? lastDir.clone().normalize() : new THREE.Vector3(0,0,1), life: 80, activeBonus: ab });
 }
 
 // Habilidade AOE (Area of Effect) - desbloqueada no nível 12
@@ -3518,13 +3453,13 @@ function updateMobileMenuContent() {
 
 /* Mobile Buttons - inicializa audio no primeiro toque */
 document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); attack(); });
-document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castFireball(); });
+document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
 document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castAOE(); });
 document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castDash(); });
 
 // Adicionar eventos de click para desktop - inicializa audio no primeiro click
 document.getElementById('btnAtk').addEventListener('click', () => { initAudio(); attack(); });
-document.getElementById('btnSkill').addEventListener('click', () => { initAudio(); castFireball(); });
+document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
 document.getElementById('btnAOE').addEventListener('click', () => { initAudio(); castAOE(); });
 document.getElementById('btnDash').addEventListener('click', () => { initAudio(); castDash(); });
 
@@ -4971,42 +4906,25 @@ function animate(time){
 
     // Fireball - usa deltaTime para velocidade consistente
     for(let i=fireballs.length-1; i>=0; i--){
-        let f = fireballs[i];
-        if(!f || !f.mesh) { fireballs.splice(i,1); continue; }
-
-        let fbDir = (f.dir && f.dir.lengthSq && f.dir.lengthSq() > 0.0001) ? f.dir.clone().normalize() : new THREE.Vector3(0,0,1);
-        let fbSpeed = f.speed || 1.05;
-        f.mesh.position.add(fbDir.multiplyScalar(fbSpeed * (safeDeltaTime / 16.67)));
-        if(f.light) f.light.position.copy(f.mesh.position);
-        f.life -= safeDeltaTime / 16.67;
-
+        let f = fireballs[i]; 
+        f.mesh.position.add(f.dir.clone().multiplyScalar(0.8 * (safeDeltaTime / 16.67))); 
+        f.life--;
         let fb_ab = f.activeBonus || { fireballDmg: 0, fireballRadius: 0 };
-        let fbRadius = 2.1 + (fb_ab.fireballRadius || 0);
-
-        for(let m of [...monsters]){
-            // Colisão em X/Z é mais confiável para jogo top-down, sem depender da altura do mesh.
-            let dx = f.mesh.position.x - m.position.x;
-            let dz = f.mesh.position.z - m.position.z;
-            if(Math.hypot(dx, dz) < fbRadius){
+        let fbRadius = 3.5 + (fb_ab.fireballRadius || 0);
+        [...monsters].forEach(m=>{
+            if(f.mesh.position.distanceTo(m.position) < fbRadius){
                 let baseDmg = 40 + (fb_ab.fireballDmg || 0);
                 // Aplica bônus percentual da skill tree passiva
                 if(player.fireballDamageBonus) {
                     baseDmg *= (1 + player.fireballDamageBonus / 100);
                 }
                 m.userData.hp -= baseDmg;
-                floatingText("🔥 -" + Math.round(baseDmg), m.position, "orange");
-                f.life = 0;
-                screenShake(0.08);
+                floatingText("-" + Math.round(baseDmg), m.position, "red");
+                f.life=0;
                 if(m.userData.hp <= 0) killMonster(m);
-                break;
             }
-        }
-
-        if(f.life<=0){
-            scene.remove(f.mesh);
-            if(f.light) scene.remove(f.light);
-            fireballs.splice(i,1);
-        }
+        });
+        if(f.life<=0){ scene.remove(f.mesh); fireballs.splice(i,1); }
     }
     
     // Boss/Monster Fireballs - projecteis inimigos
@@ -5490,8 +5408,8 @@ window.onkeydown=e=>{
     if(controlMode === 'wasd') {
         // Modo WASD: habilidades na mão direita
         if(k==="j") castFireball();
-        if(k==="k") castAOE();
-        if(k==="l") castDash();
+        if(k==="k" || k==="x") castAOE();
+        if(k==="l" || k==="c") castDash();
         if(k==="u") castShield();
         if(k==="h") usePotion();
     } else {
