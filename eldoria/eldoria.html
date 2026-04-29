@@ -841,6 +841,45 @@ html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; backgr
     }
 }
 
+
+
+/* === FIX 2026-04-28: menu mobile fixo em inventário/loja/evolução === */
+@media (max-width: 800px) {
+    #mobileMenuPanel.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden !important;
+    }
+
+    #mobileMenuPanel .mobile-menu-tabs {
+        position: sticky !important;
+        top: 0 !important;
+        flex-shrink: 0;
+        z-index: 8 !important;
+        margin-bottom: 10px;
+        background: linear-gradient(180deg, rgba(10,25,50,1), rgba(10,25,50,.96));
+        box-shadow: 0 8px 18px rgba(5,15,35,.72);
+    }
+
+    #mobileMenuPanel .mobile-menu-content.active {
+        display: block;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #mobileInventoryGrid,
+    #mobileShopGrid,
+    #mobileEvolutionTree {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -3302,7 +3341,10 @@ function switchMobileTab(tabName, evt) {
     const tabEl = evt?.currentTarget || window.event?.target;
     if (tabEl) tabEl.classList.add('active');
     const contentEl = document.getElementById(`mobile-${tabName}-content`);
-    if (contentEl) contentEl.classList.add('active');
+    if (contentEl) {
+        contentEl.classList.add('active');
+        contentEl.scrollTop = 0;
+    }
     updateMobileMenuContent();
 }
 
@@ -4356,15 +4398,27 @@ const SHOP_BUY_FILTERS = [
     { key:'consumable', label:'🧪 Consumíveis' },
 ];
 
+
+function paintShopFilterActiveState(barId, activeKey) {
+    const bar = document.getElementById(barId);
+    if(!bar) return;
+    bar.querySelectorAll('.qi-filter-btn').forEach(btn => {
+        const isActive = btn.dataset.filterKey === activeKey;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+}
+
 function renderShopBuyFilterBar() {
     let bar = document.getElementById('shopBuyFilterBar');
     if(!bar) return;
     bar.innerHTML = SHOP_BUY_FILTERS.map(f =>
-        `<button class="qi-filter-btn${shopBuyFilter === f.key ? ' active' : ''}" onclick="setShopBuyFilter('${f.key}')">${f.label}</button>`
+        `<button type="button" data-filter-key="${f.key}" aria-pressed="${shopBuyFilter === f.key ? 'true' : 'false'}" class="qi-filter-btn${shopBuyFilter === f.key ? ' active' : ''}" onclick="setShopBuyFilter('${f.key}')">${f.label}</button>`
     ).join('');
 }
 function setShopBuyFilter(key) {
     shopBuyFilter = key;
+    paintShopFilterActiveState('shopBuyFilterBar', key); // muda o estilo no mesmo clique, sem esperar o painel renderizar
     updateShopBuyPanel();
 }
 
@@ -4432,11 +4486,12 @@ function renderShopSellFilterBar() {
     let bar = document.getElementById('shopSellFilterBar');
     if(!bar) return;
     bar.innerHTML = SHOP_SELL_FILTERS.map(f =>
-        `<button class="qi-filter-btn${shopSellFilter === f.key ? ' active' : ''}" onclick="setShopSellFilter('${f.key}')">${f.label}</button>`
+        `<button type="button" data-filter-key="${f.key}" aria-pressed="${shopSellFilter === f.key ? 'true' : 'false'}" class="qi-filter-btn${shopSellFilter === f.key ? ' active' : ''}" onclick="setShopSellFilter('${f.key}')">${f.label}</button>`
     ).join('');
 }
 function setShopSellFilter(key) {
     shopSellFilter = key;
+    paintShopFilterActiveState('shopSellFilterBar', key); // muda o estilo no mesmo clique, sem delay visual
     updateShopSellPanel();
 }
 
@@ -6014,7 +6069,7 @@ function renderStartScreen() {
         // Eventos de deletar
         document.querySelectorAll('.deleteBtn').forEach(btn => {
             btn.addEventListener('click', () => {
-                if(confirm(`Deletar save de "${btn.dataset.name}"? Isso não pode ser desfeito.`)) {
+                if(confirm(`Tem certeza que deseja excluir o personagem "${btn.dataset.name}"?\n\nEssa ação não pode ser desfeita.`)) {
                     localStorage.removeItem(btn.dataset.key);
                     renderStartScreen(); // Rerenderiza a lista
                 }
