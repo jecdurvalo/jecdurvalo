@@ -1,0 +1,124 @@
+/* ── MINIMAP ── */
+#minimapContainer {
+  position: fixed; bottom: 25px; right: 25px;
+  width: 150px; height: 150px;
+  background: rgba(5,15,25,0.9);
+  border: 4px solid #5ab9ff; border-radius: 50%;
+  overflow: hidden; z-index: 2000;
+  box-shadow: 0 0 25px rgba(0,0,0,0.7), inset 0 0 20px rgba(90,185,255,0.2);
+}
+#minimapCanvas { display: block; width: 100%; height: 100%; }
+
+/* ── MAPA EXPANDIDO ── */
+#fullMapModal {
+  display: none; position: fixed;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 600px; height: 600px;
+  background: rgba(5,15,25,0.95);
+  border: 4px solid #5ab9ff; border-radius: 20px;
+  z-index: 3000;
+  box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(90,185,255,0.15);
+  overflow: hidden;
+}
+#fullMapCanvas { display: block; width: 100%; height: 100%; }
+#fullMapModal .map-title {
+  position: absolute; top: 15px; left: 20px;
+  color: white; font-size: 16px; font-weight: bold;
+  text-shadow: 0 0 10px rgba(90,185,255,0.8); pointer-events: none;
+}
+#fullMapModal .map-close {
+  position: absolute; top: 10px; right: 15px;
+  background: transparent; border: none;
+  color: rgba(255,255,255,0.6); font-size: 28px;
+  cursor: pointer; padding: 5px 10px; line-height: 1;
+  transition: color 0.2s ease, transform 0.1s ease; z-index: 10;
+}
+#fullMapModal .map-close:hover { color: rgba(255,255,255,0.9); }
+#fullMapModal .map-close:active { transform: scale(0.9); }
+
+/* ── COMBAT LOG ── */
+@keyframes logSlideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#combatLog {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px;
+  width: 400px; max-height: 82px; overflow: hidden;
+  background: rgba(4,10,28,0.78);
+  border-top: 1px solid rgba(90,185,255,.45);
+  border-left: 1px solid rgba(90,185,255,.2);
+  border-right: 1px solid rgba(90,185,255,.2);
+  border-bottom: 1px solid rgba(10,20,60,.6);
+  border-radius: 16px; padding: 9px 16px 10px;
+  color: #d8e7ff; font-size: 12.5px; line-height: 1.6;
+  z-index: 1200; pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,10,0.55), inset 0 1px 0 rgba(90,185,255,.12), 0 0 0 1px rgba(0,0,0,.35);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── JANELAS MODAIS ── */
+#statusWindow, #shopWindow, #evolutionWindow {
+  display: none; position: fixed;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 90%; max-width: 680px; max-height: 80vh; overflow: auto;
+  background: linear-gradient(135deg, #0a1930, #152545);
+  border: 3px solid #5ab9ff; padding: 25px;
+  border-radius: 20px; z-index: 5002; color: white;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(90,185,255,0.1);
+}
+.close-btn {
+  position: absolute; top: 15px; right: 15px;
+  background: transparent; border: 2px solid rgba(255,255,255,0.3);
+  color: white; font-size: 24px; cursor: pointer;
+  border-radius: 8px; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+.close-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
+
+/* ── INVENTORY GRID ── */
+.inventory-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px; max-height: 340px; overflow-y: auto;
+}
+.inv-item {
+  background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px; padding: 10px 9px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  font-size: 13px; position: relative;
+}
+.inv-item:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.5); }
+.inv-item.equipped { border-color: gold; background: rgba(255,215,0,0.12); }
+.inv-item .rarity-common    { color: #aaa; }
+.inv-item .rarity-uncommon  { color: #44ff77; }
+.inv-item .rarity-rare      { color: #4488ff; }
+.inv-item .rarity-epic      { color: #aa44ff; }
+.inv-item .rarity-legendary { color: #ffd700; }
+
+/* ── CONTROLES DESKTOP ── */
+#controls-btn {
+  position: fixed; top: 18px; right: 18px;
+  background: linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
+  padding: 10px; border-radius: 10px; color: white;
+  z-index: 999; font-size: 18px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  user-select: none;
+}
+#controls-tooltip {
+  display: none; position: fixed; top: 60px; right: 18px;
+  background: linear-gradient(135deg, rgba(0,0,0,.8), rgba(20,20,40,.8));
+  padding: 16px; border-radius: 14px; color: white; z-index: 999;
+  font-size: 13px; border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5); min-width: 180px;
+}
+#controls-tooltip ul { list-style: none; margin: 0; padding: 0; }
+#controls-tooltip li { margin-bottom: 6px; }
+
+/* ── NAMEPLATE / HP BAR DOS MONSTROS ── */
+.nameplate {
+  position: fixed; pointer-events: none;
+  background: rgba(0,0,0,0.6); padding: 2px 6px;
+  border-radius: 4px; white-space: nowrap;
+  z-index: 3000; font-size: 12px;
+}

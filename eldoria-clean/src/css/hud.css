@@ -1,0 +1,97 @@
+/* ── HUD PRINCIPAL ── */
+#hud {
+  position: fixed; top: 15px; left: 15px; width: 290px;
+  background: linear-gradient(135deg, rgba(5,15,35,.95), rgba(15,25,45,.9));
+  padding: 18px; border-radius: 18px;
+  z-index: 1000; color: white;
+  border: 2px solid rgba(90,185,255,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(90,185,255,0.1);
+}
+
+.bar {
+  height: 20px; background: #111; border-radius: 30px;
+  overflow: hidden; margin-bottom: 12px; position: relative;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.fill { height: 100%; transition: width 0.3s ease-out; }
+.hp { background: linear-gradient(90deg, #ff3333, #cc0000); box-shadow: 0 0 10px rgba(255,51,51,0.5); }
+.sp { background: linear-gradient(90deg, #4488ff, #2255cc); box-shadow: 0 0 10px rgba(68,136,255,0.5); }
+.xp { background: linear-gradient(90deg, #44ff88, #22aa55); box-shadow: 0 0 10px rgba(68,255,136,0.5); }
+
+/* ── BARRA DE EQUIPAMENTO RÁPIDO ── */
+#equipBar {
+  position: fixed; top: 230px; left: 15px;
+  display: flex; justify-content: space-between;
+  align-items: center; flex-wrap: nowrap;
+  z-index: 1001;
+}
+.equip-slot-icon {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, rgba(5,15,35,.92), rgba(15,25,50,.9));
+  border: 2px solid rgba(90,185,255,0.25);
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; font-size: 19px; cursor: pointer;
+  position: relative; transition: border-color 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.equip-slot-icon:hover { border-color: rgba(90,185,255,0.7); transform: scale(1.08); }
+.equip-slot-icon.empty { opacity: 0.35; }
+.equip-slot-icon .slot-label {
+  position: absolute; bottom: 1px; right: 2px;
+  font-size: 7px; color: rgba(255,255,255,0.45); line-height: 1;
+}
+
+/* ── PAINEL QUICK SWAP (TAB) ── */
+#quickInvPanel {
+  position: fixed; right: -320px; top: 80px;
+  width: 290px; max-height: calc(100vh - 100px); overflow-y: auto;
+  background: linear-gradient(135deg, rgba(5,15,35,.97), rgba(15,28,55,.96));
+  border: 2px solid rgba(90,185,255,0.45); border-radius: 18px;
+  padding: 16px; z-index: 5500; color: white;
+  transition: right 0.22s cubic-bezier(.4,0,.2,1);
+  box-shadow: -6px 0 32px rgba(0,0,0,0.7), inset 0 0 20px rgba(90,185,255,0.06);
+  scrollbar-width: thin; scrollbar-color: rgba(90,185,255,0.3) transparent;
+}
+#quickInvPanel.open { right: 20px; }
+#quickInvPanel h4 {
+  margin: 0 0 10px 0; font-size: 15px; color: #ffd700;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.qi-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.qi-filter-btn {
+  padding: 6px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08); color: #aaa;
+  cursor: pointer; font-size: 12px; transition: all 0.15s;
+}
+.qi-filter-btn:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.4); }
+.qi-filter-btn.active {
+  background: linear-gradient(135deg, rgba(90,185,255,0.35), rgba(90,185,255,0.2));
+  border-color: rgba(90,185,255,1); color: #fff; font-weight: bold;
+  box-shadow: 0 0 15px rgba(90,185,255,0.6), inset 0 0 10px rgba(90,185,255,0.2);
+  text-shadow: 0 0 10px rgba(90,185,255,1); transform: scale(1.05);
+}
+.qi-equipped-box {
+  background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.35);
+  border-radius: 10px; padding: 8px 10px; margin-bottom: 8px;
+  font-size: 12px; display: flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.qi-equipped-box:hover { background: rgba(255,215,0,0.18); }
+.qi-item {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 9px; padding: 7px 9px; margin-bottom: 5px;
+  font-size: 12px; display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.qi-item:hover { background: rgba(90,185,255,0.15); border-color: rgba(90,185,255,0.4); }
+.qi-item.equipped-in-slot { opacity: 0.45; cursor: default; }
+.qi-section-label {
+  font-size: 10px; color: #888; text-transform: uppercase;
+  letter-spacing: 1px; margin: 8px 0 4px;
+}
+
+/* ── AUTO-HIDE DO HUD EM MOBILE ── */
+.hud-hidden #hud { transform: translateX(-250px); transition: transform 0.3s ease-out; }
+.hud-hidden #minimapContainer { transform: translateX(150px); transition: transform 0.3s ease-out; }
+.hud-hidden #equipBar { opacity: 0; transition: opacity 0.3s ease-out; }

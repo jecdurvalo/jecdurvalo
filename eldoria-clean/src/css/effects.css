@@ -1,0 +1,62 @@
+/* ── FLOATING TEXT ── */
+.floating-text {
+  position: fixed; pointer-events: none;
+  font-size: 16px; font-weight: bold;
+  text-shadow: 0 0 8px currentColor, 1px 1px 2px rgba(0,0,0,0.8);
+  z-index: 9000; white-space: nowrap;
+  animation: floatUp 1.2s ease-out forwards;
+}
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  60%  { opacity: 0.9; transform: translateY(-40px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-70px) scale(0.8); }
+}
+
+/* ── NOTIFICAÇÃO FLUTUANTE MOBILE ── */
+.floating-notification {
+  position: fixed; top: 70px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(4,10,28,0.88);
+  border: 1px solid rgba(90,185,255,0.4); border-radius: 12px;
+  padding: 8px 16px; color: #d8e7ff; font-size: 13px;
+  z-index: 7000; pointer-events: none; white-space: nowrap;
+  animation: notifFade 2.5s ease forwards;
+}
+@keyframes notifFade {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+}
+
+/* ── SHIELD VISUAL ── */
+.shield-visual {
+  position: fixed; inset: 0; pointer-events: none;
+  border: 4px solid rgba(100,180,255,0.6);
+  border-radius: 50%; z-index: 8000;
+  animation: shieldPulse 2s ease-out forwards;
+}
+@keyframes shieldPulse {
+  0%   { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+/* ── LEVEL UP FLASH ── */
+.levelup-flash {
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,215,0,0.3), transparent 70%);
+  z-index: 7500; animation: levelFlash 1s ease-out forwards;
+}
+@keyframes levelFlash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── TELA INICIAL ── */
+#startOverlay {
+  display: flex; position: fixed; inset: 0; z-index: 20000;
+  overflow-y: auto;
+  background: linear-gradient(160deg, #02071a 0%, #080d28 40%, #0a1530 100%);
+  align-items: flex-start; justify-content: center;
+  font-family: 'Segoe UI', Arial, sans-serif; padding: 30px 15px;
+}

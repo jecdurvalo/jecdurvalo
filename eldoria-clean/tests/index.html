@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Eldoria — Testes Unitários</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a1a; color: #e0e0e0; font-family: 'Courier New', monospace; padding: 24px; }
+    h1   { color: #5ab9ff; margin-bottom: 4px; }
+    p    { color: #4a6a8a; font-size: 13px; margin-bottom: 24px; }
+    #test-results { background: rgba(255,255,255,0.03); border: 1px solid rgba(90,185,255,0.15); border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <h1>⚔️ Eldoria — Test Suite</h1>
+  <p>Abre com <code>npx serve</code> ou qualquer servidor HTTP local (não funciona via file://)</p>
+  <div id="test-results"><p style="padding:16px;color:#4a6a8a">Carregando testes...</p></div>
+
+  <script type="module">
+    import { renderResults } from './runner.js';
+    import './DamageCalculator.test.js';
+    import './Entity.test.js';
+    import './Item.test.js';
+    import './EventBus.test.js';
+
+    // Pequeno delay para todos os imports resolverem
+    setTimeout(() => renderResults('test-results'), 0);
+  </script>
+</body>
+</html>

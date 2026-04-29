@@ -1,0 +1,177 @@
+/* ── CONTROLES MOBILE ── */
+#mobileControls {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 4000;
+}
+
+/* Botão de Pausa Mobile */
+#pauseBtnMobile {
+  position: fixed; top: 15px; right: 15px;
+  width: 48px; height: 48px;
+  background: rgba(0,0,0,0.7);
+  border: 2px solid rgba(255,255,255,0.3); border-radius: 12px;
+  color: white; font-size: 22px;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 5000;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s, background 0.2s;
+}
+#pauseBtnMobile:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+
+.mobile-btn {
+  pointer-events: auto; position: absolute;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
+  border: 2px solid rgba(255,255,255,0.35);
+  border-radius: 50%; color: white; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.35);
+  transition: transform 0.1s, background 0.2s;
+  z-index: 1;
+}
+.mobile-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.25); }
+
+#btnAtk {
+  width: 90px; height: 90px;
+  background: linear-gradient(135deg, #ff3333, #cc0000);
+  border: 3px solid #fff; font-size: 16px;
+  box-shadow: 0 4px 25px rgba(255,51,51,0.6); z-index: 2;
+  bottom: 70px; right: 160px;
+}
+#btnSkill { width: 58px; height: 58px; font-size: 14px; bottom: 40px; right: 90px; }
+#btnAOE   { width: 58px; height: 58px; font-size: 14px; bottom: 100px; right: 90px; }
+#btnDash  { width: 58px; height: 58px; font-size: 14px; bottom: 70px; right: 50px; }
+
+#joystickArea {
+  position: absolute; bottom: 40px; left: 40px;
+  width: 140px; height: 140px;
+  background: rgba(255,255,255,0.08); border-radius: 50%;
+  pointer-events: auto; border: 2px solid rgba(255,255,255,0.2);
+}
+#joystickStick {
+  position: absolute; top: 45px; left: 45px;
+  width: 50px; height: 50px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3));
+  border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* ── MENU UNIFICADO MOBILE ── */
+#mobileMenuBtn {
+  display: none;
+  position: fixed; top: 10px; right: 10px;
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, rgba(90,185,255,0.3), rgba(30,60,100,0.5));
+  border: 2px solid rgba(90,185,255,0.5); border-radius: 10px;
+  color: white; font-size: 20px;
+  align-items: center; justify-content: center;
+  cursor: pointer; z-index: 3000;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  backdrop-filter: blur(5px);
+  transition: transform 0.2s, background 0.2s;
+}
+#mobileMenuBtn:active {
+  transform: scale(0.9);
+  background: linear-gradient(135deg, rgba(90,185,255,0.5), rgba(30,60,100,0.7));
+}
+
+#mobileMenuPanel {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, rgba(10,25,50,0.98), rgba(5,15,35,0.99));
+  border-top: 3px solid rgba(90,185,255,0.5);
+  border-radius: 20px 20px 0 0;
+  z-index: 5000; padding: 15px;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+  max-height: 70vh; overflow-y: auto;
+}
+#mobileMenuPanel.active {
+  display: block;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.mobile-menu-tabs {
+  display: flex; gap: 8px; margin-bottom: 15px;
+  border-bottom: 2px solid rgba(90,185,255,0.3); padding-bottom: 10px;
+}
+.mobile-menu-tab {
+  flex: 1; padding: 10px;
+  background: rgba(90,185,255,0.1);
+  border: 1px solid rgba(90,185,255,0.3); border-radius: 8px;
+  color: rgba(255,255,255,0.7); font-size: 12px; font-weight: bold;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.mobile-menu-tab.active {
+  background: rgba(90,185,255,0.3);
+  border-color: rgba(90,185,255,0.6); color: white;
+}
+.mobile-menu-content { display: none; }
+.mobile-menu-content.active { display: block; }
+
+/* ── RESPONSIVO MOBILE ── */
+@media (max-width: 800px) {
+  :root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  #hud { width: 170px !important; padding: 12px; }
+  .bar { height: 14px; margin-bottom: 8px; }
+  #skillCooldowns { display: none !important; }
+  #controls-btn { display: none; }
+  #combatLog { display: none; }
+  #minimapContainer { width: 80px; height: 80px; bottom: 12px; right: 12px; }
+
+  #pauseBtnMobile { display: flex !important; top: calc(10px + var(--safe-top)); right: 10px; width: 44px; height: 44px; z-index: 6500; }
+  #mobileMenuBtn  { display: flex !important; top: calc(10px + var(--safe-top)) !important; right: 62px !important; width: 44px !important; height: 44px !important; z-index: 6400 !important; }
+  #mobileControls { z-index: 3500; }
+
+  #joystickArea  { bottom: calc(22px + var(--safe-bottom)) !important; left: 18px !important; width: 112px !important; height: 112px !important; }
+  #joystickStick { top: 36px !important; left: 36px !important; width: 40px !important; height: 40px !important; }
+
+  #btnAtk   { right: 18px !important; bottom: calc(38px + var(--safe-bottom)) !important; width: 82px !important; height: 82px !important; font-size: 16px !important; }
+  #btnSkill { right: 112px !important; bottom: calc(22px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+  #btnDash  { right: 112px !important; bottom: calc(88px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+  #btnAOE   { right: 46px !important; bottom: calc(132px + var(--safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+
+  #mobileMenuPanel {
+    z-index: 6200 !important;
+    padding: 16px 14px calc(18px + var(--safe-bottom)) 14px !important;
+    max-height: min(72vh, 560px) !important;
+    box-sizing: border-box; overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.mobile-menu-open #mobileControls { pointer-events: none; opacity: .35; }
+  .mobile-menu-tabs {
+    position: sticky; top: 0;
+    background: linear-gradient(180deg, rgba(10,25,50,1), rgba(10,25,50,.92));
+    z-index: 2; padding-top: 2px;
+  }
+  #equipBar { display: none; }
+  #quickInvPanel { width: 92vw; right: -100vw; top: 10px; max-height: calc(100vh - 20px); }
+  #quickInvPanel.open { right: 4vw; }
+  #fullMapModal { width: 95vw; height: 80vw; max-height: 85vh; }
+}
+
+@media (max-width: 380px) {
+  #hud { width: 145px !important; }
+  #btnAtk   { width: 74px !important; height: 74px !important; right: 14px !important; }
+  #btnSkill { right: 100px !important; }
+  #btnDash  { right: 100px !important; }
+  #btnAOE   { right: 36px !important; }
+  #joystickArea  { width: 100px !important; height: 100px !important; }
+  #joystickStick { top: 31px !important; left: 31px !important; width: 38px !important; height: 38px !important; }
+}
+
+@media (min-width: 801px) {
+  #mobileMenuBtn, #mobileMenuPanel { display: none !important; }
+  #pauseBtnMobile { display: none !important; }
+}
