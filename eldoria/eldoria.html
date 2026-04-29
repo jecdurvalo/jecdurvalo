@@ -1088,6 +1088,15 @@ let lastSpSpendTime = -999999;
 const SP_REGEN_DELAY = 900; // ms sem regenerar logo após usar magia
 const SP_REGEN_PER_SECOND = 6; // regeneração controlada para SP não parecer infinito
 
+// -------- CLEAN CODE: namespaces leves para novas features --------
+// Mantém compatibilidade com o HTML atual, mas agrupa responsabilidades novas.
+const Game = window.Game || { state: {}, systems: {}, utils: {} };
+window.Game = Game;
+Game.state.player = player;
+Game.state.monsters = monsters;
+Game.state.droppedItems = droppedItems;
+
+
 // Sistema de Auto-Save
 let lastAutoSaveTime = 0;
 const AUTO_SAVE_INTERVAL = 30000; // 30 segundos em milissegundos
@@ -1387,7 +1396,17 @@ let evolutionData = {
         { id: 'quest_14', name: 'Crystal Hunter', desc: 'Derrote 40 monstros das Cavernas de Cristal', icon: '💎', target: 40, progress: 0, type: 'crystal_kills', completed: false, rewardXP: 500, rewardGold: 300, rewardSP: 6 },
         { id: 'quest_15', name: 'Shadow Warrior', desc: 'Derrote 50 monstros do Reino Sombrio', icon: '🌑', target: 50, progress: 0, type: 'shadow_kills', completed: false, rewardXP: 600, rewardGold: 400, rewardSP: 7 },
         { id: 'quest_16', name: 'Celestial Champion', desc: 'Derrote 60 monstros dos Picos Celestiais', icon: '⭐', target: 60, progress: 0, type: 'celestial_kills', completed: false, rewardXP: 750, rewardGold: 500, rewardSP: 8 },
-        { id: 'quest_17', name: 'Void Conqueror', desc: 'Derrote 75 monstros do Vazio Eterno', icon: '🕳️', target: 75, progress: 0, type: 'void_kills', completed: false, rewardXP: 1000, rewardGold: 750, rewardSP: 10 }
+        { id: 'quest_17', name: 'Void Conqueror', desc: 'Derrote 75 monstros do Vazio Eterno', icon: '🕳️', target: 75, progress: 0, type: 'void_kills', completed: false, rewardXP: 1000, rewardGold: 750, rewardSP: 10 },
+        { id: 'quest_18', name: 'Patrulha de Eldoria', desc: 'Derrote 25 inimigos de qualquer tipo', icon: '🗡️', target: 25, progress: 0, type: 'kills', completed: false, rewardXP: 150, rewardGold: 90, rewardSP: 1 },
+        { id: 'quest_19', name: 'Defensor do Reino', desc: 'Derrote 100 inimigos de qualquer tipo', icon: '🏰', target: 100, progress: 0, type: 'kills', completed: false, rewardXP: 650, rewardGold: 350, rewardSP: 4 },
+        { id: 'quest_20', name: 'Expedição de Suprimentos', desc: 'Colete 40 itens pelo mapa', icon: '📦', target: 40, progress: 0, type: 'items', completed: false, rewardXP: 260, rewardGold: 160, rewardSP: 2 },
+        { id: 'quest_21', name: 'Primeiro Colosso', desc: 'Derrote 1 Boss', icon: '👹', target: 1, progress: 0, type: 'boss_kills', completed: false, rewardXP: 300, rewardGold: 180, rewardSP: 2 },
+        { id: 'quest_22', name: 'Caçador de Colossos', desc: 'Derrote 5 Bosses', icon: '🔥', target: 5, progress: 0, type: 'boss_kills', completed: false, rewardXP: 900, rewardGold: 600, rewardSP: 5 },
+        { id: 'quest_23', name: 'Cartógrafa de Eldoria', desc: 'Visite 3 biomas diferentes', icon: '🧭', target: 3, progress: 0, type: 'biomes', completed: false, rewardXP: 220, rewardGold: 120, rewardSP: 1 },
+        { id: 'quest_24', name: 'Arquimaga de Campo', desc: 'Acerte 30 Fireballs em inimigos', icon: '🔥', target: 30, progress: 0, type: 'fireball_hits', completed: false, rewardXP: 320, rewardGold: 180, rewardSP: 2 },
+        { id: 'quest_25', name: 'Passo Impossível', desc: 'Use Dash 20 vezes', icon: '💨', target: 20, progress: 0, type: 'dash_uses', completed: false, rewardXP: 260, rewardGold: 130, rewardSP: 2 },
+        { id: 'quest_26', name: 'Controle de Multidão', desc: 'Use AOE 15 vezes', icon: '💥', target: 15, progress: 0, type: 'aoe_uses', completed: false, rewardXP: 300, rewardGold: 160, rewardSP: 2 },
+        { id: 'quest_27', name: 'Exploradora de Relíquias', desc: 'Colete 20 itens permanentes espalhados no mapa', icon: '🗺️', target: 20, progress: 0, type: 'world_items', completed: false, rewardXP: 420, rewardGold: 240, rewardSP: 3 }
     ],
     // Árvore de Habilidades
     skillTree: [
@@ -1459,7 +1478,10 @@ let evolutionData = {
         crystalKills: 0,
         shadowKills: 0,
         celestialKills: 0,
-        voidKills: 0
+        voidKills: 0,
+        dashUses: 0,
+        fireballHits: 0,
+        worldItemsCollected: 0
     }
 };
 
@@ -2188,24 +2210,23 @@ function checkAchievements() {
     updateEvolutionUI();
 }
 
-function updateQuestProgress(type, amount) {
+function updateQuestProgress(type, amount, mode='add') {
     evolutionData.quests.forEach(quest => {
-        if(quest.completed) return;
-        
-        if(quest.type === type) {
-            quest.progress += amount;
-            if(quest.progress >= quest.target) {
-                quest.completed = true;
-                player.gold += quest.rewardGold;
-                evolutionData.totalXP += quest.rewardXP;
-                if(quest.rewardSP > 0) {
-                    evolutionData.skillPoints += quest.rewardSP;
-                }
-                floatingText(`+${quest.rewardXP} XP`, hero.position, "cyan");
-                let rewardText = `+${quest.rewardGold} Gold, +${quest.rewardXP} XP`;
-                if(quest.rewardSP > 0) rewardText += `, +${quest.rewardSP} SP`;
-                log(`<span style='color:cyan'>✅ Missão Completa: ${quest.name}! ${rewardText}</span>`);
-            }
+        if(quest.completed || quest.type !== type) return;
+        const delta = Number(amount) || 0;
+        quest.progress = mode === 'set'
+            ? Math.max(quest.progress || 0, Math.min(quest.target, delta))
+            : Math.min(quest.target, (quest.progress || 0) + delta);
+
+        if(quest.progress >= quest.target) {
+            quest.completed = true;
+            player.gold += quest.rewardGold;
+            evolutionData.totalXP += quest.rewardXP;
+            if(quest.rewardSP > 0) evolutionData.skillPoints += quest.rewardSP;
+            floatingText(`+${quest.rewardXP} XP`, hero.position, "cyan");
+            let rewardText = `+${quest.rewardGold} Gold, +${quest.rewardXP} XP`;
+            if(quest.rewardSP > 0) rewardText += `, +${quest.rewardSP} SP`;
+            log(`<span style='color:cyan'>✅ Missão Completa: ${quest.name}! ${rewardText}</span>`);
         }
     });
     updateEvolutionUI();
@@ -2299,6 +2320,7 @@ function updateBiome() {
         if(!evolutionData.stats.visitedBiomes.includes(currentBiome)) {
             evolutionData.stats.visitedBiomes.push(currentBiome);
             evolutionData.stats.biomesVisited = evolutionData.stats.visitedBiomes.length;
+            updateQuestProgress('biomes', evolutionData.stats.biomesVisited, 'set');
             checkAchievements();
         }
 
@@ -2512,7 +2534,11 @@ function spawnMonster(elite=false, mobMode=false, emergencySpawn=false){
         label: makeLabel(name + " Lv." + lv), 
         mesh: monsterGroup, 
         breatheOffset: Math.random() * Math.PI * 2,
-        monsterType: monsterType
+        monsterType: monsterType,
+        aggro: false,
+        aggroUntil: 0,
+        leashRadius: elite ? 35 : undefined,
+        maxChaseRadius: elite ? 72 : undefined
     };
     scene.add(monsterGroup); monsters.push(monsterGroup);
     
@@ -2625,7 +2651,11 @@ function spawnBossWithScaling() {
         mesh: monsterGroup, 
         breatheOffset: Math.random() * Math.PI * 2,
         monsterType: monsterType,
-        bossMultiplier: bossMultiplier // Guardar multiplicador para referência
+        bossMultiplier: bossMultiplier, // Guardar multiplicador para referência
+        aggro: false,
+        aggroUntil: 0,
+        leashRadius: 35,
+        maxChaseRadius: 72
     };
     scene.add(monsterGroup); monsters.push(monsterGroup);
     
@@ -2665,6 +2695,7 @@ function killMonster(m){
     
     // Atualiza estatísticas de kills
     evolutionData.stats.kills++;
+    updateQuestProgress('kills', 1);
     
     // Contabilizar kills por tipo de monstro para missões
     let monsterKey = m.userData.name.toLowerCase();
@@ -2943,12 +2974,36 @@ function spendSP(cost) {
     return true;
 }
 
+
+function getClosestBoss(maxDistance = Infinity) {
+    let closest = null;
+    let best = maxDistance;
+    monsters.forEach(m => {
+        if(!m.userData || !m.userData.isBoss) return;
+        const d = hero.position.distanceTo(m.position);
+        if(d < best) { best = d; closest = m; }
+    });
+    return closest;
+}
+
+function triggerBossAggro(boss, source='hit') {
+    if(!boss || !boss.userData || !boss.userData.isBoss) return;
+    const now = performance.now();
+    boss.userData.aggro = true;
+    boss.userData.aggroSource = source;
+    boss.userData.aggroUntil = now + 12000;
+    boss.userData.maxChaseRadius = 72;
+    boss.userData.leashRadius = 35;
+}
+
 function castFireball(){
     let ab = getActiveSkillBonuses();
     let spCost = Math.max(5, 25 + ab.fireballSpCost);
     if(player.sp < spCost){ log("SP insuficiente!"); return; }
     playSound('fireball');
     player.sp -= spCost;
+    lastSpSpendTime = performance.now();
+    if(typeof sp !== 'undefined' && sp) sp.style.width = (player.sp / player.maxSp * 100) + "%";
     let fb = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshStandardMaterial({color:0xff4400, emissive:0xff0000}));
     fb.position.copy(hero.position); fb.position.y = 1.2;
     scene.add(fb);
@@ -2956,6 +3011,44 @@ function castFireball(){
 }
 
 // Habilidade AOE (Area of Effect) - desbloqueada no nível 12
+function getHorizontalDistance(a, b){
+    if(!a || !b) return Infinity;
+    const dx = (a.x || 0) - (b.x || 0);
+    const dz = (a.z || 0) - (b.z || 0);
+    return Math.sqrt(dx*dx + dz*dz);
+}
+
+function applyAOEDamage(monster, origin, aoeRadius, aoeBonuses){
+    if(!monster || !monster.userData || !monster.position) return false;
+    const dist = getHorizontalDistance(monster.position, origin);
+    const monsterRadius = monster.userData.isBoss ? 2.4 : 1.2;
+    if(dist > aoeRadius + monsterRadius) return false;
+
+    let baseDmg = player.atk * 2.5 + ((aoeBonuses && aoeBonuses.aoeDmg) || 0);
+    if(player.aoeDamageBonus) baseDmg *= (1 + player.aoeDamageBonus / 100);
+
+    const def = Number(monster.userData.def) || 0;
+    const maxHp = Math.max(1, Number(monster.userData.maxHp) || Number(monster.userData.hp) || 1);
+    const calcDmg = Math.max(1, Math.floor(baseDmg - def));
+    let dmg;
+
+    if(monster.userData.isBoss) {
+        // Boss toma dano percentual, mas também respeita o dano calculado para a skill não parecer bugada.
+        dmg = Math.max(1, Math.floor(maxHp * 0.15), Math.floor(calcDmg * 0.35));
+        triggerBossAggro(monster, 'aoe');
+    } else {
+        // Monstros comuns recebem um impacto forte, evitando dano NaN/zero quando algum stat vier sem defesa.
+        const minDmg = Math.max(1, Math.floor(maxHp * 0.5));
+        dmg = Math.max(calcDmg, minDmg);
+    }
+
+    monster.userData.hp = Math.max(0, Number(monster.userData.hp || 0) - dmg);
+    floatingText("-" + Math.round(dmg), monster.position, "purple");
+    createHitVisual(monster.position, 0x9933ff);
+    if(monster.userData.hp <= 0) killMonster(monster);
+    return true;
+}
+
 function castAOE(){
     if(player.level < 12){
         log("🔒 AOE desbloqueia no nível 12!");
@@ -2970,8 +3063,11 @@ function castAOE(){
     }
     let aoe_ab = getActiveSkillBonuses();
     let aoeSpCost = Math.max(10, 50 + aoe_ab.aoeSpCost);
-    if(!spendSP(aoeSpCost)) return;
+    if(player.sp < aoeSpCost){ log("SP insuficiente!"); return; }
     lastAoeTime = now;
+    player.sp -= aoeSpCost;
+    lastSpSpendTime = performance.now();
+    if(typeof sp !== 'undefined' && sp) sp.style.width = (player.sp / player.maxSp * 100) + "%";
 
     let aoeRadius = 4 + (aoe_ab.aoeRadius || 0);
     // Cria efeito visual de explosão em área
@@ -3020,6 +3116,7 @@ function castAOE(){
             let dmg;
             if(monster.userData.isBoss) {
                 // Boss: AOE faz só 15% do HP máximo
+                if(typeof triggerBossAggro === 'function') triggerBossAggro(monster, 'aoe');
                 dmg = Math.floor(monster.userData.maxHp * 0.15);
             } else {
                 // Monstros comuns: mínimo 50% do HP máximo
@@ -3046,20 +3143,40 @@ function castDash() {
         let rem = ((DASH_COOLDOWN-(now-lastDashTime))/1000).toFixed(1);
         floatingText("⏳ "+rem+"s", hero.position, "cyan"); return;
     }
+
     lastDashTime = now;
+    evolutionData.stats.dashUses = (evolutionData.stats.dashUses || 0) + 1;
+    updateQuestProgress('dash_uses', 1);
     playSound('dash');
-    // Empurrão na direção atual
-    let dashVec = lastDir ? lastDir.clone().normalize().multiplyScalar(6) : new THREE.Vector3(0,0,1).multiplyScalar(6);
+
+    // Dash inteligente: perto do boss, prioriza sair do raio de perigo.
+    const nearbyBoss = getClosestBoss(16);
+    let dashVec;
+    let dashLabel = "💨 Dash!";
+    if(nearbyBoss) {
+        triggerBossAggro(nearbyBoss, 'dash_escape');
+        dashVec = new THREE.Vector3().subVectors(hero.position, nearbyBoss.position);
+        if(dashVec.length() < 0.01) dashVec.set(Math.random()-0.5, 0, Math.random()-0.5);
+        dashVec.y = 0;
+        dashVec.normalize().multiplyScalar(10);
+        dashLabel = "💨 Escape!";
+    } else {
+        dashVec = lastDir ? lastDir.clone().normalize().multiplyScalar(7.5) : new THREE.Vector3(0,0,1).multiplyScalar(7.5);
+    }
+
     hero.position.add(dashVec);
+    if(lastDir) lastDir.copy(dashVec.clone().normalize());
+    hero.rotation.y = Math.atan2(dashVec.x, dashVec.z);
+
     // Partículas de dash
-    for(let i=0;i<8;i++) {
+    for(let i=0;i<12;i++) {
         let p = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.15,0.15), new THREE.MeshStandardMaterial({color:0x00ccff,emissive:0x0088ff,emissiveIntensity:1}));
         p.position.copy(hero.position);
         p.position.x+=(Math.random()-0.5)*2; p.position.z+=(Math.random()-0.5)*2; p.position.y+=Math.random()*1.5;
-        p.userData={velocity:new THREE.Vector3((Math.random()-0.5)*0.2,Math.random()*0.15,(Math.random()-0.5)*0.2),life:20};
+        p.userData={velocity:new THREE.Vector3((Math.random()-0.5)*0.2,Math.random()*0.15,(Math.random()-0.5)*0.2),life:22};
         scene.add(p); particles.push(p);
     }
-    floatingText("💨 Dash!", hero.position, "cyan");
+    floatingText(dashLabel, hero.position, "cyan");
 }
 
 function castShield() {
@@ -3115,6 +3232,7 @@ function attack(){
                         isCrit = true;
                     }
                     
+                    if(m.userData.isBoss) triggerBossAggro(m, 'melee');
                     m.userData.hp -= dmg; 
                     floatingText("-"+dmg, m.position, isCrit ? "red" : "orange");
                     
@@ -3495,13 +3613,13 @@ function updateMobileMenuContent() {
 
 /* Mobile Buttons - inicializa audio no primeiro toque */
 document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); attack(); });
-document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); castFireball(); });
+document.getElementById('btnSkill').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castFireball(); });
 document.getElementById('btnAOE').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castAOE(); });
 document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); castDash(); });
 
 // Adicionar eventos de click para desktop - inicializa audio no primeiro click
 document.getElementById('btnAtk').addEventListener('click', () => { initAudio(); attack(); });
-document.getElementById('btnSkill').addEventListener('click', () => { castFireball(); });
+document.getElementById('btnSkill').addEventListener('click', () => { initAudio(); castFireball(); });
 document.getElementById('btnAOE').addEventListener('click', () => { initAudio(); castAOE(); });
 document.getElementById('btnDash').addEventListener('click', () => { initAudio(); castDash(); });
 
@@ -4763,6 +4881,9 @@ function loadGame() {
             evolutionData.totalXP = save.evolutionData.totalXP || 0;
             evolutionData.skillPoints = save.evolutionData.skillPoints || 0;
             if(save.evolutionData.stats) Object.assign(evolutionData.stats, save.evolutionData.stats);
+            evolutionData.stats.dashUses = evolutionData.stats.dashUses || 0;
+            evolutionData.stats.fireballHits = evolutionData.stats.fireballHits || 0;
+            evolutionData.stats.worldItemsCollected = evolutionData.stats.worldItemsCollected || 0;
             (save.evolutionData.achievements || []).forEach(saved => {
                 let a = evolutionData.achievements.find(a => a.id === saved.id);
                 if(a) a.unlocked = saved.unlocked;
@@ -4932,6 +5053,10 @@ function animate(time){
             // Atualiza estatísticas de coleta
             evolutionData.stats.itemsCollected++;
             updateQuestProgress('items', 1);
+            if(drop.permanent) {
+                evolutionData.stats.worldItemsCollected = (evolutionData.stats.worldItemsCollected || 0) + 1;
+                updateQuestProgress('world_items', 1);
+            }
             checkAchievements();
             
             if(wasStacked) {
@@ -4973,6 +5098,9 @@ function animate(time){
                 if(player.fireballDamageBonus) {
                     baseDmg *= (1 + player.fireballDamageBonus / 100);
                 }
+                if(m.userData.isBoss) triggerBossAggro(m, 'fireball');
+                evolutionData.stats.fireballHits = (evolutionData.stats.fireballHits || 0) + 1;
+                updateQuestProgress('fireball_hits', 1);
                 m.userData.hp -= baseDmg;
                 floatingText("-" + Math.round(baseDmg), m.position, "red");
                 f.life=0;
@@ -5090,9 +5218,16 @@ function animate(time){
             
             // ---- BOSS AI ----
             if(m.userData.isBoss) {
-                // ---- LEASH: boss para de perseguir fora do raio ----
-                const BOSS_LEASH_RADIUS = 35; // unidades de distância
-                const bossLeashed = d > BOSS_LEASH_RADIUS;
+                // ---- LEASH + AGGRO ----
+                // Sem aggro, boss respeita raio curto. Se for atingido de longe, persegue até um raio maior.
+                const BOSS_LEASH_RADIUS = m.userData.leashRadius || 35;
+                const BOSS_AGGRO_RADIUS = m.userData.maxChaseRadius || 72;
+                const bossAggroActive = !!m.userData.aggro && time < (m.userData.aggroUntil || 0);
+                const bossLeashed = bossAggroActive ? d > BOSS_AGGRO_RADIUS : d > BOSS_LEASH_RADIUS;
+                if(d > BOSS_AGGRO_RADIUS) {
+                    m.userData.aggro = false;
+                    m.userData.aggroUntil = 0;
+                }
 
                 if(!bossLeashed) {
                     // Inicializa ângulo de órbita baseado na posição atual (garante 360° sem pontos cegos)
@@ -5103,7 +5238,7 @@ function animate(time){
                     if(d > 12) {
                         // Perseguição direta quando longe mas dentro do leash
                         let toHero = new THREE.Vector3().subVectors(hero.position, m.position).normalize();
-                        m.position.addScaledVector(toHero, 0.09);
+                        m.position.addScaledVector(toHero, bossAggroActive ? 0.13 : 0.09);
                     } else if(d > 2) {
                         // Órbita a raio fixo ~4u usando ângulo rastreado — cobre 360° sem pontos cegos
                         let orbitRadius = 4;
@@ -5127,7 +5262,7 @@ function animate(time){
                     Math.floor(m.userData.atk * projScale * 0.75)
                 );
                 // Boss só ataca se o jogador estiver dentro do leash
-                if(d < 40 && !bossLeashed) {
+                if(d < (bossAggroActive ? BOSS_AGGRO_RADIUS : 40) && !bossLeashed) {
                     biomeAbilities.forEach((ability, ai) => {
                         if(!m.userData.abilityTimers[ai]) m.userData.abilityTimers[ai] = 0;
                         // Cooldown diminui com o nível, mas nunca abaixo de 35% do base
@@ -5455,27 +5590,18 @@ window.onkeydown=e=>{
     keys[k] = true;
     // Ignora atalhos de jogo enquanto a tela inicial estiver visível
     if(startOverlay && startOverlay.style.display !== 'none') return;
-    // Movimento — setas sempre funcionam; WASD só se modo wasd
-    // (apenas registrado via keys[], o loop de movimento decide)
 
     if(e.code==="Space") attack();
 
-    if(controlMode === 'wasd') {
-        // Modo WASD: habilidades na mão direita
-        if(k==="j") castFireball();
-        if(k==="k" || k==="x") castAOE();
-        if(k==="l" || k==="c") castDash();
-        if(k==="u") castShield();
-        if(k==="h") usePotion();
-    } else {
-        // Modo Setas: atalhos originais
-        if(k==="z") castFireball();
-        if(k==="x") castAOE();
-        if(k==="c") castDash();
-        if(k==="r") castShield();
-        if(k==="q") usePotion();
-    }
-    // Atalhos comuns a ambos os modos
+    // Habilidades: mantidas compatíveis nos dois modos para evitar quebra de usabilidade.
+    // Z/J = Fireball, X/K = AOE, C/L = Dash.
+    if(k==="z" || k==="j") castFireball();
+    if(k==="x" || k==="k") castAOE();
+    if(k==="c" || k==="l") castDash();
+    if(k==="r" || k==="u") castShield();
+    if(k==="q" || k==="h") usePotion();
+
+    // Atalhos comuns
     if(k==="v") toggleV();
     if(k==="tab") { e.preventDefault(); toggleQuickInv(); }
     if(k==="e") toggleShop();
@@ -5484,7 +5610,7 @@ window.onkeydown=e=>{
     if(k==="m") toggleFullMap();
     if(e.key==="Escape") {
         let closed = closeAllMenus();
-        if(!closed) toggleEvolution(); // ESC abre evolução quando nenhum menu está aberto
+        if(!closed) toggleEvolution();
     }
 };
 window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
@@ -5755,6 +5881,109 @@ function addBiomeDecorations() {
     }
 }
 
+
+// -------- WORLD POPULATION: mapa inteiro vivo, setorizado e com loot permanente --------
+let worldPopulationInitialized = false;
+let worldSectorVisuals = [];
+const WORLD_SECTOR_SIZE = 180;
+const WORLD_LIMIT = 900;
+
+function getWorldSectorBiome(x, z) {
+    const gx = Math.floor((x + WORLD_LIMIT) / WORLD_SECTOR_SIZE);
+    const gz = Math.floor((z + WORLD_LIMIT) / WORLD_SECTOR_SIZE);
+    return Math.abs((gx * 3 + gz * 5 + gx * gz) % biomes.length);
+}
+
+function createWorldItemMesh(itemCopy) {
+    let itemMesh = new THREE.Group();
+    let rarHex = itemCopy.rarityData ? itemCopy.rarityData.glowHex : 0xffd700;
+    let rarGlowHex = itemCopy.rarityData ? itemCopy.rarityData.hex : 0xffaa00;
+
+    let glowMat = new THREE.MeshStandardMaterial({color: rarHex, emissive: rarGlowHex, emissiveIntensity: 1.0});
+    let glow = new THREE.Mesh(new THREE.RingGeometry(0.24, 0.34, 16), glowMat);
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.y = 0.06;
+    itemMesh.add(glow);
+
+    let itemColor = 0xffffff;
+    if(itemCopy.slot === "weapon") itemColor = 0xff4444;
+    else if(itemCopy.slot === "shield") itemColor = 0x4444ff;
+    else if(itemCopy.slot === "cape") itemColor = 0x44ff44;
+    else if(itemCopy.slot === "boots") itemColor = 0xffaa00;
+    else if(itemCopy.slot === "ring") itemColor = 0xffd700;
+    else if(itemCopy.slot === "consumable") itemColor = 0x00ff88;
+    if(itemCopy.rarity && itemCopy.rarity !== 'common') itemColor = rarHex;
+
+    let cube = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.28, 0.28),
+        new THREE.MeshStandardMaterial({color: itemColor, emissive: itemColor, emissiveIntensity: 0.55})
+    );
+    cube.position.y = 0.3;
+    itemMesh.add(cube);
+    itemMesh.userData.isWorldDrop = true;
+    return itemMesh;
+}
+
+function spawnWorldLootAt(x, z, biomeIndex) {
+    const biomeLevel = biomes[biomeIndex]?.level || 1;
+    let availableLoot = lootTable.filter(item => item.minLevel <= Math.max(1, biomeLevel + 5));
+    if(availableLoot.length === 0) availableLoot = lootTable.filter(item => item.minLevel <= 1);
+    const baseItem = availableLoot[Math.floor(Math.random() * availableLoot.length)];
+    let itemCopy = applyRarity(createItem(baseItem), Math.min(biomeIndex, biomes.length - 1), Math.max(1, biomeLevel));
+    if(itemCopy.stackable) itemCopy.quantity = 1 + Math.floor(Math.random() * 2);
+
+    const mesh = createWorldItemMesh(itemCopy);
+    mesh.position.set(x, 0, z);
+    scene.add(mesh);
+    droppedItems.push({ mesh, item: itemCopy, life: Infinity, permanent: true, worldBiome: biomeIndex });
+}
+
+function clearWorldPopulation() {
+    for(let i = droppedItems.length - 1; i >= 0; i--) {
+        if(droppedItems[i].permanent) {
+            scene.remove(droppedItems[i].mesh);
+            droppedItems.splice(i, 1);
+        }
+    }
+    worldSectorVisuals.forEach(v => scene.remove(v));
+    worldSectorVisuals = [];
+    worldPopulationInitialized = false;
+}
+
+function populateEntireWorld() {
+    clearWorldPopulation();
+    for(let x = -WORLD_LIMIT; x <= WORLD_LIMIT; x += WORLD_SECTOR_SIZE) {
+        for(let z = -WORLD_LIMIT; z <= WORLD_LIMIT; z += WORLD_SECTOR_SIZE) {
+            const biomeIndex = getWorldSectorBiome(x, z);
+            const biome = biomes[biomeIndex] || biomes[0];
+
+            // Patch visual discreto para setorizar o mapa com look and feel diferente.
+            const patch = new THREE.Mesh(
+                new THREE.PlaneGeometry(WORLD_SECTOR_SIZE * 0.92, WORLD_SECTOR_SIZE * 0.92),
+                new THREE.MeshStandardMaterial({ color: biome.groundColor, transparent: true, opacity: 0.22, depthWrite: false })
+            );
+            patch.rotation.x = -Math.PI / 2;
+            patch.position.set(x, 0.012, z);
+            patch.userData = { isWorldSector: true, biomeIndex };
+            scene.add(patch);
+            worldSectorVisuals.push(patch);
+
+            // Pelo menos dois itens por setor, garantindo mapa inteiro populado.
+            const itemsInSector = 2 + Math.floor(Math.random() * 3);
+            for(let i = 0; i < itemsInSector; i++) {
+                const px = x + (Math.random() - 0.5) * WORLD_SECTOR_SIZE * 0.75;
+                const pz = z + (Math.random() - 0.5) * WORLD_SECTOR_SIZE * 0.75;
+                spawnWorldLootAt(px, pz, biomeIndex);
+            }
+        }
+    }
+    worldPopulationInitialized = true;
+    log("<span style='color:#7fffd4'>🗺️ Eldoria foi populada com setores, relíquias e suprimentos pelo mapa inteiro.</span>");
+}
+
+Game.systems.populateEntireWorld = populateEntireWorld;
+Game.systems.clearWorldPopulation = clearWorldPopulation;
+
 // Chama decorações quando muda de bioma
 let lastBiomeForDeco = -1;
 
@@ -5898,7 +6127,7 @@ function resetGame() {
     evolutionData.quests.forEach(q => { q.progress = 0; q.completed = false; });
     evolutionData.skillTree.forEach(s => s.level = 0);
     evolutionData.activeSkillTree.forEach(s => s.level = 0);
-    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0, mysticKills:0, crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0 };
+    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0, mysticKills:0, crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0, dashUses:0, fireballHits:0, worldItemsCollected:0 };
 
     // 6. Resetar posição e recriar decorações
     hero.position.set(0, 0, 0);
@@ -6139,7 +6368,7 @@ function resetStateForNewHero() {
     evolutionData.quests.forEach(q => { q.progress = 0; q.completed = false; });
     evolutionData.skillTree.forEach(s => s.level = 0);
     evolutionData.activeSkillTree.forEach(s => s.level = 0);
-    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0, mysticKills:0, crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0 };
+    evolutionData.stats = { kills:0, wolfKills:0, bossKills:0, itemsCollected:0, biomesVisited:0, visitedBiomes:[], slimeKills:0, spiderKills:0, orcKills:0, dragonKills:0, goblinKills:0, treantKills:0, yetiKills:0, banditKills:0, scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0, desertKills:0, iceKills:0, fireKills:0, mysticKills:0, crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0, dashUses:0, fireballHits:0, worldItemsCollected:0 };
     hero.position.set(0, 0, 0);
     recalcStats();
     player.hp = player.maxHp;
@@ -6181,6 +6410,7 @@ function launchGame(loadSave) {
     startOverlay.style.display = 'none';
     hasGameStarted = true;
     if(loadSave) loadGame(); // Só carrega se foi pedido (herói existente)
+    populateEntireWorld();
     animate();
     updateEquipBar();
     setTimeout(positionEquipBar, 100); // garante posição após render inicial
