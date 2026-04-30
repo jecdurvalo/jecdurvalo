@@ -31,6 +31,7 @@ function createDefaultEvolution() {
       scorpionKills:0, mummyKills:0, wormKills:0, aoeUses:0,
       desertKills:0, iceKills:0, fireKills:0, mysticKills:0,
       crystalKills:0, shadowKills:0, celestialKills:0, voidKills:0,
+      dashUses:0, fireballHits:0, worldItemsCollected:0,
     },
     achievements: [],
     quests: [],

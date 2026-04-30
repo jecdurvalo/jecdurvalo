@@ -58,3 +58,11 @@ export function getActiveBonus(prefix) {
       return sum + (s?.bonus[key] ?? 0);
     }, 0);
 }
+
+// Soma todos os bonus[bonusKey] das skills desbloqueadas
+export function getSkillBonus(bonusKey) {
+  const tree = state.evolution.skillTree ?? [];
+  return SKILL_DEFINITIONS
+    .filter(s => tree.includes(s.id) && s.bonus[bonusKey] != null)
+    .reduce((sum, s) => sum + s.bonus[bonusKey], 0);
+}

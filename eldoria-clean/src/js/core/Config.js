@@ -91,6 +91,19 @@ export const MONSTER_TYPES = {
   ],
 };
 
+export const BOSS_BIOME_VISUALS = [
+  { bodyColor:0x8b0000, eyeColor:0xff2200, hornColor:0x333333, name:'Demônio das Planícies'    },
+  { bodyColor:0x1a3d1a, eyeColor:0x44ff44, hornColor:0x1a2a1a, name:'Espírito da Floresta'     },
+  { bodyColor:0xaa8822, eyeColor:0xffcc44, hornColor:0x886600, name:'Senhor do Deserto'         },
+  { bodyColor:0x1a4a6a, eyeColor:0x88ddff, hornColor:0x2a6080, name:'Wraith do Gelo'           },
+  { bodyColor:0x4a1a00, eyeColor:0xff5500, hornColor:0x1a0a00, name:'Lorde Vulcânico'          },
+  { bodyColor:0x3a1a6a, eyeColor:0xaa44ff, hornColor:0x220055, name:'Arauto Místico'           },
+  { bodyColor:0x004a4a, eyeColor:0x00ffee, hornColor:0x003333, name:'Elemental de Cristal'     },
+  { bodyColor:0x1a0033, eyeColor:0xaa00dd, hornColor:0x0a0022, name:'Terror Sombrio'           },
+  { bodyColor:0x7a6a4a, eyeColor:0xffeeaa, hornColor:0xaa9955, name:'Guardião Celestial'       },
+  { bodyColor:0x110033, eyeColor:0x6600ff, hornColor:0x060018, name:'Deus do Vazio'            },
+];
+
 export const RARITIES = {
   common:    { name:'Common',    color:'#aaa',    mult:1.0,  chance:60 },
   uncommon:  { name:'Uncommon',  color:'#44ff77', mult:1.3,  chance:25 },

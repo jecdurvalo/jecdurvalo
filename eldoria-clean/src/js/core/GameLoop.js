@@ -86,12 +86,27 @@ function moveHero(dt) {
   const { hero } = state;
   if (!hero) return;
   const move = getMoveVector();
-  if (move.length() > 0.05) {
+  const moving = move.length() > 0.05;
+
+  if (moving) {
     const speed = getPlayerSpeed() * (dt / 16.67);
     move.normalize().multiplyScalar(speed);
     hero.position.add(move);
     if (state.lastDir) state.lastDir.copy(move);
     hero.rotation.y = Math.atan2(move.x, move.z);
+  }
+
+  // Animação de caminhada nas pernas
+  if (hero._legs) {
+    const [leg1, leg2] = hero._legs;
+    if (moving) {
+      const swing = Math.sin(performance.now() / 150) * 0.4;
+      leg1.rotation.x =  swing;
+      leg2.rotation.x = -swing;
+    } else {
+      leg1.rotation.x *= 0.8;
+      leg2.rotation.x *= 0.8;
+    }
   }
 }
 

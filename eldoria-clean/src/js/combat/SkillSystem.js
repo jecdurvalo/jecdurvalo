@@ -8,6 +8,8 @@ import { playSound } from '../core/AudioManager.js';
 import { floatingText, screenShake } from '../graphics/VisualEffects.js';
 import { log } from '../core/Logger.js';
 import { EventBus } from '../core/EventBus.js';
+import { isUnlocked, getSkillBonus } from '../progression/SkillTree.js';
+import { updateQuestProgress } from '../progression/QuestSystem.js';
 
 // ── FIREBALL ────────────────────────────────────────────────────────────────
 export function castFireball() {
@@ -19,7 +21,7 @@ export function castFireball() {
   if (now - state.lastFireballTime < 800) return;
   state.lastFireballTime = now;
 
-  player.sp -= GAME.FIREBALL_SP_COST + (getActiveSkillBonus('fb_sp_1') ? -10 : 0);
+  player.sp -= GAME.FIREBALL_SP_COST;
   playSound('fireball');
 
   const THREE = window.THREE;
@@ -30,11 +32,13 @@ export function castFireball() {
   proj.position.copy(hero.position).add(new THREE.Vector3(0, 1.5, 0));
 
   const dir = lastDir ? lastDir.clone().normalize() : new THREE.Vector3(0, 0, -1);
-  const baseDmg = 50 + (player.level * 3) + (player.fireballDamageBonus || 0) + getActiveSkillBonus('fb_dmg');
-  const hitRadius = 2.5 + (getActiveSkillBonus('fb_radius') ? 2 : 0);
+  const baseDmg = 50 + (player.level * 3) + (player.fireballDamageBonus || 0) + getSkillBonus('fireballDmg');
+  const hitRadius = 2.5;
 
   state.scene.add(proj);
   state.projectiles.push({ mesh: proj, vel: dir.multiplyScalar(0.5), life: 80, dmg: baseDmg, hitRadius, owner: 'player' });
+  state.evolution.stats.fireballHits++;
+  updateQuestProgress('fireball_hits', 1);
 }
 
 // ── AOE ─────────────────────────────────────────────────────────────────────
@@ -53,8 +57,8 @@ export function castAOE() {
   playSound('aoe');
   screenShake(0.4);
 
-  const AOE_RADIUS = 8 + (getActiveSkillBonus('aoe_radius') ? 3 : 0);
-  const baseDmg = 80 + (player.level * 4) + (player.aoeDamageBonus || 0) + getActiveSkillBonus('aoe_dmg');
+  const AOE_RADIUS = 8;
+  const baseDmg = 80 + (player.level * 4) + (player.aoeDamageBonus || 0) + getSkillBonus('aoeDmg');
 
   state.monsters.forEach(m => {
     if (m.position.distanceTo(hero.position) > AOE_RADIUS) return;
@@ -79,6 +83,8 @@ export function doDash() {
   state.lastDashTime = now;
   state.isDashing = true;
   player.sp -= GAME.DASH_SP_COST;
+  state.evolution.stats.dashUses++;
+  updateQuestProgress('dash_uses', 1);
   playSound('dash');
 
   const dir = lastDir ? lastDir.clone().normalize().multiplyScalar(8) : new THREE.Vector3(0, 0, -8);
@@ -110,20 +116,8 @@ export function doShield() {
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
-function isDashUnlocked() {
-  return state.evolution.skillTree.find(s => s.id === 'dash_unlock')?.level > 0;
-}
-function isShieldUnlocked() {
-  return state.evolution.skillTree.find(s => s.id === 'shield_unlock')?.level > 0;
-}
-function getActiveSkillBonus(prefix) {
-  return state.evolution.activeSkillTree
-    .filter(s => s.id.startsWith(prefix) && s.level > 0)
-    .reduce((acc, s) => {
-      const bonuses = { fb_dmg_1:30, fb_dmg_2:30, fb_dmg_3:50, fb_dmg_4:80, fb_sp_1:true, fb_radius:true, aoe_dmg_1:20, aoe_dmg_2:40, aoe_dmg_3:70, aoe_radius:true };
-      return acc + (bonuses[s.id] || 0);
-    }, 0);
-}
+function isDashUnlocked()   { return isUnlocked('dash'); }
+function isShieldUnlocked() { return isUnlocked('shield'); }
 
 function spawnAOEVisual(pos, radius) {
   const THREE = window.THREE;
