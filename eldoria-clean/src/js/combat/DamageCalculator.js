@@ -3,6 +3,14 @@
  * Fácil de testar isoladamente.
  */
 import { state } from '../core/GameState.js';
+import { SKILL_DEFINITIONS } from '../progression/SkillTree.js';
+
+function getSkillStatBonus(statKey) {
+  const tree = state.evolution.skillTree ?? [];
+  return SKILL_DEFINITIONS
+    .filter(s => tree.includes(s.id) && s.bonus[statKey] != null)
+    .reduce((sum, s) => sum + s.bonus[statKey], 0);
+}
 
 /**
  * @param {number} baseAtk  - Ataque base do atacante
@@ -30,7 +38,11 @@ export function calcDamage(baseAtk, targetDef, opts = {}) {
 
 export function getPlayerAtk() {
   const { player, equipped } = state;
-  return player.baseAtk + (equipped.weapon?.atk || 0) + (equipped.ring1?.atk || 0) + (equipped.ring2?.atk || 0);
+  return player.baseAtk
+    + (equipped.weapon?.atk || 0)
+    + (equipped.ring1?.atk  || 0)
+    + (equipped.ring2?.atk  || 0)
+    + getSkillStatBonus('atk');
 }
 
 export function getPlayerDef() {
@@ -40,10 +52,22 @@ export function getPlayerDef() {
     + (equipped.cape?.def   || 0)
     + (equipped.boots?.def  || 0)
     + (equipped.ring1?.def  || 0)
-    + (equipped.ring2?.def  || 0);
+    + (equipped.ring2?.def  || 0)
+    + getSkillStatBonus('def');
 }
 
 export function getPlayerSpeed() {
   const { player, equipped } = state;
-  return 0.35 + (equipped.boots?.speed || 0) + (player.speedBonus || 0);
+  return 0.35
+    + (equipped.boots?.speed || 0)
+    + (player.speedBonus     || 0)
+    + getSkillStatBonus('speed');
+}
+
+export function getPlayerCritChance() {
+  return (state.player.critChance || 0) + getSkillStatBonus('critChance');
+}
+
+export function getPlayerLifesteal() {
+  return (state.player.lifesteal || 0) + getSkillStatBonus('lifesteal');
 }
