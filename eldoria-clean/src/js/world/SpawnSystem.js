@@ -2,8 +2,8 @@
  * SpawnSystem — spawn dinâmico e inteligente de monstros.
  */
 import { state } from '../core/GameState.js';
-import { MONSTER_TYPES } from '../core/Config.js';
-import { buildMonsterMesh } from '../graphics/ModelLoader.js';
+import { MONSTER_TYPES, BOSS_BIOME_VISUALS } from '../core/Config.js';
+import { buildMonsterMesh, buildBossMesh } from '../graphics/ModelLoader.js';
 import { playSound } from '../core/AudioManager.js';
 import { floatingText } from '../graphics/VisualEffects.js';
 import { log } from '../core/Logger.js';
@@ -62,9 +62,48 @@ export function spawnMonster(elite = false, mobMode = false, emergencySpawn = fa
 }
 
 export function spawnBoss() {
-  const { BOSS_BIOME_VISUALS, BOSS_ABILITIES } = window._eldoriaConfig || {};
-  // Boss spawn é delegado ao BossSpawner (mantido no EldoriaApp para acesso ao THREE)
-  import('../entities/Boss.js').then(m => m.spawnBoss());
+  const { hero, player, currentBiome, scene, monsters } = state;
+
+  const angle = Math.random() * Math.PI * 2;
+  const dist  = 40 + Math.random() * 20;
+  const sX = hero.position.x + Math.cos(angle) * dist;
+  const sZ = hero.position.z + Math.sin(angle) * dist;
+
+  const lv = player.level;
+  const biomeMonsters = MONSTER_TYPES[currentBiome] || MONSTER_TYPES[0];
+  const monsterType = biomeMonsters[Math.floor(Math.random() * biomeMonsters.length)];
+  const bv = BOSS_BIOME_VISUALS[Math.min(currentBiome, BOSS_BIOME_VISUALS.length - 1)];
+
+  // Scaling idêntico ao original
+  const bossMultiplier = 1 + Math.floor(Math.random() * 3) * 0.25;
+  const lvAboveBase = Math.max(0, lv - 5);
+  const bossHpMult  = 1 + lvAboveBase * 0.13;
+  const bossAtkMult = 1 + lvAboveBase * 0.09;
+  const baseHp  = Math.floor((1200 + lv * 120) * bossHpMult);
+  const baseAtk = Math.floor((25   + lv * 4)   * bossAtkMult);
+  const xpNeeded = 50 * Math.pow(1.25, lv) + (lv + 1) * 20;
+  const xpGain   = Math.floor(xpNeeded * 0.7 * bossMultiplier * 1.5);
+  const hp  = Math.floor(baseHp  * bossMultiplier);
+  const atk = Math.floor(baseAtk * bossMultiplier);
+
+  const group = buildBossMesh(currentBiome);
+  group.position.set(sX, 0, sZ);
+  group.userData = {
+    name: '👹 BOSS ' + bv.name,
+    level: lv, hp, maxHp: hp, atk,
+    def: Math.floor(baseAtk * 0.3 * bossMultiplier),
+    xp: xpGain, isBoss: true, isMob: false,
+    monsterType, breatheOffset: Math.random() * Math.PI * 2,
+    lastAttack: 0, lastSpell: 0,
+    ui: buildHpBar(),
+    label: buildLabel(`👹 ${bv.name} Lv.${lv}`),
+  };
+
+  scene.add(group);
+  monsters.push(group);
+  playSound('bossSpawn');
+  log(`<span style='color:red'>⚠️ Boss apareceu: ${bv.name}!</span>`);
+  return group;
 }
 
 function buildHpBar() {

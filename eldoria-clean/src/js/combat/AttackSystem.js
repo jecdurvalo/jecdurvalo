@@ -2,7 +2,7 @@
  * AttackSystem — ataque físico básico com animação.
  */
 import { state } from '../core/GameState.js';
-import { calcDamage, getPlayerAtk } from './DamageCalculator.js';
+import { calcDamage, getPlayerAtk, getPlayerCritChance, getPlayerLifesteal } from './DamageCalculator.js';
 import { playSound } from '../core/AudioManager.js';
 import { floatingText, screenShake } from '../graphics/VisualEffects.js';
 import { log } from '../core/Logger.js';
@@ -21,12 +21,13 @@ export function basicAttack() {
   state.monsters.forEach(m => {
     if (m.position.distanceTo(state.hero.position) > ATTACK_RANGE) return;
     const { damage, isCrit } = calcDamage(playerAtk, m.userData.def || 0, {
-      critChance: state.player.critChance || 0,
+      critChance: getPlayerCritChance(),
     });
     m.userData.hp -= damage;
 
-    if (state.player.lifesteal > 0) {
-      const heal = Math.floor(damage * state.player.lifesteal / 100);
+    const lifesteal = getPlayerLifesteal();
+    if (lifesteal > 0) {
+      const heal = Math.floor(damage * lifesteal);
       state.player.hp = Math.min(state.player.maxHp, state.player.hp + heal);
     }
 

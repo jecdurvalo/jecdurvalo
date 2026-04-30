@@ -6,6 +6,7 @@ import { playSound } from '../core/AudioManager.js';
 import { floatingText } from '../graphics/VisualEffects.js';
 import { log } from '../core/Logger.js';
 import { EventBus } from '../core/EventBus.js';
+import { spawnBoss } from '../world/SpawnSystem.js';
 
 export function gainXP(amount) {
   const { player } = state;
@@ -36,13 +37,20 @@ function levelUp() {
   player.baseMaxHp = player.maxHp;
   player.baseMaxSp = player.maxSp;
 
-  // Skill points a cada 5 níveis
-  if (player.level % 5 === 0) state.evolution.skillPoints += 1;
+  // 1 skill point por nível (igual ao original)
+  state.evolution.skillPoints += 1;
+  floatingText('+1 SP', hero.position, 'magenta');
 
   playSound('levelup');
   showLevelUpFlash();
   floatingText(`⬆️ Nível ${player.level}!`, hero.position, 'gold');
   log(`<span style='color:gold'>⭐ Level ${player.level}!</span>`);
+
+  // Boss spawn por progressão de nível: Lv5+a cada 5, Lv13+a cada 3, Lv25+a cada 2
+  if (player.level >= 5) {
+    const interval = player.level >= 25 ? 2 : player.level >= 13 ? 3 : 5;
+    if (player.level % interval === 0) spawnBoss();
+  }
 
   EventBus.emit('player:levelUp', { level: player.level });
 }
