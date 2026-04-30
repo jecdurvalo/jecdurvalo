@@ -93,8 +93,9 @@ export function spawnBoss() {
     level: lv, hp, maxHp: hp, atk,
     def: Math.floor(baseAtk * 0.3 * bossMultiplier),
     xp: xpGain, isBoss: true, isMob: false,
+    biomeIndex: currentBiome,
     monsterType, breatheOffset: Math.random() * Math.PI * 2,
-    lastAttack: 0, lastSpell: 0,
+    lastAttack: 0, lastAbilityTime: [0, 0], phase2: false,
     ui: buildHpBar(),
     label: buildLabel(`👹 ${bv.name} Lv.${lv}`),
   };
