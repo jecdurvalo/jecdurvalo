@@ -21,6 +21,7 @@ import { playSound } from './AudioManager.js';
 import { floatingText } from '../graphics/VisualEffects.js';
 import { log } from './Logger.js';
 import { EventBus } from './EventBus.js';
+import { getBossAbilities } from '../entities/Boss.js';
 
 let lastFrame = 0;
 let lastSave  = 0;
@@ -64,6 +65,9 @@ function animate(time) {
 
   // Bioma
   updateBiome();
+
+  // DOT ticks sobre o jogador
+  processDOTs();
 
   // SP regeneração
   const { player } = state;
@@ -131,10 +135,25 @@ function updateMonsters(dt, time) {
     // Respiração (bobbing)
     m.position.y = Math.sin(time * 0.003 + m.userData.breatheOffset) * 0.1;
 
-    // Ataque ao herói
+    // Ataque melee ao herói
     if (dist < 2 && time - m.userData.lastAttack > 1200) {
       m.userData.lastAttack = time;
       onMonsterAttack(m);
+    }
+
+    // Boss: lança feitiços + ativa fase 2
+    if (m.userData.isBoss) {
+      castBossSpells(m, time);
+      if (!m.userData.phase2 && m.userData.hp <= m.userData.maxHp * 0.5) {
+        m.userData.phase2 = true;
+        floatingText('⚡ FASE 2!', m.position, '#ff4400');
+        m.traverse(child => {
+          if (child.isMesh && child.material && child.material.emissive) {
+            child.material.emissive.setHex(0xff0000);
+            child.material.emissiveIntensity = 0.8;
+          }
+        });
+      }
     }
 
     // HP bar overlay
@@ -175,6 +194,13 @@ function updateMonsterUI(m, camera, renderer) {
 // ── PROJÉTEIS ────────────────────────────────────────────────────────────────
 function updateProjectiles() {
   state.projectiles = state.projectiles.filter(p => {
+    // Homing: corrige trajetória lentamente em direção ao alvo
+    if (p.homing && p.target) {
+      const toTarget = p.target.position.clone().sub(p.mesh.position).normalize();
+      const spd = p.vel.length();
+      p.vel.lerp(toTarget.multiplyScalar(spd), 0.06);
+    }
+
     p.mesh.position.add(p.vel);
     p.life--;
     if (p.life <= 0) { state.scene.remove(p.mesh); return false; }
@@ -190,6 +216,21 @@ function updateProjectiles() {
         }
       }
     }
+
+    if (p.owner === 'boss') {
+      if (state.hero && p.mesh.position.distanceTo(state.hero.position) < (p.hitRadius || 1.5)) {
+        if (!state.isShielded) {
+          state.player.hp = Math.max(0, state.player.hp - p.dmg);
+          floatingText('-' + p.dmg, state.hero.position, 'red');
+          playSound('hit');
+          if (p.dot) applyDOT(p.dot);
+          if (state.player.hp <= 0) EventBus.emit('player:die');
+        }
+        state.scene.remove(p.mesh);
+        return false;
+      }
+    }
+
     return true;
   });
 }
@@ -206,6 +247,91 @@ function handleSpawn() {
   const roll = Math.random();
   if (roll < getMobSpawnChance() * 0.3) spawnMonster(false, true);
   else if (roll < 0.5) spawnMonster();
+}
+
+// ── BOSS SPELLS ───────────────────────────────────────────────────────────────
+function castBossSpells(boss, time) {
+  const abilities = getBossAbilities(boss.userData.biomeIndex ?? 0);
+  abilities.forEach((ability, idx) => {
+    if (idx > 0 && !boss.userData.phase2) return;
+    if (!boss.userData.lastAbilityTime) boss.userData.lastAbilityTime = [0, 0];
+    const last = boss.userData.lastAbilityTime[idx] || 0;
+    if (time - last < ability.interval) return;
+    boss.userData.lastAbilityTime[idx] = time;
+    fireBossAbility(boss, ability);
+  });
+}
+
+function fireBossAbility(boss, ability) {
+  const THREE = window.THREE;
+  const { hero, scene, projectiles } = state;
+  if (!hero) return;
+
+  const dir = hero.position.clone().sub(boss.position).normalize();
+  const baseDmg = Math.max(1, Math.floor(boss.userData.atk * (ability.dmgMult || 1)));
+  const count = ability.count || 1;
+  const spread = ability.spread || 0;
+
+  floatingText(ability.label, boss.position, '#ff6600');
+
+  for (let i = 0; i < count; i++) {
+    const angle = count > 1 ? (i - (count - 1) / 2) * spread : 0;
+    const shotDir = rotateY(dir.clone(), angle);
+
+    const proj = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 6, 6),
+      new THREE.MeshStandardMaterial({ color: ability.color, emissive: ability.color, emissiveIntensity: 1 })
+    );
+    proj.position.copy(boss.position).add(new THREE.Vector3(0, 2, 0));
+    scene.add(proj);
+
+    projectiles.push({
+      mesh: proj,
+      vel: shotDir.multiplyScalar(ability.speed || 0.3),
+      life: 140,
+      dmg: baseDmg,
+      hitRadius: 1.5,
+      owner: 'boss',
+      homing: ability.homing || false,
+      dot: ability.dot || null,
+      target: hero,
+    });
+  }
+}
+
+function rotateY(vec, angle) {
+  const THREE = window.THREE;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return new THREE.Vector3(
+    vec.x * cos + vec.z * sin,
+    vec.y,
+    -vec.x * sin + vec.z * cos
+  );
+}
+
+// ── DOT (damage over time sobre o jogador) ────────────────────────────────────
+function applyDOT(dot) {
+  state.playerDots.push({
+    dmg: dot.dmg,
+    ticks: dot.ticks,
+    interval: dot.interval,
+    nextTick: Date.now() + dot.interval,
+  });
+}
+
+function processDOTs() {
+  if (!state.playerDots.length) return;
+  const now = Date.now();
+  state.playerDots = state.playerDots.filter(dot => {
+    if (now < dot.nextTick) return true;
+    dot.nextTick = now + dot.interval;
+    dot.ticks--;
+    state.player.hp = Math.max(0, state.player.hp - dot.dmg);
+    floatingText('☠️ -' + dot.dmg, state.hero.position, '#ff4400');
+    if (state.player.hp <= 0) EventBus.emit('player:die');
+    return dot.ticks > 0;
+  });
 }
 
 // ── KILL ──────────────────────────────────────────────────────────────────────
